@@ -1,37 +1,165 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet, StatusBar, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet, StatusBar, KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
-import { buscarApi } from '../services/api';
+import { buscarApi, obterDetalhesErro } from '../services/api';
+import { usarAutenticacao } from '../services/AuthContext';
 import { colors, typography, spacing, borders, shadows, componentStyles } from '../styles/globalStyles';
 
 export default function TelaRegistro({ navigation }) {
+  const { conectado } = usarAutenticacao();
   const [nome, setNome] = useState('');
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
+  const [confirmarSenha, setConfirmarSenha] = useState('');
   const [nomeFocused, setNomeFocused] = useState(false);
   const [emailFocused, setEmailFocused] = useState(false);
   const [senhaFocused, setSenhaFocused] = useState(false);
+  const [confirmarSenhaFocused, setConfirmarSenhaFocused] = useState(false);
+  const [carregando, setCarregando] = useState(false);
 
+  // Validação de nome
+  const validarNome = (nome) => {
+    const nomeLimpo = nome.trim();
+    if (nomeLimpo.length < 2) return false;
+    if (nomeLimpo.length > 100) return false;
+    const regex = /^[a-zA-ZÀ-ÿ\s]+$/;
+    return regex.test(nomeLimpo);
+  };
+
+  // Validação de email
+  const validarEmail = (email) => {
+    const emailLimpo = email.trim().toLowerCase();
+    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return regex.test(emailLimpo);
+  };
+
+  // Validação de senha
+  const validarSenha = (senha) => {
+    if (senha.length < 6) return false;
+    if (senha.length > 255) return false;
+    
+    // Verificar se contém pelo menos uma letra maiúscula, uma minúscula e um número
+    const temMaiuscula = /[A-Z]/.test(senha);
+    const temMinuscula = /[a-z]/.test(senha);
+    const temNumero = /\d/.test(senha);
+    
+    return temMaiuscula && temMinuscula && temNumero;
+  };
+
+  // Validar formulário completo
+  const validarFormulario = () => {
+    if (!nome.trim()) {
+      Alert.alert('Campo obrigatório', 'Por favor, insira seu nome completo');
+      return false;
+    }
+
+    if (!validarNome(nome)) {
+      Alert.alert('Nome inválido', 'Nome deve ter entre 2 e 100 caracteres e conter apenas letras e espaços');
+      return false;
+    }
+
+    if (!email.trim()) {
+      Alert.alert('Campo obrigatório', 'Por favor, insira seu email');
+      return false;
+    }
+
+    if (!validarEmail(email)) {
+      Alert.alert('Email inválido', 'Por favor, insira um email válido');
+      return false;
+    }
+
+    if (!senha) {
+      Alert.alert('Campo obrigatório', 'Por favor, insira uma senha');
+      return false;
+    }
+
+    if (!validarSenha(senha)) {
+      Alert.alert('Senha inválida', 'Senha deve ter entre 6 e 255 caracteres, com pelo menos uma letra maiúscula, uma minúscula e um número');
+      return false;
+    }
+
+    if (senha !== confirmarSenha) {
+      Alert.alert('Senhas não coincidem', 'A confirmação de senha deve ser igual à senha');
+      return false;
+    }
+
+    return true;
+  };
+
+  // Lidar com registro
   async function lidarComRegistro() {
-    if (!nome.trim() || !email.trim() || !senha.trim()) {
-      Alert.alert('Erro', 'Por favor, preencha todos os campos');
+    if (!validarFormulario()) return;
+
+    // Verificar conectividade
+    if (!conectado) {
+      Alert.alert(
+        'Sem conexão', 
+        'Não foi possível conectar ao servidor. Verifique sua internet e tente novamente.',
+        [
+          { text: 'OK' },
+          { text: 'Tentar novamente', onPress: () => navigation.navigate('Register') }
+        ]
+      );
       return;
     }
 
-    if (senha.length < 6) {
-      Alert.alert('Erro', 'A senha deve ter pelo menos 6 caracteres');
-      return;
-    }
+    setCarregando(true);
 
     try {
-      await buscarApi('/api/autenticacao/registrar', { 
+      const dados = await buscarApi('/api/autenticacao/registrar', { 
         method: 'POST', 
-        body: { nome, email, senha } 
+        body: { 
+          nome: nome.trim(),
+          email: email.trim().toLowerCase(), 
+          senha 
+        } 
       });
-      Alert.alert('Sucesso', 'Conta criada com sucesso! Faça login para continuar.');
-      navigation.goBack();
-    } catch (e) {
-      Alert.alert('Erro', e.message);
+
+      console.log('✅ Registro realizado com sucesso:', dados);
+      
+      Alert.alert(
+        'Conta criada!', 
+        'Sua conta foi criada com sucesso! Faça login para continuar.',
+        [
+          { 
+            text: 'Fazer Login', 
+            onPress: () => {
+              // Limpar campos
+              setNome('');
+              setEmail('');
+              setSenha('');
+              setConfirmarSenha('');
+              navigation.goBack();
+            }
+          }
+        ]
+      );
+      
+    } catch (erro) {
+      console.error('❌ Erro no registro:', erro);
+      
+      let mensagem = 'Erro ao criar conta. Tente novamente.';
+      
+      if (erro.status === 409) {
+        mensagem = 'Este email já está cadastrado. Use outro email ou faça login.';
+      } else if (erro.status === 400) {
+        mensagem = 'Dados inválidos. Verifique as informações inseridas.';
+      } else if (erro.status === 500) {
+        mensagem = 'Erro interno do servidor. Tente novamente mais tarde.';
+      } else if (erro.message) {
+        mensagem = erro.message;
+      }
+
+      // Mostrar detalhes do erro se disponível
+      const detalhes = obterDetalhesErro(erro);
+      if (detalhes && detalhes !== mensagem) {
+        mensagem += `\n\nDetalhes: ${detalhes}`;
+      }
+
+      Alert.alert('Erro no Registro', mensagem);
+      
+    } finally {
+      setCarregando(false);
     }
   }
 
@@ -57,6 +185,20 @@ export default function TelaRegistro({ navigation }) {
           </View>
           <Text style={styles.welcomeText}>Junte-se a nós!</Text>
           <Text style={styles.subtitleText}>Crie sua conta e comece sua jornada para uma vida mais saudável</Text>
+          
+          {/* Indicador de conectividade */}
+          <View style={styles.connectionStatus}>
+            <View style={[
+              styles.connectionDot, 
+              { backgroundColor: conectado ? colors.success : colors.error }
+            ]} />
+            <Text style={[
+              styles.connectionText,
+              { color: conectado ? colors.success : colors.error }
+            ]}>
+              {conectado ? 'Conectado ao servidor' : 'Servidor não acessível'}
+            </Text>
+          </View>
         </View>
 
         {/* Formulário */}
@@ -66,7 +208,8 @@ export default function TelaRegistro({ navigation }) {
             <TextInput
               style={[
                 styles.input,
-                nomeFocused && styles.inputFocused
+                nomeFocused && styles.inputFocused,
+                nome.trim() && !validarNome(nome) && styles.inputError
               ]}
               placeholder="Seu nome completo"
               placeholderTextColor={colors.neutral[400]}
@@ -76,7 +219,11 @@ export default function TelaRegistro({ navigation }) {
               onBlur={() => setNomeFocused(false)}
               autoCapitalize="words"
               autoCorrect={false}
+              editable={!carregando}
             />
+            {nome.trim() && !validarNome(nome) && (
+              <Text style={styles.errorText}>Nome deve ter entre 2 e 100 caracteres</Text>
+            )}
           </View>
 
           <View style={styles.inputGroup}>
@@ -84,7 +231,8 @@ export default function TelaRegistro({ navigation }) {
             <TextInput
               style={[
                 styles.input,
-                emailFocused && styles.inputFocused
+                emailFocused && styles.inputFocused,
+                email.trim() && !validarEmail(email) && styles.inputError
               ]}
               placeholder="seu@email.com"
               placeholderTextColor={colors.neutral[400]}
@@ -95,7 +243,11 @@ export default function TelaRegistro({ navigation }) {
               keyboardType="email-address"
               autoCapitalize="none"
               autoCorrect={false}
+              editable={!carregando}
             />
+            {email.trim() && !validarEmail(email) && (
+              <Text style={styles.errorText}>Email deve ter formato válido</Text>
+            )}
           </View>
 
           <View style={styles.inputGroup}>
@@ -103,7 +255,8 @@ export default function TelaRegistro({ navigation }) {
             <TextInput
               style={[
                 styles.input,
-                senhaFocused && styles.inputFocused
+                senhaFocused && styles.inputFocused,
+                senha && !validarSenha(senha) && styles.inputError
               ]}
               placeholder="••••••••"
               placeholderTextColor={colors.neutral[400]}
@@ -113,16 +266,53 @@ export default function TelaRegistro({ navigation }) {
               onBlur={() => setSenhaFocused(false)}
               secureTextEntry
               autoCapitalize="none"
+              editable={!carregando}
             />
-            <Text style={styles.passwordHint}>Mínimo de 6 caracteres</Text>
+            {senha && !validarSenha(senha) && (
+              <Text style={styles.errorText}>Mínimo 6 caracteres, com maiúscula, minúscula e número</Text>
+            )}
+          </View>
+
+          <View style={styles.inputGroup}>
+            <Text style={styles.inputLabel}>Confirmar senha</Text>
+            <TextInput
+              style={[
+                styles.input,
+                confirmarSenhaFocused && styles.inputFocused,
+                confirmarSenha && senha !== confirmarSenha && styles.inputError
+              ]}
+              placeholder="••••••••"
+              placeholderTextColor={colors.neutral[400]}
+              value={confirmarSenha}
+              onChangeText={setConfirmarSenha}
+              onFocus={() => setConfirmarSenhaFocused(true)}
+              onBlur={() => setConfirmarSenhaFocused(false)}
+              secureTextEntry
+              autoCapitalize="none"
+              editable={!carregando}
+            />
+            {confirmarSenha && senha !== confirmarSenha && (
+              <Text style={styles.errorText}>As senhas não coincidem</Text>
+            )}
           </View>
 
           <TouchableOpacity 
             onPress={lidarComRegistro} 
-            style={styles.registerButton}
+            style={[
+              styles.registerButton,
+              carregando && styles.buttonDisabled
+            ]}
+            disabled={carregando || !conectado}
             activeOpacity={0.8}
           >
-            <Text style={styles.registerButtonText}>Criar Conta</Text>
+            {carregando ? (
+              <View style={styles.buttonWithLoading}>
+                <ActivityIndicator color={colors.neutral[50]} size="small" />
+                <Text style={styles.registerButtonText}>Criando conta...</Text>
+              </View>
+            ) : (
+              <Text style={styles.registerButtonText}>Criar Conta</Text>
+            )}
           </TouchableOpacity>
         </View>
 
@@ -131,6 +321,7 @@ export default function TelaRegistro({ navigation }) {
           <TouchableOpacity 
             onPress={() => navigation.goBack()}
             style={styles.navLink}
+            disabled={carregando}
           >
             <Text style={styles.navLinkText}>Já tem conta? Fazer login</Text>
           </TouchableOpacity>
@@ -199,6 +390,24 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: typography.lineHeight.normal,
     maxWidth: 300,
+    marginBottom: spacing.md,
+  },
+  
+  connectionStatus: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  
+  connectionDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  
+  connectionText: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
   },
   
   formContainer: {
@@ -235,6 +444,18 @@ const styles = StyleSheet.create({
     ...shadows.base,
   },
   
+  inputError: {
+    borderColor: colors.error,
+    borderWidth: borders.width.base,
+  },
+  
+  errorText: {
+    fontSize: typography.fontSize.sm,
+    color: colors.error,
+    marginLeft: spacing.sm,
+    fontStyle: 'italic',
+  },
+  
   passwordHint: {
     fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.medium,
@@ -253,6 +474,17 @@ const styles = StyleSheet.create({
     marginTop: spacing.md,
     ...shadows.lg,
     elevation: 8,
+  },
+  
+  buttonDisabled: {
+    backgroundColor: colors.neutral[400],
+    ...shadows.sm,
+  },
+  
+  buttonWithLoading: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
   },
   
   registerButtonText: {

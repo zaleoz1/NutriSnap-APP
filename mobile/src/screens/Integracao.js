@@ -11,7 +11,7 @@ export default function OnboardingScreen({ navigation }) {
   const [answers, setAnswers] = useState({});
   const [textInputs, setTextInputs] = useState({});
 
-  console.log('OnboardingScreen rendered - currentStep:', currentStep, 'answers:', answers, 'textInputs:', textInputs);
+
 
   const steps = [
     {
@@ -107,8 +107,6 @@ export default function OnboardingScreen({ navigation }) {
   const currentStepData = steps[currentStep];
 
   useEffect(() => {
-    console.log('useEffect triggered - currentStep:', currentStep, 'currentStepData:', currentStepData);
-    
     if (currentStepData.options?.length > 0) {
       // Se já temos respostas para este passo, não sobrescrever
       if (!answers[currentStepData.id]) {
@@ -116,7 +114,6 @@ export default function OnboardingScreen({ navigation }) {
           ...option,
           selected: false
         }));
-        console.log('Initializing options for step:', currentStepData.id, 'options:', initialOptions);
         setAnswers(prev => ({
           ...prev,
           [currentStepData.id]: initialOptions
@@ -126,9 +123,6 @@ export default function OnboardingScreen({ navigation }) {
   }, [currentStep, currentStepData.id, currentStepData.options, answers]);
 
   const handleOptionSelect = (optionId) => {
-    console.log('handleOptionSelect called with optionId:', optionId);
-    console.log('Current options before update:', currentStepData.options);
-    
     const updatedOptions = currentStepData.options.map(option => ({
       ...option,
       selected: currentStepData.multiSelect 
@@ -136,14 +130,11 @@ export default function OnboardingScreen({ navigation }) {
         : option.id === optionId
     }));
     
-    console.log('Updated options:', updatedOptions);
-    
     setAnswers(prev => {
       const newAnswers = {
         ...prev,
         [currentStepData.id]: updatedOptions
       };
-      console.log('New answers state:', newAnswers);
       return newAnswers;
     });
   };
@@ -153,19 +144,14 @@ export default function OnboardingScreen({ navigation }) {
   };
 
   const canProceed = () => {
-    console.log('canProceed - currentStep:', currentStep, 'totalSteps:', steps.length);
-    console.log('currentStepData:', currentStepData);
-    
     // Se for o último passo, sempre permitir prosseguir
     if (currentStep === steps.length - 1) {
-      console.log('Last step - always allow proceed');
       return true;
     }
     
     if (currentStepData.options?.length > 0) {
       const currentAnswers = answers[currentStepData.id];
       const canProceedResult = currentAnswers?.some(option => option.selected);
-      console.log('canProceed with options:', canProceedResult, 'answers:', currentAnswers);
       return canProceedResult;
     }
     
@@ -173,27 +159,19 @@ export default function OnboardingScreen({ navigation }) {
       const canProceedResult = currentStepData.additionalFields.every(field => 
         textInputs[field]?.trim().length > 0
       );
-      console.log('canProceed with fields:', canProceedResult, 'textInputs:', textInputs);
       return canProceedResult;
     }
     
-    console.log('canProceed default: true');
     return true;
   };
 
   const handleNext = () => {
-    console.log('handleNext called - currentStep:', currentStep, 'totalSteps:', steps.length);
-    
     if (currentStep < steps.length - 1) {
-      console.log('Moving to next step');
       setCurrentStep(currentStep + 1);
     } else {
-      console.log('Finalizing - navigating to Principal');
       try {
         navigation.replace('Principal');
-        console.log('Navigation successful');
       } catch (error) {
-        console.error('Navigation error:', error);
         // Fallback para navegação simples
         navigation.navigate('Principal');
       }
@@ -330,7 +308,6 @@ export default function OnboardingScreen({ navigation }) {
           </View>
 
           <View style={styles.navigationContainer}>
-            {console.log('Rendering navigation - currentStep:', currentStep, 'canProceed:', canProceed())}
             <TouchableOpacity
               onPress={handleBack}
               style={styles.backButton}

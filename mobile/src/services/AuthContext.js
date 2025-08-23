@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { verificarToken, testarConexao } from './api';
 
 const ContextoAutenticacao = createContext(null);
 
@@ -8,73 +9,183 @@ export function ProvedorAutenticacao({ children }) {
   const [usuario, setUsuario] = useState(null);
   const [modoVisitante, setModoVisitante] = useState(false);
   const [carregando, setCarregando] = useState(true);
+  const [conectado, setConectado] = useState(false);
 
+  // Verificar conectividade com o servidor
   useEffect(() => {
-    (async () => {
-      try {
-        const tokenSalvo = await AsyncStorage.getItem('token');
-        const usuarioSalvo = await AsyncStorage.getItem('user');
-        if (tokenSalvo) {
-          setToken(tokenSalvo);
-          setUsuario(JSON.parse(usuarioSalvo));
-        }
-      } catch (erro) {
-        console.log('Erro ao carregar dados salvos:', erro);
-      } finally {
-        setCarregando(false);
-      }
-    })();
+    verificarConectividade();
   }, []);
 
-  const fazerLogin = async (t, u) => {
-    setToken(t);
-    setUsuario(u);
-    setModoVisitante(false);
-    await AsyncStorage.setItem('token', t);
-    await AsyncStorage.setItem('user', JSON.stringify(u));
+  // Carregar dados salvos na inicialização
+  useEffect(() => {
+    carregarDadosSalvos();
+  }, []);
+
+  // Verificar conectividade com o servidor
+  const verificarConectividade = async () => {
+    try {
+      const resultado = await testarConexao();
+      setConectado(resultado.conectado);
+      
+      if (!resultado.conectado) {
+        console.warn('⚠️ Servidor não está acessível:', resultado.erro);
+      }
+    } catch (erro) {
+      console.error('❌ Erro ao verificar conectividade:', erro);
+      setConectado(false);
+    }
   };
 
+  // Carregar dados salvos do AsyncStorage
+  const carregarDadosSalvos = async () => {
+    try {
+      const [tokenSalvo, usuarioSalvo] = await Promise.all([
+        AsyncStorage.getItem('token'),
+        AsyncStorage.getItem('user')
+      ]);
+
+      if (tokenSalvo && usuarioSalvo) {
+        // Verificar se o token ainda é válido
+        const tokenValido = await verificarToken(tokenSalvo);
+        
+        if (tokenValido) {
+          setToken(tokenSalvo);
+          setUsuario(JSON.parse(usuarioSalvo));
+          console.log('✅ Token válido carregado');
+        } else {
+          console.log('⚠️ Token expirado, removendo dados salvos');
+          await limparDados();
+        }
+      }
+    } catch (erro) {
+      console.error('❌ Erro ao carregar dados salvos:', erro);
+      await limparDados();
+    } finally {
+      setCarregando(false);
+    }
+  };
+
+  // Fazer login
+  const fazerLogin = async (novoToken, novoUsuario) => {
+    try {
+      // Validar dados
+      if (!novoToken || !novoUsuario) {
+        throw new Error('Token e usuário são obrigatórios');
+      }
+
+      // Salvar no estado
+      setToken(novoToken);
+      setUsuario(novoUsuario);
+      setModoVisitante(false);
+
+      // Salvar no AsyncStorage
+      await Promise.all([
+        AsyncStorage.setItem('token', novoToken),
+        AsyncStorage.setItem('user', JSON.stringify(novoUsuario))
+      ]);
+
+      console.log('✅ Login realizado com sucesso:', novoUsuario.email);
+    } catch (erro) {
+      console.error('❌ Erro ao fazer login:', erro);
+      throw erro;
+    }
+  };
+
+  // Fazer logout
   const fazerLogout = async () => {
+    try {
+      await limparDados();
+      console.log('✅ Logout realizado com sucesso');
+    } catch (erro) {
+      console.error('❌ Erro ao fazer logout:', erro);
+    }
+  };
+
+  // Limpar todos os dados
+  const limparDados = async () => {
     setToken(null);
     setUsuario(null);
     setModoVisitante(false);
-    await AsyncStorage.removeItem('token');
-    await AsyncStorage.removeItem('user');
+    
+    try {
+      await Promise.all([
+        AsyncStorage.removeItem('token'),
+        AsyncStorage.removeItem('user')
+      ]);
+    } catch (erro) {
+      console.error('❌ Erro ao limpar dados:', erro);
+    }
   };
 
+  // Entrar no modo visitante
   const entrarModoVisitante = () => {
     setModoVisitante(true);
     setToken(null);
     setUsuario(null);
+    console.log('👤 Modo visitante ativado');
   };
 
+  // Sair do modo visitante
   const sairModoVisitante = () => {
     setModoVisitante(false);
+    console.log('👤 Modo visitante desativado');
+  };
+
+  // Verificar se o usuário está autenticado
+  const estaAutenticado = () => {
+    return !!(token && usuario);
+  };
+
+  // Verificar se está no modo visitante
+  const estaNoModoVisitante = () => {
+    return modoVisitante;
   };
 
   // Funções de compatibilidade com nomes em português
   const entrar = fazerLogin;
   const sair = fazerLogout;
 
+  // Contexto fornecido
+  const contexto = {
+    // Estados
+    token,
+    usuario,
+    modoVisitante,
+    carregando,
+    conectado,
+    
+    // Funções principais
+    fazerLogin,
+    fazerLogout,
+    entrarModoVisitante,
+    sairModoVisitante,
+    
+    // Funções de compatibilidade
+    entrar,
+    sair,
+    
+    // Funções utilitárias
+    estaAutenticado,
+    estaNoModoVisitante,
+    
+    // Funções de gerenciamento
+    limparDados,
+    verificarConectividade
+  };
+
   return (
-    <ContextoAutenticacao.Provider value={{ 
-      token, 
-      usuario, 
-      modoVisitante,
-      carregando,
-      fazerLogin, 
-      fazerLogout,
-      entrarModoVisitante,
-      sairModoVisitante,
-      // Funções de compatibilidade
-      entrar,
-      sair
-    }}>
+    <ContextoAutenticacao.Provider value={contexto}>
       {children}
     </ContextoAutenticacao.Provider>
   );
 }
 
 export function usarAutenticacao() {
-  return useContext(ContextoAutenticacao);
+  const contexto = useContext(ContextoAutenticacao);
+  
+  if (!contexto) {
+    throw new Error('useAutenticacao deve ser usado dentro de um ProvedorAutenticacao');
+  }
+  
+  return contexto;
 }
