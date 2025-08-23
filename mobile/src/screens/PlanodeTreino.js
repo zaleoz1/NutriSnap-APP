@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet, Alert, StatusBar, ScrollView, Dimensions } from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
 import { usarAutenticacao } from '../services/AuthContext';
 import { buscarApi } from '../services/api';
 import { colors, typography, spacing, borders, shadows, componentStyles } from '../styles/globalStyles';
@@ -154,7 +155,7 @@ export default function TelaPlanoTreino() {
             <Text style={styles.subtitle}>Crie sua rotina personalizada de exercícios</Text>
           </View>
           <View style={styles.iconContainer}>
-            <Text style={styles.icon}>💪</Text>
+            <MaterialIcons name="fitness-center" size={40} color={colors.primary[600]} />
           </View>
         </View>
 

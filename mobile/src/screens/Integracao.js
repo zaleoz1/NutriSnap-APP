@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, StatusBar, Dimensions, TextInput } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, StatusBar, Dimensions, TextInput, TouchableWithoutFeedback, Keyboard } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { MaterialIcons } from '@expo/vector-icons';
 import { colors, typography, spacing, borders, shadows } from '../styles/globalStyles';
 
 const { width, height } = Dimensions.get('window');
@@ -9,6 +10,8 @@ export default function OnboardingScreen({ navigation }) {
   const [currentStep, setCurrentStep] = useState(0);
   const [answers, setAnswers] = useState({});
   const [textInputs, setTextInputs] = useState({});
+
+  console.log('OnboardingScreen rendered - currentStep:', currentStep, 'answers:', answers, 'textInputs:', textInputs);
 
   const steps = [
     {
@@ -78,7 +81,7 @@ export default function OnboardingScreen({ navigation }) {
         { id: 'feminino', text: 'Feminino' }
       ],
       multiSelect: false,
-      additionalFields: ['idade', 'pais', 'cep']
+      additionalFields: ['idade']
     },
     {
       id: 'measurements',
@@ -104,19 +107,28 @@ export default function OnboardingScreen({ navigation }) {
   const currentStepData = steps[currentStep];
 
   useEffect(() => {
-    if (!answers[currentStepData.id] && currentStepData.options?.length > 0) {
-      const initialOptions = currentStepData.options.map(option => ({
-        ...option,
-        selected: false
-      }));
-      setAnswers(prev => ({
-        ...prev,
-        [currentStepData.id]: initialOptions
-      }));
+    console.log('useEffect triggered - currentStep:', currentStep, 'currentStepData:', currentStepData);
+    
+    if (currentStepData.options?.length > 0) {
+      // Se já temos respostas para este passo, não sobrescrever
+      if (!answers[currentStepData.id]) {
+        const initialOptions = currentStepData.options.map(option => ({
+          ...option,
+          selected: false
+        }));
+        console.log('Initializing options for step:', currentStepData.id, 'options:', initialOptions);
+        setAnswers(prev => ({
+          ...prev,
+          [currentStepData.id]: initialOptions
+        }));
+      }
     }
-  }, [currentStep, currentStepData.id, currentStepData.options]);
+  }, [currentStep, currentStepData.id, currentStepData.options, answers]);
 
   const handleOptionSelect = (optionId) => {
+    console.log('handleOptionSelect called with optionId:', optionId);
+    console.log('Current options before update:', currentStepData.options);
+    
     const updatedOptions = currentStepData.options.map(option => ({
       ...option,
       selected: currentStepData.multiSelect 
@@ -124,10 +136,16 @@ export default function OnboardingScreen({ navigation }) {
         : option.id === optionId
     }));
     
-    setAnswers(prev => ({
-      ...prev,
-      [currentStepData.id]: updatedOptions
-    }));
+    console.log('Updated options:', updatedOptions);
+    
+    setAnswers(prev => {
+      const newAnswers = {
+        ...prev,
+        [currentStepData.id]: updatedOptions
+      };
+      console.log('New answers state:', newAnswers);
+      return newAnswers;
+    });
   };
 
   const handleTextInputChange = (field, value) => {
@@ -135,25 +153,50 @@ export default function OnboardingScreen({ navigation }) {
   };
 
   const canProceed = () => {
+    console.log('canProceed - currentStep:', currentStep, 'totalSteps:', steps.length);
+    console.log('currentStepData:', currentStepData);
+    
+    // Se for o último passo, sempre permitir prosseguir
+    if (currentStep === steps.length - 1) {
+      console.log('Last step - always allow proceed');
+      return true;
+    }
+    
     if (currentStepData.options?.length > 0) {
       const currentAnswers = answers[currentStepData.id];
-      return currentAnswers?.some(option => option.selected);
+      const canProceedResult = currentAnswers?.some(option => option.selected);
+      console.log('canProceed with options:', canProceedResult, 'answers:', currentAnswers);
+      return canProceedResult;
     }
     
     if (currentStepData.additionalFields) {
-      return currentStepData.additionalFields.every(field => 
+      const canProceedResult = currentStepData.additionalFields.every(field => 
         textInputs[field]?.trim().length > 0
       );
+      console.log('canProceed with fields:', canProceedResult, 'textInputs:', textInputs);
+      return canProceedResult;
     }
     
+    console.log('canProceed default: true');
     return true;
   };
 
   const handleNext = () => {
+    console.log('handleNext called - currentStep:', currentStep, 'totalSteps:', steps.length);
+    
     if (currentStep < steps.length - 1) {
+      console.log('Moving to next step');
       setCurrentStep(currentStep + 1);
     } else {
-      navigation.replace('Dashboard');
+      console.log('Finalizing - navigating to Principal');
+      try {
+        navigation.replace('Principal');
+        console.log('Navigation successful');
+      } catch (error) {
+        console.error('Navigation error:', error);
+        // Fallback para navegação simples
+        navigation.navigate('Principal');
+      }
     }
   };
 
@@ -235,8 +278,6 @@ export default function OnboardingScreen({ navigation }) {
 
     const fieldLabels = {
       idade: 'Idade',
-      pais: 'País',
-      cep: 'CEP',
       altura: 'Altura (cm)',
       peso_atual: 'Peso Atual (kg)',
       peso_meta: 'Peso Meta (kg)'
@@ -244,8 +285,6 @@ export default function OnboardingScreen({ navigation }) {
 
     const placeholders = {
       idade: 'idade',
-      pais: 'país',
-      cep: 'CEP',
       altura: 'altura',
       peso_atual: 'peso atual',
       peso_meta: 'peso meta'
@@ -274,45 +313,48 @@ export default function OnboardingScreen({ navigation }) {
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
       <StatusBar barStyle="light-content" backgroundColor={colors.neutral[900]} />
       
-      <View style={styles.container}>
-        <View style={styles.contentContainer}>
-          {renderProgressBar()}
-          <View style={styles.questionContainer}>
-            <Text style={styles.questionText}>{currentStepData.question}</Text>
-            {currentStepData.instruction && (
-              <Text style={styles.instructionText}>{currentStepData.instruction}</Text>
-            )}
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <View style={styles.container}>
+          <View style={styles.contentContainer}>
+            {renderProgressBar()}
+            <View style={styles.questionContainer}>
+              <Text style={styles.questionText}>{currentStepData.question}</Text>
+              {currentStepData.instruction && (
+                <Text style={styles.instructionText}>{currentStepData.instruction}</Text>
+              )}
+            </View>
+            <View style={styles.mainContent}>
+              {renderOptions()}
+              {renderTextInputs()}
+            </View>
           </View>
-          <View style={styles.mainContent}>
-            {renderOptions()}
-            {renderTextInputs()}
+
+          <View style={styles.navigationContainer}>
+            {console.log('Rendering navigation - currentStep:', currentStep, 'canProceed:', canProceed())}
+            <TouchableOpacity
+              onPress={handleBack}
+              style={styles.backButton}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.backButtonText}>←</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={handleNext}
+              style={[
+                styles.nextButton,
+                !canProceed() && styles.nextButtonDisabled
+              ]}
+              disabled={!canProceed()}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.nextButtonText}>
+                {currentStep === steps.length - 1 ? 'Finalizar' : 'Próximo'}
+              </Text>
+            </TouchableOpacity>
           </View>
         </View>
-
-        <View style={styles.navigationContainer}>
-          <TouchableOpacity
-            onPress={handleBack}
-            style={styles.backButton}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.backButtonText}>←</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            onPress={handleNext}
-            style={[
-              styles.nextButton,
-              !canProceed() && styles.nextButtonDisabled
-            ]}
-            disabled={!canProceed()}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.nextButtonText}>
-              {currentStep === steps.length - 1 ? 'Finalizar' : 'Próximo'}
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+      </TouchableWithoutFeedback>
     </SafeAreaView>
   );
 }

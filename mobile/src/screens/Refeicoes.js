@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, FlatList, Alert, Image, StyleSheet, StatusBar, ScrollView, Dimensions } from 'react-native';
+import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { usarAutenticacao } from '../services/AuthContext';
 import { buscarApi } from '../services/api';
@@ -103,7 +104,7 @@ export default function TelaRefeicoes() {
             <Text style={styles.subtitle}>Fotografe sua refeição para análise nutricional</Text>
           </View>
           <View style={styles.iconContainer}>
-            <Text style={styles.icon}>📱</Text>
+            <MaterialIcons name="camera-alt" size={40} color={colors.primary[600]} />
           </View>
         </View>
 
@@ -123,7 +124,7 @@ export default function TelaRefeicoes() {
           activeOpacity={0.8}
         >
           <View style={styles.captureButtonContent}>
-            <Text style={styles.captureIcon}>📸</Text>
+            <MaterialIcons name="camera-alt" size={32} color={colors.neutral[50]} />
             <Text style={styles.captureText}>Fotografar Refeição</Text>
           </View>
         </TouchableOpacity>

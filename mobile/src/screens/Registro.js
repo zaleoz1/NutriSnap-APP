@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet, StatusBar, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
 import { buscarApi } from '../services/api';
 import { colors, typography, spacing, borders, shadows, componentStyles } from '../styles/globalStyles';
 
@@ -50,7 +51,7 @@ export default function TelaRegistro({ navigation }) {
         <View style={styles.header}>
           <View style={styles.logoContainer}>
             <View style={styles.logoCircle}>
-              <Text style={styles.logoIcon}>🍎</Text>
+              <MaterialIcons name="restaurant" size={32} color={colors.primary[600]} />
             </View>
             <Text style={styles.logoText}>NutriSnap</Text>
           </View>

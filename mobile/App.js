@@ -29,6 +29,7 @@ export default function App() {
             <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
             <Stack.Screen name="Register" component={RegisterScreen} options={{ title: 'Criar conta' }} />
             <Stack.Screen name="Principal" component={HomeScreen} options={{ headerShown: false }} />
+            <Stack.Screen name="Dashboard" component={DashboardScreen} options={{ headerShown: false }} />
             <Stack.Screen name="IMC" component={BMIScreen} options={{ title: 'IMC' }} />
             <Stack.Screen name="Meta" component={GoalScreen} options={{ title: 'Meta de Peso' }} />
             <Stack.Screen name="PlanoTreino" component={WorkoutPlanScreen} options={{ title: 'Rotina de Treino' }} />

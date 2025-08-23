@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
 import { usarAutenticacao } from '../services/AuthContext';
 import { colors, spacing } from '../styles/globalStyles';
 

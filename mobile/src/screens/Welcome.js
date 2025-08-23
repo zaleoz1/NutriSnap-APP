@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Dimensions, StatusBar, ScrollView, Animated } from 'react-native';
+import { MaterialIcons, Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import { usarAutenticacao } from '../services/AuthContext';
 import { colors, typography, spacing, borders, shadows } from '../styles/globalStyles';
 
@@ -13,21 +14,21 @@ export default function WelcomeScreen({ navigation }) {
   const slides = [
     {
       id: 1,
-      image: '🏃‍♂️',
+      icon: 'directions-run',
       title: 'Quer ver suas vitórias?',
       subtitle: 'Comece a acompanhar seu dia',
       description: 'Transforme sua saúde com inteligência artificial'
     },
     {
       id: 2,
-      image: '📊',
+      icon: 'analytics',
       title: 'Acompanhe seu progresso',
       subtitle: 'Metas personalizadas e resultados reais',
       description: 'Visualize sua evolução com gráficos detalhados'
     },
     {
       id: 3,
-      image: '💪',
+      icon: 'fitness-center',
       title: 'Planos personalizados',
       subtitle: 'Treinos e refeições sob medida',
       description: 'Receba recomendações baseadas em seus objetivos'
@@ -70,7 +71,7 @@ export default function WelcomeScreen({ navigation }) {
         ]}
       >
         <View style={styles.slideImageContainer}>
-          <Text style={styles.slideImage}>{slide.image}</Text>
+          <MaterialIcons name={slide.icon} size={60} color={colors.neutral[50]} />
         </View>
         <Text style={styles.slideTitle}>{slide.title}</Text>
         <Text style={styles.slideSubtitle}>{slide.subtitle}</Text>

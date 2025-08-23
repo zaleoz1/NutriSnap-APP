@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, StatusBar, ScrollView, Dimensions } from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
 import { colors, typography, spacing, borders, shadows, componentStyles } from '../styles/globalStyles';
 
 const { width } = Dimensions.get('window');
@@ -95,7 +96,7 @@ export default function TelaIMC() {
             <Text style={styles.subtitle}>Índice de Massa Corporal</Text>
           </View>
           <View style={styles.iconContainer}>
-            <Text style={styles.icon}>📊</Text>
+            <MaterialIcons name="analytics" size={40} color={colors.primary[600]} />
           </View>
         </View>
 

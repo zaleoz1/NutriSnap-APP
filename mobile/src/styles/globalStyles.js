@@ -224,6 +224,28 @@ export const createResponsiveStyles = (baseStyles, breakpoints = {}) => {
   return StyleSheet.create(baseStyles);
 };
 
+// Tamanhos de ícones
+export const iconSizes = {
+  xs: 12,
+  sm: 16,
+  base: 20,
+  lg: 24,
+  xl: 32,
+  '2xl': 40,
+  '3xl': 48,
+  '4xl': 56,
+  '5xl': 64,
+};
+
+// Configurações de ícones
+export const iconConfig = {
+  defaultColor: colors.neutral[600],
+  primaryColor: colors.primary[600],
+  successColor: colors.success,
+  errorColor: colors.error,
+  warningColor: colors.warning,
+};
+
 // Exportar tudo
 export default {
   colors,
@@ -233,4 +255,6 @@ export default {
   shadows,
   componentStyles,
   createResponsiveStyles,
+  iconSizes,
+  iconConfig,
 };

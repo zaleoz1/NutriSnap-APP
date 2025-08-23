@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, StatusBar, ScrollView, Dimensions, Image } from 'react-native';
+import { Ionicons, MaterialIcons, FontAwesome5, MaterialCommunityIcons } from '@expo/vector-icons';
 import { usarAutenticacao } from '../services/AuthContext';
 import { colors, typography, spacing, borders, shadows } from '../styles/globalStyles';
 
@@ -60,7 +61,7 @@ export default function DashboardScreen({ navigation }) {
           </View>
           
           <TouchableOpacity style={styles.notificationButton}>
-            <Text style={styles.notificationIcon}>🔔</Text>
+            <Ionicons name="notifications" size={20} color={colors.neutral[400]} />
           </TouchableOpacity>
         </View>
 
@@ -85,19 +86,19 @@ export default function DashboardScreen({ navigation }) {
             
             <View style={styles.caloriesBreakdown}>
               <View style={styles.breakdownItem}>
-                <Text style={styles.breakdownIcon}>🎯</Text>
+                <MaterialIcons name="flag" size={16} color={colors.neutral[400]} />
                 <Text style={styles.breakdownLabel}>Meta base</Text>
                 <Text style={styles.breakdownValue}>{userData.dailyCalories}</Text>
               </View>
               
               <View style={styles.breakdownItem}>
-                <Text style={styles.breakdownIcon}>🍽️</Text>
+                <MaterialIcons name="restaurant" size={16} color={colors.neutral[400]} />
                 <Text style={styles.breakdownLabel}>Alimentos</Text>
                 <Text style={styles.breakdownValue}>{userData.consumedCalories}</Text>
               </View>
               
               <View style={styles.breakdownItem}>
-                <Text style={styles.breakdownIcon}>🔥</Text>
+                <MaterialIcons name="local-fire-department" size={16} color={colors.neutral[400]} />
                 <Text style={styles.breakdownLabel}>Exercício</Text>
                 <Text style={styles.breakdownValue}>{userData.exerciseCalories}</Text>
               </View>
@@ -118,7 +119,7 @@ export default function DashboardScreen({ navigation }) {
             <View style={styles.adRight}>
               <Text style={styles.adDiscount}>% ATÉ 40% OFF</Text>
               <View style={styles.adImage}>
-                <Text style={styles.adCarIcon}>🚗</Text>
+                <MaterialIcons name="directions-car" size={24} color={colors.neutral[700]} />
               </View>
               <TouchableOpacity style={styles.adButton}>
                 <Text style={styles.adButtonText}>Baixe agora</Text>
@@ -147,7 +148,7 @@ export default function DashboardScreen({ navigation }) {
           <View style={styles.metricCard}>
             <Text style={styles.metricTitle}>Passos</Text>
             <View style={styles.metricContent}>
-              <Text style={styles.metricIcon}>👟</Text>
+              <FontAwesome5 name="shoe-prints" size={20} color={colors.accent.pink} />
               <Text style={styles.metricValue}>{userData.steps}</Text>
             </View>
             <Text style={styles.metricGoal}>Meta: 10.000 passos</Text>
@@ -157,31 +158,31 @@ export default function DashboardScreen({ navigation }) {
           </View>
           
           <View style={styles.metricCard}>
-            <Text style={styles.metricTitle}>Exercício</Text>
             <TouchableOpacity style={styles.addButton}>
-              <Text style={styles.addButtonText}>+</Text>
+              <Ionicons name="add" size={16} color={colors.neutral[50]} />
             </TouchableOpacity>
+            <Text style={styles.metricTitle}>Exercício</Text>
             <View style={styles.metricContent}>
-              <Text style={styles.metricIcon}>🔥</Text>
+              <MaterialIcons name="local-fire-department" size={20} color={colors.neutral[400]} />
               <Text style={styles.metricValue}>{userData.exerciseCalories} cal</Text>
             </View>
             <Text style={styles.metricGoal}>00:00 h</Text>
           </View>
           
           <View style={styles.metricCard}>
-            <Text style={styles.metricTitle}>Peso</Text>
             <TouchableOpacity style={styles.addButton}>
-              <Text style={styles.addButtonText}>+</Text>
+              <Ionicons name="add" size={16} color={colors.neutral[50]} />
             </TouchableOpacity>
+            <Text style={styles.metricTitle}>Peso</Text>
             <Text style={styles.metricValue}>{userData.weight}</Text>
             <Text style={styles.metricGoal}>Últimos 90 dias</Text>
           </View>
           
           <View style={styles.metricCard}>
-            <Text style={styles.metricTitle}>Água</Text>
             <TouchableOpacity style={styles.addButton}>
-              <Text style={styles.addButtonText}>+</Text>
+              <Ionicons name="add" size={16} color={colors.neutral[50]} />
             </TouchableOpacity>
+            <Text style={styles.metricTitle}>Água</Text>
             <Text style={styles.metricValue}>{userData.waterIntake}</Text>
             <Text style={styles.metricGoal}>Meta: 2L</Text>
           </View>
@@ -208,14 +209,14 @@ export default function DashboardScreen({ navigation }) {
         <View style={styles.quickActions}>
           <TouchableOpacity style={styles.quickActionButton}>
             <View style={styles.quickActionIcon}>
-              <Text style={styles.quickActionEmoji}>🔍</Text>
+              <MaterialIcons name="search" size={24} color={colors.primary[600]} />
             </View>
             <Text style={styles.quickActionText}>Registrar alimento</Text>
           </TouchableOpacity>
           
           <TouchableOpacity style={styles.quickActionButton}>
             <View style={styles.quickActionIcon}>
-              <Text style={styles.quickActionEmoji}>📱</Text>
+              <MaterialIcons name="qr-code-scanner" size={24} color={colors.primary[600]} />
             </View>
             <Text style={styles.quickActionText}>Leitor de código de barras</Text>
           </TouchableOpacity>
@@ -225,27 +226,27 @@ export default function DashboardScreen({ navigation }) {
       {/* Barra de navegação inferior */}
       <View style={styles.bottomNav}>
         <TouchableOpacity style={[styles.navItem, styles.navItemActive]}>
-          <Text style={styles.navIcon}>📊</Text>
+          <MaterialIcons name="dashboard" size={20} color={colors.primary[600]} />
           <Text style={styles.navLabel}>Painel</Text>
         </TouchableOpacity>
         
         <TouchableOpacity style={styles.navItem}>
-          <Text style={styles.navIcon}>📖</Text>
+          <MaterialIcons name="book" size={20} color={colors.neutral[400]} />
           <Text style={styles.navLabel}>Diário</Text>
         </TouchableOpacity>
         
         <TouchableOpacity style={styles.navItem}>
-          <Text style={styles.navIcon}>📱</Text>
+          <MaterialIcons name="restaurant" size={20} color={colors.neutral[400]} />
           <Text style={styles.navLabel}>Refeições</Text>
         </TouchableOpacity>
         
         <TouchableOpacity style={styles.navItem}>
-          <Text style={styles.navIcon}>📈</Text>
+          <MaterialIcons name="trending-up" size={20} color={colors.neutral[400]} />
           <Text style={styles.navLabel}>Progresso</Text>
         </TouchableOpacity>
         
         <TouchableOpacity style={styles.navItem}>
-          <Text style={styles.navIcon}>⚙️</Text>
+          <MaterialIcons name="settings" size={20} color={colors.neutral[400]} />
           <Text style={styles.navLabel}>Mais</Text>
         </TouchableOpacity>
       </View>

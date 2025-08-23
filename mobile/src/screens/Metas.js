@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet, StatusBar, ScrollView, Dimensions } from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
 import { usarAutenticacao } from '../services/AuthContext';
 import { buscarApi } from '../services/api';
 import { colors, typography, spacing, borders, shadows, componentStyles } from '../styles/globalStyles';
@@ -92,7 +93,7 @@ export default function TelaMeta() {
             <Text style={styles.subtitle}>Defina seus objetivos e calcule suas necessidades calóricas</Text>
           </View>
           <View style={styles.iconContainer}>
-            <Text style={styles.icon}>🎯</Text>
+            <MaterialIcons name="flag" size={40} color={colors.primary[600]} />
           </View>
         </View>
 
