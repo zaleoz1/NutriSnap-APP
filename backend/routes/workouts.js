@@ -1,20 +1,20 @@
 import express from 'express';
-import db from '../config/db.js';
-import { requireAuth } from '../middleware/auth.js';
+import bancoDados from '../config/db.js';
+import { requerAutenticacao } from '../middleware/auth.js';
 
-const router = express.Router();
+const roteador = express.Router();
 
-router.get('/', requireAuth, async (req, res) => {
-  const [rows] = await db.query('SELECT * FROM workouts WHERE user_id = ? ORDER BY id DESC LIMIT 1', [req.userId]);
-  res.json(rows[0] || null);
+roteador.get('/', requerAutenticacao, async (req, res) => {
+  const [linhas] = await bancoDados.query('SELECT * FROM treinos WHERE id_usuario = ? ORDER BY id DESC LIMIT 1', [req.idUsuario]);
+  res.json(linhas[0] || null);
 });
 
-router.post('/', requireAuth, async (req, res) => {
-  const { plan } = req.body;
-  await db.query('INSERT INTO workouts (user_id, plan) VALUES (?, ?)', [
-    req.userId, JSON.stringify(plan || [])
+roteador.post('/', requerAutenticacao, async (req, res) => {
+  const { plano } = req.body;
+  await bancoDados.query('INSERT INTO treinos (id_usuario, plano) VALUES (?, ?)', [
+    req.idUsuario, JSON.stringify(plano || [])
   ]);
-  res.json({ message: 'Treino salvo' });
+  res.json({ mensagem: 'Treino salvo' });
 });
 
-export default router;
+export default roteador;

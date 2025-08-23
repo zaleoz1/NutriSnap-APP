@@ -1,42 +1,42 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const AuthContext = createContext(null);
+const ContextoAutenticacao = createContext(null);
 
-export function AuthProvider({ children }) {
+export function ProvedorAutenticacao({ children }) {
   const [token, setToken] = useState(null);
-  const [user, setUser] = useState(null);
+  const [usuario, setUsuario] = useState(null);
 
   useEffect(() => {
     (async () => {
-      const saved = await AsyncStorage.getItem('token');
-      const savedUser = await AsyncStorage.getItem('user');
-      if (saved) setToken(saved);
-      if (savedUser) setUser(JSON.parse(savedUser));
+      const tokenSalvo = await AsyncStorage.getItem('token');
+      const usuarioSalvo = await AsyncStorage.getItem('user');
+      if (tokenSalvo) setToken(tokenSalvo);
+      if (usuarioSalvo) setUsuario(JSON.parse(usuarioSalvo));
     })();
   }, []);
 
-  const signIn = async (t, u) => {
+  const fazerLogin = async (t, u) => {
     setToken(t);
-    setUser(u);
+    setUsuario(u);
     await AsyncStorage.setItem('token', t);
     await AsyncStorage.setItem('user', JSON.stringify(u));
   };
 
-  const signOut = async () => {
+  const fazerLogout = async () => {
     setToken(null);
-    setUser(null);
+    setUsuario(null);
     await AsyncStorage.removeItem('token');
     await AsyncStorage.removeItem('user');
   };
 
   return (
-    <AuthContext.Provider value={{ token, user, signIn, signOut }}>
+    <ContextoAutenticacao.Provider value={{ token, usuario, fazerLogin, fazerLogout }}>
       {children}
-    </AuthContext.Provider>
+    </ContextoAutenticacao.Provider>
   );
 }
 
-export function useAuth() {
-  return useContext(AuthContext);
+export function usarAutenticacao() {
+  return useContext(ContextoAutenticacao);
 }

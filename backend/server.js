@@ -3,42 +3,62 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
-import authRoutes from './routes/auth.js';
-import mealRoutes from './routes/meals.js';
-import goalRoutes from './routes/goals.js';
-import workoutRoutes from './routes/workouts.js';
-import analyzeRoutes from './routes/analyze.js';
-import db from './config/db.js';
+import rotasAutenticacao from './routes/auth.js';
+import rotasRefeicoes from './routes/meals.js';
+import rotasMetas from './routes/goals.js';
+import rotasTreinos from './routes/workouts.js';
+import rotasAnalise from './routes/analyze.js';
+import bancoDados from './config/db.js';
 
-const app = express();
-app.use(helmet());
-app.use(cors());
-app.use(express.json({ limit: '10mb' }));
+const aplicacao = express();
+aplicacao.use(helmet());
+aplicacao.use(cors());
+aplicacao.use(express.json({ limit: '10mb' }));
 
-// Basic rate limiting
-const limiter = rateLimit({
+// Limitação básica de taxa
+const limitador = rateLimit({
   windowMs: 60 * 1000,
   max: 120
 });
-app.use(limiter);
+aplicacao.use(limitador);
 
-// Health check
-app.get('/api/health', async (req, res) => {
+// Rota raiz
+aplicacao.get('/', (req, res) => {
+  res.json({ 
+    mensagem: 'NutriSnap Backend API', 
+    versao: '1.0.0',
+    status: 'online',
+    rotas: {
+      saude: '/api/saude',
+      autenticacao: '/api/autenticacao',
+      refeicoes: '/api/refeicoes',
+      metas: '/api/metas',
+      treinos: '/api/treinos',
+      analise: '/api/analise'
+    }
+  });
+});
+
+// Verificação de saúde
+aplicacao.get('/api/saude', async (req, res) => {
   try {
-    await db.query('SELECT 1');
-    res.json({ ok: true });
-  } catch (e) {
-    res.status(500).json({ ok: false, error: e.message });
+    await bancoDados.query('SELECT 1');
+    res.json({ ok: true, banco: 'conectado' });
+  } catch (erro) {
+    res.json({ ok: true, banco: 'desconectado', aviso: 'Banco de dados não disponível' });
   }
 });
 
-app.use('/api/auth', authRoutes);
-app.use('/api/meals', mealRoutes);
-app.use('/api/goals', goalRoutes);
-app.use('/api/workouts', workoutRoutes);
-app.use('/api/analyze', analyzeRoutes);
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`✅ Backend rodando na porta ${PORT}`);
+aplicacao.use('/api/autenticacao', rotasAutenticacao);
+aplicacao.use('/api/refeicoes', rotasRefeicoes);
+aplicacao.use('/api/metas', rotasMetas);
+aplicacao.use('/api/treinos', rotasTreinos);
+aplicacao.use('/api/analise', rotasAnalise);
+
+const PORTA = process.env.PORT || 3000;
+const HOST = process.env.HOST || '0.0.0.0';
+aplicacao.listen(PORTA, HOST, () => {
+  console.log(`✅ Backend rodando em http://${HOST}:${PORTA}`);
+  console.log(`🌐 Acessível na rede local em http://192.168.0.135:${PORTA}`);
 });

@@ -1,11 +1,11 @@
 # NutriSnap Mobile (Expo)
 
-## Setup
+## Configuração
 1) `npm i`
-2) Ajuste o `BASE_URL` em `src/services/api.js` para o IP da sua máquina (ex: `http://192.168.0.2:3000`).
+2) Ajuste o `URL_BASE` em `src/services/api.js` para o IP da sua máquina (ex: `http://192.168.0.2:3000`).
 3) `npm start` e abra com o app Expo Go no Android/iOS, ou rode em emulador.
 
-Telas:
+## Telas:
 - Login / Registro
 - Home (meta diária vinda da API + progresso)
 - IMC

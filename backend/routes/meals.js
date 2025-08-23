@@ -1,28 +1,28 @@
 import express from 'express';
-import db from '../config/db.js';
-import { requireAuth } from '../middleware/auth.js';
+import bancoDados from '../config/db.js';
+import { requerAutenticacao } from '../middleware/auth.js';
 
-const router = express.Router();
+const roteador = express.Router();
 
-router.get('/', requireAuth, async (req, res) => {
-  const [rows] = await db.query('SELECT * FROM meals WHERE user_id = ? ORDER BY timestamp DESC', [req.userId]);
-  res.json(rows);
+roteador.get('/', requerAutenticacao, async (req, res) => {
+  const [linhas] = await bancoDados.query('SELECT * FROM refeicoes WHERE id_usuario = ? ORDER BY timestamp DESC', [req.idUsuario]);
+  res.json(linhas);
 });
 
-router.post('/', requireAuth, async (req, res) => {
-  const { items, total_calories, timestamp } = req.body;
-  await db.query('INSERT INTO meals (user_id, items, total_calories, timestamp) VALUES (?, ?, ?, ?)', [
-    req.userId,
-    JSON.stringify(items || []),
-    total_calories || 0,
+roteador.post('/', requerAutenticacao, async (req, res) => {
+  const { itens, calorias_totais, timestamp } = req.body;
+  await bancoDados.query('INSERT INTO refeicoes (id_usuario, itens, calorias_totais, timestamp) VALUES (?, ?, ?, ?)', [
+    req.idUsuario,
+    JSON.stringify(itens || []),
+    calorias_totais || 0,
     timestamp || new Date()
   ]);
-  res.json({ message: 'Refeição salva' });
+  res.json({ mensagem: 'Refeição salva' });
 });
 
-router.delete('/:id', requireAuth, async (req, res) => {
-  await db.query('DELETE FROM meals WHERE id = ? AND user_id = ?', [req.params.id, req.userId]);
-  res.json({ message: 'Refeição removida' });
+roteador.delete('/:id', requerAutenticacao, async (req, res) => {
+  await bancoDados.query('DELETE FROM refeicoes WHERE id = ? AND id_usuario = ?', [req.params.id, req.idUsuario]);
+  res.json({ mensagem: 'Refeição removida' });
 });
 
-export default router;
+export default roteador;

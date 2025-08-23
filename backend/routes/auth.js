@@ -1,52 +1,52 @@
 import express from 'express';
-import db from '../config/db.js';
+import bancoDados from '../config/db.js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { z } from 'zod';
 
-const router = express.Router();
+const roteador = express.Router();
 
-const registerSchema = z.object({
-  name: z.string().min(2),
+const esquemaRegistro = z.object({
+  nome: z.string().min(2),
   email: z.string().email(),
-  password: z.string().min(6)
+  senha: z.string().min(6)
 });
 
-router.post('/register', async (req, res) => {
+roteador.post('/registrar', async (req, res) => {
   try {
-    const { name, email, password } = registerSchema.parse(req.body);
+    const { nome, email, senha } = esquemaRegistro.parse(req.body);
 
-    const [exists] = await db.query('SELECT id FROM users WHERE email = ?', [email]);
-    if (exists.length) return res.status(400).json({ message: 'Email já cadastrado' });
+    const [existe] = await bancoDados.query('SELECT id FROM usuarios WHERE email = ?', [email]);
+    if (existe.length) return res.status(400).json({ mensagem: 'Email já cadastrado' });
 
-    const hashed = await bcrypt.hash(password, 10);
-    await db.query('INSERT INTO users (name, email, password) VALUES (?, ?, ?)', [name, email, hashed]);
-    res.json({ message: 'Usuário registrado com sucesso' });
-  } catch (e) {
-    res.status(400).json({ message: e.message });
+    const senhaCriptografada = await bcrypt.hash(senha, 10);
+    await bancoDados.query('INSERT INTO usuarios (nome, email, senha) VALUES (?, ?, ?)', [nome, email, senhaCriptografada]);
+    res.json({ mensagem: 'Usuário registrado com sucesso' });
+  } catch (erro) {
+    res.status(400).json({ mensagem: erro.message });
   }
 });
 
-const loginSchema = z.object({
+const esquemaLogin = z.object({
   email: z.string().email(),
-  password: z.string().min(6)
+  senha: z.string().min(6)
 });
 
-router.post('/login', async (req, res) => {
+roteador.post('/entrar', async (req, res) => {
   try {
-    const { email, password } = loginSchema.parse(req.body);
-    const [rows] = await db.query('SELECT * FROM users WHERE email = ?', [email]);
-    if (!rows.length) return res.status(400).json({ message: 'Usuário não encontrado' });
-    const user = rows[0];
+    const { email, senha } = esquemaLogin.parse(req.body);
+    const [linhas] = await bancoDados.query('SELECT * FROM usuarios WHERE email = ?', [email]);
+    if (!linhas.length) return res.status(400).json({ mensagem: 'Usuário não encontrado' });
+    const usuario = linhas[0];
 
-    const ok = await bcrypt.compare(password, user.password);
-    if (!ok) return res.status(400).json({ message: 'Senha incorreta' });
+    const senhaCorreta = await bcrypt.compare(senha, usuario.senha);
+    if (!senhaCorreta) return res.status(400).json({ mensagem: 'Senha incorreta' });
 
-    const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET || 'secreta', { expiresIn: '7d' });
-    res.json({ token, user: { id: user.id, name: user.name, email: user.email } });
-  } catch (e) {
-    res.status(400).json({ message: e.message });
+    const token = jwt.sign({ id: usuario.id }, process.env.JWT_SECRET || 'secreta', { expiresIn: '7d' });
+    res.json({ token, usuario: { id: usuario.id, nome: usuario.nome, email: usuario.email } });
+  } catch (erro) {
+    res.status(400).json({ mensagem: erro.message });
   }
 });
 
-export default router;
+export default roteador;

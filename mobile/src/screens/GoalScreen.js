@@ -1,89 +1,89 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet } from 'react-native';
-import { useAuth } from '../services/AuthContext';
-import { apiFetch } from '../services/api';
+import { usarAutenticacao } from '../services/AuthContext';
+import { buscarApi } from '../services/api';
 
-function calculateDailyCalories({ weight, height, age, sex, activityLevel, goal }) {
-  let tmb = 10 * weight + 6.25 * height - 5 * age;
-  tmb += sex === 'M' ? 5 : -161;
+function calcularCaloriasDiarias({ peso, altura, idade, sexo, nivelAtividade, objetivo }) {
+  let tmb = 10 * peso + 6.25 * altura - 5 * idade;
+  tmb += sexo === 'M' ? 5 : -161;
 
-  const activityMultipliers = {
+  const multiplicadoresAtividade = {
     sedentario: 1.2,
     leve: 1.375,
     moderado: 1.55,
     intenso: 1.725
   };
-  let calories = tmb * (activityMultipliers[activityLevel] || 1.2);
-  if (goal === 'emagrecer') calories -= 500;
-  if (goal === 'ganhar') calories += 500;
-  return Math.round(calories);
+  let calorias = tmb * (multiplicadoresAtividade[nivelAtividade] || 1.2);
+  if (objetivo === 'emagrecer') calorias -= 500;
+  if (objetivo === 'ganhar') calorias += 500;
+  return Math.round(calorias);
 }
 
-export default function GoalScreen() {
-  const { token } = useAuth();
-  const [currentWeight, setCurrentWeight] = useState('');
-  const [goalWeight, setGoalWeight] = useState('');
-  const [days, setDays] = useState('');
-  const [height, setHeight] = useState('');
-  const [age, setAge] = useState('');
-  const [sex, setSex] = useState('M'); // M/F
-  const [activityLevel, setActivityLevel] = useState('moderado');
-  const [objective, setObjective] = useState('emagrecer');
-  const [dailyCalories, setDailyCalories] = useState(null);
+export default function TelaMeta() {
+  const { token } = usarAutenticacao();
+  const [pesoAtual, setPesoAtual] = useState('');
+  const [pesoMeta, setPesoMeta] = useState('');
+  const [dias, setDias] = useState('');
+  const [altura, setAltura] = useState('');
+  const [idade, setIdade] = useState('');
+  const [sexo, setSexo] = useState('M'); // M/F
+  const [nivelAtividade, setNivelAtividade] = useState('moderado');
+  const [objetivo, setObjetivo] = useState('emagrecer');
+  const [caloriasDiarias, setCaloriasDiarias] = useState(null);
 
-  function handleCalc() {
-    const calories = calculateDailyCalories({
-      weight: parseFloat(currentWeight || '0'),
-      height: parseFloat(height || '0') * 100, // altura em cm
-      age: parseInt(age || '0'),
-      sex,
-      activityLevel,
-      goal: objective
+  function lidarComCalculo() {
+    const calorias = calcularCaloriasDiarias({
+      peso: parseFloat(pesoAtual || '0'),
+      altura: parseFloat(altura || '0') * 100, // altura em cm
+      idade: parseInt(idade || '0'),
+      sexo,
+      nivelAtividade,
+      objetivo
     });
-    setDailyCalories(calories);
+    setCaloriasDiarias(calorias);
   }
 
-  async function saveGoal() {
+  async function salvarMeta() {
     try {
-      await apiFetch('/api/goals', {
+      await buscarApi('/api/metas', {
         method: 'POST',
         token,
         body: {
-          current_weight: parseFloat(currentWeight),
-          goal_weight: parseFloat(goalWeight),
-          days: parseInt(days),
-          daily_calories: parseInt(dailyCalories || '0')
+          peso_atual: parseFloat(pesoAtual),
+          peso_meta: parseFloat(pesoMeta),
+          dias: parseInt(dias),
+          calorias_diarias: parseInt(caloriasDiarias || '0')
         }
       });
       Alert.alert('Sucesso', 'Meta salva e meta diária definida!');
-    } catch (e) {
-      Alert.alert('Erro', e.message);
+    } catch (erro) {
+      Alert.alert('Erro', erro.message);
     }
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Meta de Peso</Text>
-      <TextInput placeholder="Peso atual (kg)" keyboardType="numeric" value={currentWeight} onChangeText={setCurrentWeight} style={styles.input} />
-      <TextInput placeholder="Peso desejado (kg)" keyboardType="numeric" value={goalWeight} onChangeText={setGoalWeight} style={styles.input} />
-      <TextInput placeholder="Prazo (dias)" keyboardType="numeric" value={days} onChangeText={setDays} style={styles.input} />
-      <TextInput placeholder="Altura (m) ex: 1.75" keyboardType="numeric" value={height} onChangeText={setHeight} style={styles.input} />
-      <TextInput placeholder="Idade" keyboardType="numeric" value={age} onChangeText={setAge} style={styles.input} />
-      <TextInput placeholder="Sexo (M/F)" value={sex} onChangeText={setSex} style={styles.input} />
-      <TextInput placeholder="Atividade (sedentario/leve/moderado/intenso)" value={activityLevel} onChangeText={setActivityLevel} style={styles.input} />
-      <TextInput placeholder="Objetivo (emagrecer/ganhar/manter)" value={objective} onChangeText={setObjective} style={styles.input} />
-      <TouchableOpacity onPress={handleCalc} style={styles.button}><Text style={styles.btnText}>Calcular Calorias</Text></TouchableOpacity>
-      {dailyCalories && <Text style={styles.result}>Meta diária: {dailyCalories} kcal</Text>}
-      <TouchableOpacity onPress={saveGoal} style={[styles.button, { backgroundColor:'#2563eb', marginTop:12 }]}><Text style={styles.btnText}>Salvar Meta</Text></TouchableOpacity>
+    <View style={estilos.container}>
+      <Text style={estilos.titulo}>Meta de Peso</Text>
+      <TextInput placeholder="Peso atual (kg)" keyboardType="numeric" value={pesoAtual} onChangeText={setPesoAtual} style={estilos.entrada} />
+      <TextInput placeholder="Peso desejado (kg)" keyboardType="numeric" value={pesoMeta} onChangeText={setPesoMeta} style={estilos.entrada} />
+      <TextInput placeholder="Prazo (dias)" keyboardType="numeric" value={dias} onChangeText={setDias} style={estilos.entrada} />
+      <TextInput placeholder="Altura (m) ex: 1.75" keyboardType="numeric" value={altura} onChangeText={setAltura} style={estilos.entrada} />
+      <TextInput placeholder="Idade" keyboardType="numeric" value={idade} onChangeText={setIdade} style={estilos.entrada} />
+      <TextInput placeholder="Sexo (M/F)" value={sexo} onChangeText={setSexo} style={estilos.entrada} />
+      <TextInput placeholder="Atividade (sedentario/leve/moderado/intenso)" value={nivelAtividade} onChangeText={setNivelAtividade} style={estilos.entrada} />
+      <TextInput placeholder="Objetivo (emagrecer/ganhar/manter)" value={objetivo} onChangeText={setObjetivo} style={estilos.entrada} />
+      <TouchableOpacity onPress={lidarComCalculo} style={estilos.botao}><Text style={estilos.textoBotao}>Calcular Calorias</Text></TouchableOpacity>
+      {caloriasDiarias && <Text style={estilos.resultado}>Meta diária: {caloriasDiarias} kcal</Text>}
+      <TouchableOpacity onPress={salvarMeta} style={[estilos.botao, { backgroundColor:'#2563eb', marginTop:12 }]}><Text style={estilos.textoBotao}>Salvar Meta</Text></TouchableOpacity>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const estilos = StyleSheet.create({
   container: { flex:1, padding:20, backgroundColor:'#f9fafb' },
-  title: { fontSize:24, fontWeight:'800', color:'#111827', textAlign:'center', marginBottom:16 },
-  input: { backgroundColor:'#fff', padding:14, borderRadius:12, borderColor:'#e5e7eb', borderWidth:1, marginBottom:12 },
-  button: { backgroundColor:'#10b981', padding:14, borderRadius:12 },
-  btnText: { color:'#fff', textAlign:'center', fontWeight:'700' },
-  result: { marginTop:12, textAlign:'center', fontSize:16, fontWeight:'700' }
+  titulo: { fontSize:24, fontWeight:'800', color:'#111827', textAlign:'center', marginBottom:16 },
+  entrada: { backgroundColor:'#fff', padding:14, borderRadius:12, borderColor:'#e5e7eb', borderWidth:1, marginBottom:12 },
+  botao: { backgroundColor:'#10b981', padding:14, borderRadius:12 },
+  textoBotao: { color:'#fff', textAlign:'center', fontWeight:'700' },
+  resultado: { marginTop:12, textAlign:'center', fontSize:16, fontWeight:'700' }
 });

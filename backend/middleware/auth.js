@@ -1,15 +1,15 @@
 import jwt from 'jsonwebtoken';
 
-export function requireAuth(req, res, next) {
-  const header = req.headers.authorization || '';
-  const token = header.startsWith('Bearer ') ? header.slice(7) : null;
-  if (!token) return res.status(401).json({ message: 'Token ausente' });
+export function requerAutenticacao(req, res, next) {
+  const cabecalho = req.headers.authorization || '';
+  const token = cabecalho.startsWith('Bearer ') ? cabecalho.slice(7) : null;
+  if (!token) return res.status(401).json({ mensagem: 'Token ausente' });
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secreta');
-    req.userId = decoded.id;
+    const decodificado = jwt.verify(token, process.env.JWT_SECRET || 'secreta');
+    req.idUsuario = decodificado.id;
     next();
-  } catch (e) {
-    return res.status(401).json({ message: 'Token inválido' });
+  } catch (erro) {
+    return res.status(401).json({ mensagem: 'Token inválido' });
   }
 }

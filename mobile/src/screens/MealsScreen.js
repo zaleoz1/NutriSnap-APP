@@ -1,73 +1,73 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, FlatList, Alert, Image, StyleSheet } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import { useAuth } from '../services/AuthContext';
-import { apiFetch } from '../services/api';
+import { usarAutenticacao } from '../services/AuthContext';
+import { buscarApi } from '../services/api';
 
-export default function MealsScreen() {
-  const { token } = useAuth();
-  const [image, setImage] = useState(null);
-  const [items, setItems] = useState([]);
+export default function TelaRefeicoes() {
+  const { token } = usarAutenticacao();
+  const [imagem, setImagem] = useState(null);
+  const [itens, setItens] = useState([]);
   const [total, setTotal] = useState(0);
 
-  function recalc(items) {
-    setTotal(items.reduce((s, i) => s + (i.calories||0), 0));
+  function recalcular(itens) {
+    setTotal(itens.reduce((soma, item) => soma + (item.calorias||0), 0));
   }
 
-  async function pickImage() {
-    const res = await ImagePicker.launchCameraAsync({ base64: true, quality: 0.6 });
-    if (!res.canceled) {
-      const asset = res.assets[0];
-      setImage(asset.uri);
+  async function escolherImagem() {
+    const resultado = await ImagePicker.launchCameraAsync({ base64: true, quality: 0.6 });
+    if (!resultado.canceled) {
+      const asset = resultado.assets[0];
+      setImagem(asset.uri);
       try {
-        const data = await apiFetch('/api/analyze', { method:'POST', token, body:{ base64ImageData: asset.base64 } });
-        setItems(data.items || []);
-        recalc(data.items || []);
-      } catch (e) {
-        Alert.alert('Erro', e.message);
+        const dados = await buscarApi('/api/analise', { method:'POST', token, body:{ dadosImagemBase64: asset.base64 } });
+        setItens(dados.itens || []);
+        recalcular(dados.itens || []);
+      } catch (erro) {
+        Alert.alert('Erro', erro.message);
       }
     }
   }
 
-  async function saveMeal() {
+  async function salvarRefeicao() {
     try {
-      await apiFetch('/api/meals', { method:'POST', token, body:{ items, total_calories: total, timestamp: new Date() } });
+      await buscarApi('/api/refeicoes', { method:'POST', token, body:{ itens, calorias_totais: total, timestamp: new Date() } });
       Alert.alert('Sucesso', 'Refeição salva!');
-      setImage(null); setItems([]); setTotal(0);
-    } catch (e) {
-      Alert.alert('Erro', e.message);
+      setImagem(null); setItens([]); setTotal(0);
+    } catch (erro) {
+      Alert.alert('Erro', erro.message);
     }
   }
 
   return (
-    <View style={styles.container}>
-      <TouchableOpacity onPress={pickImage} style={styles.button}><Text style={styles.btnText}>Fotografar refeição</Text></TouchableOpacity>
+    <View style={estilos.container}>
+      <TouchableOpacity onPress={escolherImagem} style={estilos.botao}><Text style={estilos.textoBotao}>Fotografar refeição</Text></TouchableOpacity>
 
-      {image && <Image source={{ uri:image }} style={{ width:'100%', height:200, marginTop:12, borderRadius:12 }} />}
+      {imagem && <Image source={{ uri:imagem }} style={{ width:'100%', height:200, marginTop:12, borderRadius:12 }} />}
 
       <FlatList
         style={{ marginTop:12 }}
-        data={items}
+        data={itens}
         keyExtractor={(item, idx) => idx.toString()}
         renderItem={({ item }) => (
-          <View style={styles.card}>
-            <Text style={{ fontWeight:'700' }}>{item.name}</Text>
-            <Text>{Math.round(item.calories)} kcal</Text>
+          <View style={estilos.cartao}>
+            <Text style={{ fontWeight:'700' }}>{item.nome}</Text>
+            <Text>{Math.round(item.calorias)} kcal</Text>
           </View>
         )}
         ListFooterComponent={
-          items.length>0 ? <Text style={{ textAlign:'center', marginTop:8, fontWeight:'700' }}>Total: {Math.round(total)} kcal</Text> : null
+          itens.length>0 ? <Text style={{ textAlign:'center', marginTop:8, fontWeight:'700' }}>Total: {Math.round(total)} kcal</Text> : null
         }
       />
 
-      {items.length>0 && <TouchableOpacity onPress={saveMeal} style={[styles.button, { backgroundColor:'#2563eb', marginTop:12 }]}><Text style={styles.btnText}>Salvar refeição</Text></TouchableOpacity>}
+      {itens.length>0 && <TouchableOpacity onPress={salvarRefeicao} style={[estilos.botao, { backgroundColor:'#2563eb', marginTop:12 }]}><Text style={estilos.textoBotao}>Salvar refeição</Text></TouchableOpacity>}
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const estilos = StyleSheet.create({
   container: { flex:1, padding:20, backgroundColor:'#f9fafb' },
-  button: { backgroundColor:'#10b981', padding:14, borderRadius:12 },
-  btnText: { color:'#fff', textAlign:'center', fontWeight:'700' },
-  card: { backgroundColor:'#fff', padding:12, borderRadius:12, borderWidth:1, borderColor:'#e5e7eb', marginBottom:8 }
+  botao: { backgroundColor:'#10b981', padding:14, borderRadius:12 },
+  textoBotao: { color:'#fff', textAlign:'center', fontWeight:'700' },
+  cartao: { backgroundColor:'#fff', padding:12, borderRadius:12, borderWidth:1, borderColor:'#e5e7eb', marginBottom:8 }
 });

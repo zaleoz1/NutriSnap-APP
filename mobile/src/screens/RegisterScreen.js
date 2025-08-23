@@ -1,15 +1,18 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet } from 'react-native';
-import { apiFetch } from '../services/api';
+import { buscarApi } from '../services/api';
 
-export default function RegisterScreen({ navigation }) {
-  const [name, setName] = useState('');
+export default function TelaRegistro({ navigation }) {
+  const [nome, setNome] = useState('');
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [senha, setSenha] = useState('');
 
-  async function handleRegister() {
+  async function lidarComRegistro() {
     try {
-      await apiFetch('/api/auth/register', { method: 'POST', body: { name, email, password } });
+      await buscarApi('/api/autenticacao/registrar', { 
+        method: 'POST', 
+        body: { nome, email, senha } 
+      });
       Alert.alert('Sucesso', 'Conta criada, faça login.');
       navigation.goBack();
     } catch (e) {
@@ -18,20 +21,20 @@ export default function RegisterScreen({ navigation }) {
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Criar conta</Text>
-      <TextInput placeholder="Nome" value={name} onChangeText={setName} style={styles.input} />
-      <TextInput placeholder="Email" value={email} onChangeText={setEmail} style={styles.input} />
-      <TextInput placeholder="Senha (mín. 6)" value={password} onChangeText={setPassword} secureTextEntry style={styles.input} />
-      <TouchableOpacity onPress={handleRegister} style={styles.button}><Text style={styles.btnText}>Cadastrar</Text></TouchableOpacity>
+    <View style={estilos.container}>
+      <Text style={estilos.titulo}>Criar conta</Text>
+      <TextInput placeholder="Nome" value={nome} onChangeText={setNome} style={estilos.entrada} />
+      <TextInput placeholder="Email" value={email} onChangeText={setEmail} style={estilos.entrada} />
+      <TextInput placeholder="Senha (mín. 6)" value={senha} onChangeText={setSenha} secureTextEntry style={estilos.entrada} />
+      <TouchableOpacity onPress={lidarComRegistro} style={estilos.botao}><Text style={estilos.textoBotao}>Cadastrar</Text></TouchableOpacity>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const estilos = StyleSheet.create({
   container: { flex:1, justifyContent:'center', padding:24, backgroundColor:'#f3f4f6' },
-  title: { fontSize:28, fontWeight:'800', color:'#111827', textAlign:'center', marginBottom:24 },
-  input: { backgroundColor:'#fff', padding:14, borderRadius:12, borderColor:'#e5e7eb', borderWidth:1, marginBottom:12 },
-  button: { backgroundColor:'#10b981', padding:14, borderRadius:12, marginTop:8 },
-  btnText: { color:'#fff', fontWeight:'700', textAlign:'center' },
+  titulo: { fontSize:28, fontWeight:'800', color:'#111827', textAlign:'center', marginBottom:24 },
+  entrada: { backgroundColor:'#fff', padding:14, borderRadius:12, borderColor:'#e5e7eb', borderWidth:1, marginBottom:12 },
+  botao: { backgroundColor:'#10b981', padding:14, borderRadius:12, marginTop:8 },
+  textoBotao: { color:'#fff', fontWeight:'700', textAlign:'center' },
 });
