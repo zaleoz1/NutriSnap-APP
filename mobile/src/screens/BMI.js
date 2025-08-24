@@ -13,52 +13,112 @@ export default function TelaIMC() {
   const [calculando, setCalculando] = useState(false);
   const [pesoFocused, setPesoFocused] = useState(false);
   const [alturaFocused, setAlturaFocused] = useState(false);
+  const [erroPeso, setErroPeso] = useState('');
+  const [erroAltura, setErroAltura] = useState('');
+
+  // Função para converter vírgula em ponto (corrige bug do teclado iPhone)
+  const converterVirgulaParaPonto = (valor) => {
+    return valor.replace(',', '.');
+  };
+
+  // Função para validar peso em tempo real
+  const validarPeso = (valor) => {
+    if (!valor || !valor.trim()) {
+      setErroPeso('');
+      return;
+    }
+    const p = parseFloat(valor);
+    if (isNaN(p) || p <= 0 || p > 500) {
+      setErroPeso('Peso deve ser entre 1 e 500 kg');
+    } else {
+      setErroPeso('');
+    }
+  };
+
+  // Função para validar altura em tempo real
+  const validarAltura = (valor) => {
+    if (!valor || !valor.trim()) {
+      setErroAltura('');
+      return;
+    }
+    const a = parseFloat(valor);
+    if (isNaN(a) || a <= 0.5 || a > 2.5) {
+      setErroAltura('Altura deve ser entre 0.5 e 2.5 metros');
+    } else {
+      setErroAltura('');
+    }
+  };
 
   function validarFormulario() {
-    if (!peso.trim()) {
-      Alert.alert('Erro', 'Por favor, insira seu peso');
-      return false;
-    }
-    if (!altura.trim()) {
-      Alert.alert('Erro', 'Por favor, insira sua altura');
-      return false;
+    // Limpar erros anteriores
+    setErroPeso('');
+    setErroAltura('');
+    
+    let valido = true;
+    
+    if (!peso || !peso.trim()) {
+      setErroPeso('Por favor, insira seu peso');
+      valido = false;
+    } else {
+      const p = parseFloat(peso);
+      if (isNaN(p) || p <= 0 || p > 500) {
+        setErroPeso('Peso deve ser entre 1 e 500 kg');
+        valido = false;
+      }
     }
     
-    const p = parseFloat(peso);
-    const a = parseFloat(altura);
-    
-    if (isNaN(p) || p <= 0 || p > 500) {
-      Alert.alert('Erro', 'Peso deve ser entre 1 e 500 kg');
-      return false;
+    if (!altura || !altura.trim()) {
+      setErroAltura('Por favor, insira sua altura');
+      valido = false;
+    } else {
+      const a = parseFloat(altura);
+      if (isNaN(a) || a <= 0.5 || a > 2.5) {
+        setErroAltura('Altura deve ser entre 0.5 e 2.5 metros');
+        valido = false;
+      }
     }
-    if (isNaN(a) || a <= 0 || a > 3) {
-      Alert.alert('Erro', 'Altura deve ser entre 0.1 e 3 metros');
-      return false;
-    }
     
-    return true;
+    return valido;
   }
 
   function calcularIMC() {
     if (!validarFormulario()) return;
     
     setCalculando(true);
-    setTimeout(() => {
-      const p = parseFloat(peso);
-      const a = parseFloat(altura);
-      const valor = p / (a * a);
-      
-      setImc(valor.toFixed(2));
-      
-      if (valor < 18.5) setCategoria('Abaixo do peso');
-      else if (valor < 25) setCategoria('Peso normal');
-      else if (valor < 30) setCategoria('Sobrepeso');
-      else if (valor < 35) setCategoria('Obesidade I');
-      else if (valor < 40) setCategoria('Obesidade II');
-      else setCategoria('Obesidade III');
-      
+    
+    // Cálculo imediato sem timeout desnecessário
+    const p = parseFloat(peso);
+    const a = parseFloat(altura);
+    const valor = p / (a * a);
+    
+    // Validação adicional do resultado
+    if (isNaN(valor) || valor < 10 || valor > 100) {
+      Alert.alert('Erro', 'Valores inseridos resultam em IMC inválido. Verifique peso e altura.');
       setCalculando(false);
-    }, 500);
+      return;
+    }
+    
+    setImc(valor.toFixed(1));
+    
+    // Classificação do IMC
+    if (valor < 18.5) setCategoria('Abaixo do peso');
+    else if (valor < 25) setCategoria('Peso normal');
+    else if (valor < 30) setCategoria('Sobrepeso');
+    else if (valor < 35) setCategoria('Obesidade I');
+    else if (valor < 40) setCategoria('Obesidade II');
+    else setCategoria('Obesidade III');
+    
+    setCalculando(false);
+    
+    // Mostrar mensagem de sucesso
+    Alert.alert(
+      'IMC Calculado!', 
+      `Seu IMC é ${valor.toFixed(1)} - ${valor < 18.5 ? 'Abaixo do peso' : 
+        valor < 25 ? 'Peso normal' : 
+        valor < 30 ? 'Sobrepeso' : 
+        valor < 35 ? 'Obesidade I' : 
+        valor < 40 ? 'Obesidade II' : 'Obesidade III'}`
+    );
   }
 
   function limparDados() {
@@ -66,9 +126,18 @@ export default function TelaIMC() {
     setAltura('');
     setImc(null);
     setCategoria('');
+    setPesoFocused(false);
+    setAlturaFocused(false);
+    setErroPeso('');
+    setErroAltura('');
+    setCalculando(false);
   }
 
   function obterCorCategoria(cat) {
+    if (!cat || typeof cat !== 'string') {
+      return colors.neutral[500];
+    }
+    
     switch (cat) {
       case 'Abaixo do peso': return colors.accent.blue;
       case 'Peso normal': return colors.success;
@@ -104,47 +173,59 @@ export default function TelaIMC() {
         <View style={styles.formContainer}>
           <View style={styles.inputGroup}>
             <Text style={styles.inputLabel}>Peso (kg)</Text>
+            <Text style={styles.inputHint}>Use ponto ou vírgula como separador decimal (ex: 70.5)</Text>
             <TextInput
               style={[
                 styles.input,
-                pesoFocused && styles.inputFocused
+                pesoFocused ? styles.inputFocused : null
               ]}
               placeholder="Ex: 70.5"
               placeholderTextColor={colors.neutral[400]}
               value={peso}
-              onChangeText={setPeso}
+              onChangeText={(valor) => {
+                const valorConvertido = converterVirgulaParaPonto(valor);
+                setPeso(valorConvertido);
+                validarPeso(valorConvertido);
+              }}
               onFocus={() => setPesoFocused(true)}
               onBlur={() => setPesoFocused(false)}
               keyboardType="numeric"
               editable={!calculando}
             />
+            {erroPeso && erroPeso.length > 0 ? <Text style={styles.errorText}>{erroPeso}</Text> : null}
           </View>
 
           <View style={styles.inputGroup}>
             <Text style={styles.inputLabel}>Altura (m)</Text>
+            <Text style={styles.inputHint}>Use ponto ou vírgula como separador decimal (ex: 1.75)</Text>
             <TextInput
               style={[
                 styles.input,
-                alturaFocused && styles.inputFocused
+                alturaFocused ? styles.inputFocused : null
               ]}
               placeholder="Ex: 1.75"
               placeholderTextColor={colors.neutral[400]}
               value={altura}
-              onChangeText={setAltura}
+              onChangeText={(valor) => {
+                const valorConvertido = converterVirgulaParaPonto(valor);
+                setAltura(valorConvertido);
+                validarAltura(valorConvertido);
+              }}
               onFocus={() => setAlturaFocused(true)}
               onBlur={() => setAlturaFocused(false)}
               keyboardType="numeric"
               editable={!calculando}
             />
+            {erroAltura && erroAltura.length > 0 ? <Text style={styles.errorText}>{erroAltura}</Text> : null}
           </View>
 
           <TouchableOpacity
             onPress={calcularIMC}
             style={[
               styles.calculateButton,
-              calculando && styles.buttonDisabled
+              (calculando || !!erroPeso || !!erroAltura) ? styles.buttonDisabled : null
             ]}
-            disabled={calculando}
+            disabled={calculando || !!erroPeso || !!erroAltura}
             activeOpacity={0.8}
           >
             {calculando ? (
@@ -159,7 +240,7 @@ export default function TelaIMC() {
         </View>
 
         {/* Resultado */}
-        {imc && (
+        {imc && imc !== null && imc !== '' && imc !== undefined ? (
           <View style={styles.resultContainer}>
             <View style={styles.resultHeader}>
               <Text style={styles.resultTitle}>Seu IMC</Text>
@@ -171,7 +252,31 @@ export default function TelaIMC() {
                 styles.categoryText,
                 { color: obterCorCategoria(categoria) }
               ]}>
-                {categoria}
+                {categoria || 'Não definido'}
+              </Text>
+              <Text style={styles.categorySubtext}>
+                IMC: {imc} kg/m²
+              </Text>
+            </View>
+
+            {/* Interpretação do resultado */}
+            <View style={styles.interpretationContainer}>
+              <Text style={styles.interpretationTitle}>O que isso significa?</Text>
+              <Text style={styles.interpretationText}>
+                {categoria === 'Abaixo do peso' ? 
+                  'Seu IMC indica que você está abaixo do peso considerado saudável para sua altura. Considere consultar um nutricionista para orientações sobre ganho de peso saudável.' :
+                categoria === 'Peso normal' ? 
+                  'Parabéns! Seu IMC está na faixa considerada saudável. Continue mantendo hábitos alimentares equilibrados e atividade física regular.' :
+                categoria === 'Sobrepeso' ? 
+                  'Seu IMC indica sobrepeso. Considere ajustar sua alimentação e aumentar a atividade física para alcançar um peso mais saudável.' :
+                categoria === 'Obesidade I' ? 
+                  'Seu IMC indica obesidade grau I. É recomendável buscar orientação profissional para um plano de emagrecimento saudável.' :
+                categoria === 'Obesidade II' ? 
+                  'Seu IMC indica obesidade grau II. É importante buscar acompanhamento médico e nutricional para um tratamento adequado.' :
+                categoria === 'Obesidade III' ? 
+                  'Seu IMC indica obesidade grau III (mórbida). É essencial buscar acompanhamento médico especializado para um tratamento personalizado.' :
+                  'IMC calculado com sucesso. Consulte um profissional de saúde para interpretação personalizada.'
+                }
               </Text>
             </View>
 
@@ -212,12 +317,12 @@ export default function TelaIMC() {
               </View>
             </View>
           </View>
-        )}
+        ) : null}
 
         {/* Botão limpar */}
         <TouchableOpacity
           onPress={limparDados}
-          style={[styles.clearButton, calculando && styles.buttonDisabled]}
+          style={[styles.clearButton, calculando ? styles.buttonDisabled : null]}
           disabled={calculando}
           activeOpacity={0.8}
         >
@@ -297,6 +402,24 @@ const styles = StyleSheet.create({
     fontWeight: typography.fontWeight.semibold,
     color: colors.neutral[700],
     marginLeft: spacing.sm,
+  },
+  
+  inputHint: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.neutral[500],
+    marginLeft: spacing.sm,
+    marginBottom: spacing.xs,
+    fontStyle: 'italic',
+  },
+  
+  errorText: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.error,
+    marginLeft: spacing.sm,
+    marginTop: spacing.xs,
+    fontStyle: 'italic',
   },
   
   input: {
@@ -390,6 +513,13 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   
+  categorySubtext: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.neutral[600],
+    marginTop: spacing.xs,
+  },
+  
   legendContainer: {
     borderTopWidth: borders.width.thin,
     borderTopColor: colors.neutral[200],
@@ -442,4 +572,6 @@ const styles = StyleSheet.create({
     fontWeight: typography.fontWeight.semibold,
     color: colors.neutral[700],
   },
+
+
 });
