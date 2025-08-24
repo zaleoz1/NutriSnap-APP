@@ -14,6 +14,7 @@ export default function TelaLogin({ navigation }) {
   const [emailFocado, setEmailFocado] = useState(false);
   const [senhaFocada, setSenhaFocada] = useState(false);
   const [carregando, setCarregando] = useState(false);
+  const [mostrarSenha, setMostrarSenha] = useState(false);
 
   // Animações
   const animacaoFade = useRef(new Animated.Value(0)).current;
@@ -286,16 +287,21 @@ export default function TelaLogin({ navigation }) {
                   onChangeText={setSenha}
                   onFocus={() => setSenhaFocada(true)}
                   onBlur={() => setSenhaFocada(false)}
-                  secureTextEntry
+                  secureTextEntry={!mostrarSenha}
                   autoCapitalize="none"
                   editable={!carregando}
                 />
-                <MaterialIcons 
-                  name="lock" 
-                  size={20} 
-                  color={senhaFocada ? "#00C9FF" : "rgba(255, 255, 255, 0.6)"} 
-                  style={estilos.iconeInput}
-                />
+                <TouchableOpacity 
+                  onPress={() => setMostrarSenha(!mostrarSenha)}
+                  style={estilos.botaoIcone}
+                  disabled={carregando}
+                >
+                  <MaterialIcons 
+                    name={mostrarSenha ? "visibility" : "visibility-off"} 
+                    size={20} 
+                    color={senhaFocada ? "#00C9FF" : "rgba(255, 255, 255, 0.6)"} 
+                  />
+                </TouchableOpacity>
               </View>
               {senha.trim() && !validarSenha(senha) && (
                 <Text style={estilos.textoErro}>Mínimo de 6 caracteres</Text>
@@ -350,14 +356,6 @@ export default function TelaLogin({ navigation }) {
               disabled={carregando}
             >
               <Text style={estilos.textoLinkNavegacao}>Não tem conta? Cadastre-se</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity 
-              onPress={() => navigation.goBack()}
-              style={estilos.linkNavegacao}
-              disabled={carregando}
-            >
-              <Text style={estilos.textoLinkNavegacao}>Voltar</Text>
             </TouchableOpacity>
           </Animated.View>
         </ScrollView>
@@ -575,6 +573,14 @@ const estilos = StyleSheet.create({
     right: spacing.lg,
     top: '50%',
     marginTop: -10,
+  },
+
+  botaoIcone: {
+    position: 'absolute',
+    right: spacing.lg,
+    top: '50%',
+    marginTop: -10,
+    padding: spacing.xs,
   },
   
   inputFocado: {

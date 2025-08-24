@@ -18,6 +18,8 @@ export default function TelaRegistro({ navigation }) {
   const [senhaFocada, setSenhaFocada] = useState(false);
   const [confirmarSenhaFocada, setConfirmarSenhaFocada] = useState(false);
   const [carregando, setCarregando] = useState(false);
+  const [mostrarSenha, setMostrarSenha] = useState(false);
+  const [mostrarConfirmarSenha, setMostrarConfirmarSenha] = useState(false);
 
   // Animações
   const animacaoFade = useRef(new Animated.Value(0)).current;
@@ -336,16 +338,21 @@ export default function TelaRegistro({ navigation }) {
                   onChangeText={setSenha}
                   onFocus={() => setSenhaFocada(true)}
                   onBlur={() => setSenhaFocada(false)}
-                  secureTextEntry
+                  secureTextEntry={!mostrarSenha}
                   autoCapitalize="none"
                   editable={!carregando}
                 />
-                <MaterialIcons 
-                  name="lock" 
-                  size={20} 
-                  color={senhaFocada ? "#00C9FF" : "rgba(255, 255, 255, 0.6)"} 
-                  style={estilos.iconeEntrada}
-                />
+                <TouchableOpacity 
+                  onPress={() => setMostrarSenha(!mostrarSenha)}
+                  style={estilos.botaoIcone}
+                  disabled={carregando}
+                >
+                  <MaterialIcons 
+                    name={mostrarSenha ? "visibility" : "visibility-off"} 
+                    size={20} 
+                    color={senhaFocada ? "#00C9FF" : "rgba(255, 255, 255, 0.6)"} 
+                  />
+                </TouchableOpacity>
               </View>
               {senha && !validarSenha(senha) && (
                 <Text style={estilos.textoErro}>Mínimo 6 caracteres, com maiúscula, minúscula e número</Text>
@@ -367,16 +374,21 @@ export default function TelaRegistro({ navigation }) {
                   onChangeText={setConfirmarSenha}
                   onFocus={() => setConfirmarSenhaFocada(true)}
                   onBlur={() => setConfirmarSenhaFocada(false)}
-                  secureTextEntry
+                  secureTextEntry={!mostrarConfirmarSenha}
                   autoCapitalize="none"
                   editable={!carregando}
                 />
-                <MaterialIcons 
-                  name="lock-outline" 
-                  size={20} 
-                  color={confirmarSenhaFocada ? "#00C9FF" : "rgba(255, 255, 255, 0.6)"} 
-                  style={estilos.iconeEntrada}
-                />
+                <TouchableOpacity 
+                  onPress={() => setMostrarConfirmarSenha(!mostrarConfirmarSenha)}
+                  style={estilos.botaoIcone}
+                  disabled={carregando}
+                >
+                  <MaterialIcons 
+                    name={mostrarConfirmarSenha ? "visibility" : "visibility-off"} 
+                    size={20} 
+                    color={confirmarSenhaFocada ? "#00C9FF" : "rgba(255, 255, 255, 0.6)"} 
+                  />
+                </TouchableOpacity>
               </View>
               {confirmarSenha && senha !== confirmarSenha && (
                 <Text style={estilos.textoErro}>As senhas não coincidem</Text>
@@ -625,6 +637,14 @@ const estilos = StyleSheet.create({
     right: spacing.lg,
     top: '50%',
     marginTop: -10,
+  },
+
+  botaoIcone: {
+    position: 'absolute',
+    right: spacing.lg,
+    top: '50%',
+    marginTop: -10,
+    padding: spacing.xs,
   },
   
   entradaFocada: {

@@ -95,9 +95,6 @@ export default function TelaPrincipal({ navigation }) {
         {/* Seção "Hoje" */}
         <View style={estilos.secaoHoje}>
           <Text style={estilos.tituloHoje}>Hoje</Text>
-          <TouchableOpacity style={estilos.botaoEditar}>
-            <Text style={estilos.textoBotaoEditar}>Editar</Text>
-          </TouchableOpacity>
         </View>
 
         {/* Card principal de calorias */}
@@ -315,7 +312,7 @@ const estilos = StyleSheet.create({
   
   scrollContent: {
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
+    paddingTop: spacing.xl,
     paddingBottom: spacing.xl,
   },
   
@@ -323,21 +320,23 @@ const estilos = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: spacing.xl,
+    paddingVertical: spacing.md,
   },
   
   iconePerfil: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     backgroundColor: colors.accent.purple,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: spacing.md,
+    ...shadows.base,
   },
   
   textoPerfil: {
     color: colors.neutral[50],
-    fontSize: typography.fontSize.lg,
+    fontSize: typography.fontSize.xl,
     fontWeight: typography.fontWeight.bold,
   },
   
@@ -347,54 +346,41 @@ const estilos = StyleSheet.create({
   },
   
   nomeApp: {
-    fontSize: typography.fontSize.xl,
-    fontWeight: typography.fontWeight.bold,
+    fontSize: typography.fontSize['2xl'],
+    fontWeight: typography.fontWeight.extrabold,
     color: colors.accent.blue,
-    marginBottom: spacing.xs,
+    letterSpacing: 1,
   },
   
   iconeNotificacao: {
-    width: 40,
-    height: 40,
+    width: 48,
+    height: 48,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  
-  textoNotificacao: {
-    fontSize: 20,
+    backgroundColor: colors.neutral[800],
+    borderRadius: 24,
+    ...shadows.base,
   },
   
   secaoHoje: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: spacing.lg,
+    marginBottom: spacing.xl,
   },
   
   tituloHoje: {
-    fontSize: typography.fontSize['2xl'],
+    fontSize: typography.fontSize['3xl'],
     fontWeight: typography.fontWeight.bold,
     color: colors.neutral[50],
-  },
-  
-  botaoEditar: {
-    backgroundColor: colors.accent.blue,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: borders.radius.base,
-  },
-  
-  textoBotaoEditar: {
-    color: colors.neutral[50],
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.medium,
+    marginBottom: spacing.sm,
   },
   
   cardCalorias: {
     backgroundColor: colors.neutral[800],
     borderRadius: borders.radius.xl,
     padding: spacing.xl,
-    marginBottom: spacing.lg,
+    marginBottom: spacing.xl,
+    ...shadows.lg,
+    borderWidth: 1,
+    borderColor: colors.neutral[700],
   },
   
   tituloCalorias: {
@@ -407,75 +393,81 @@ const estilos = StyleSheet.create({
   formulaCalorias: {
     fontSize: typography.fontSize.sm,
     color: colors.neutral[400],
-    marginBottom: spacing.lg,
+    marginBottom: spacing.xl,
+    fontStyle: 'italic',
   },
   
   displayPrincipalCalorias: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: spacing.xl,
   },
   
   circuloCalorias: {
     flex: 1,
     alignItems: 'center',
+    paddingVertical: spacing.lg,
   },
   
   numeroCalorias: {
-    fontSize: typography.fontSize['4xl'],
+    fontSize: typography.fontSize['5xl'],
     fontWeight: typography.fontWeight.extrabold,
-    color: colors.neutral[50],
+    color: colors.accent.blue,
     lineHeight: typography.lineHeight.tight,
   },
   
   rotuloCalorias: {
-    fontSize: typography.fontSize.base,
-    color: colors.neutral[400],
-    marginTop: spacing.xs,
+    fontSize: typography.fontSize.lg,
+    color: colors.neutral[300],
+    marginTop: spacing.sm,
+    fontWeight: typography.fontWeight.medium,
   },
   
   detalhesCalorias: {
     flex: 1,
-    gap: spacing.md,
+    gap: spacing.lg,
   },
   
   itemDetalheCalorias: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
-  },
-  
-  iconeDetalhe: {
-    fontSize: 16,
+    gap: spacing.md,
+    paddingVertical: spacing.sm,
   },
   
   textoDetalhe: {
     flex: 1,
-    fontSize: typography.fontSize.sm,
-    color: colors.neutral[400],
+    fontSize: typography.fontSize.base,
+    color: colors.neutral[300],
+    fontWeight: typography.fontWeight.medium,
   },
   
   valorDetalhe: {
-    fontSize: typography.fontSize.sm,
+    fontSize: typography.fontSize.lg,
     fontWeight: typography.fontWeight.bold,
     color: colors.neutral[50],
   },
   
   gridMetricas: {
-    gap: spacing.md,
+    gap: spacing.lg,
     marginBottom: spacing.xl,
   },
   
   linhaMetricas: {
     flexDirection: 'row',
-    gap: spacing.md,
+    gap: spacing.lg,
   },
   
   cardMetrica: {
     flex: 1,
     backgroundColor: colors.neutral[800],
-    borderRadius: borders.radius.lg,
+    borderRadius: borders.radius.xl,
     padding: spacing.lg,
     position: 'relative',
+    ...shadows.base,
+    borderWidth: 1,
+    borderColor: colors.neutral[700],
+    minHeight: 120,
   },
   
   tituloMetrica: {
@@ -495,15 +487,11 @@ const estilos = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: spacing.sm,
-  },
-  
-  iconeMetrica: {
-    fontSize: 16,
-    marginRight: spacing.sm,
+    gap: spacing.sm,
   },
   
   valorMetrica: {
-    fontSize: typography.fontSize.base,
+    fontSize: typography.fontSize.lg,
     fontWeight: typography.fontWeight.bold,
     color: colors.neutral[50],
   },
@@ -511,11 +499,11 @@ const estilos = StyleSheet.create({
   metaMetrica: {
     fontSize: typography.fontSize.sm,
     color: colors.neutral[400],
-    marginBottom: spacing.sm,
+    marginBottom: spacing.md,
   },
   
   barraProgressoMetrica: {
-    height: 4,
+    height: 6,
     backgroundColor: colors.neutral[700],
     borderRadius: borders.radius.full,
     overflow: 'hidden',
@@ -528,39 +516,39 @@ const estilos = StyleSheet.create({
   },
   
   valorPeso: {
-    fontSize: typography.fontSize['3xl'],
+    fontSize: typography.fontSize['4xl'],
     fontWeight: typography.fontWeight.extrabold,
     color: colors.neutral[50],
+    textAlign: 'center',
   },
   
   botaoAdicionar: {
     position: 'absolute',
     top: spacing.md,
     right: spacing.md,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: colors.neutral[600],
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: colors.accent.blue,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  
-  textoBotaoAdicionar: {
-    color: colors.neutral[50],
-    fontSize: typography.fontSize.lg,
-    fontWeight: typography.fontWeight.bold,
+    ...shadows.base,
   },
   
   botaoSair: {
     backgroundColor: colors.neutral[800],
-    borderRadius: borders.radius.lg,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
+    borderRadius: borders.radius.xl,
+    paddingVertical: spacing.lg,
+    paddingHorizontal: spacing.xl,
     alignItems: 'center',
+    marginBottom: spacing.xl,
+    borderWidth: 1,
+    borderColor: colors.neutral[700],
+    ...shadows.base,
   },
   
   textoBotaoSair: {
-    fontSize: typography.fontSize.base,
+    fontSize: typography.fontSize.lg,
     fontWeight: typography.fontWeight.semibold,
     color: colors.neutral[300],
   },
@@ -568,21 +556,18 @@ const estilos = StyleSheet.create({
   navegacaoInferior: {
     flexDirection: 'row',
     backgroundColor: colors.neutral[800],
-    paddingVertical: spacing.md,
+    paddingVertical: spacing.lg,
     paddingHorizontal: spacing.lg,
     borderTopWidth: borders.width.thin,
     borderTopColor: colors.neutral[700],
+    ...shadows.lg,
   },
   
   itemNavegacao: {
     flex: 1,
     alignItems: 'center',
     gap: spacing.xs,
-  },
-  
-  iconeNavegacao: {
-    fontSize: 20,
-    color: colors.neutral[400],
+    paddingVertical: spacing.sm,
   },
   
   rotuloNavegacao: {
@@ -592,26 +577,22 @@ const estilos = StyleSheet.create({
   },
   
   botaoCentral: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     backgroundColor: colors.accent.blue,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: -20,
-    ...shadows.lg,
-  },
-  
-  textoBotaoCentral: {
-    color: colors.neutral[50],
-    fontSize: typography.fontSize['2xl'],
-    fontWeight: typography.fontWeight.bold,
+    marginTop: -24,
+    ...shadows.xl,
+    borderWidth: 4,
+    borderColor: colors.neutral[900],
   },
 
   // Estilos do modal
   overlayModal: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: spacing.lg,
@@ -624,13 +605,15 @@ const estilos = StyleSheet.create({
     width: '100%',
     maxWidth: 400,
     ...shadows.xl,
+    borderWidth: 1,
+    borderColor: colors.neutral[700],
   },
 
   cabecalhoModal: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: spacing.lg,
+    marginBottom: spacing.xl,
   },
 
   tituloModal: {
@@ -641,16 +624,16 @@ const estilos = StyleSheet.create({
   },
 
   botaoFechar: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: colors.neutral[700],
     alignItems: 'center',
     justifyContent: 'center',
   },
 
   gridOpcoes: {
-    gap: spacing.md,
+    gap: spacing.lg,
   },
 
   cardOpcao: {
@@ -659,14 +642,16 @@ const estilos = StyleSheet.create({
     padding: spacing.lg,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.md,
+    gap: spacing.lg,
     ...shadows.base,
+    borderWidth: 1,
+    borderColor: colors.neutral[600],
   },
 
   iconeOpcao: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     alignItems: 'center',
     justifyContent: 'center',
   },
