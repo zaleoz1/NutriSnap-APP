@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, FlatList, Alert, Image, StyleSheet, StatusBar, ScrollView, Dimensions } from 'react-native';
+import { View, Text, TouchableOpacity, FlatList, Alert, Image, StyleSheet, StatusBar, ScrollView, Dimensions, TextInput, Modal } from 'react-native';
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { usarAutenticacao } from '../services/AuthContext';
@@ -13,6 +13,12 @@ export default function TelaRefeicoes() {
   const [imagem, setImagem] = useState(null);
   const [itens, setItens] = useState([]);
   const [total, setTotal] = useState(0);
+  const [modalVisivel, setModalVisivel] = useState(false);
+  const [alimentoManual, setAlimentoManual] = useState('');
+  const [caloriasManual, setCaloriasManual] = useState('');
+  const [proteinasManual, setProteinasManual] = useState('');
+  const [carboidratosManual, setCarboidratosManual] = useState('');
+  const [gordurasManual, setGordurasManual] = useState('');
 
   function recalcular(itens) {
     setTotal(itens.reduce((soma, item) => soma + (item.calorias||0), 0));
@@ -45,6 +51,76 @@ export default function TelaRefeicoes() {
         }
       }
     }
+  }
+
+  async function escolherDaGaleria() {
+    const resultado = await ImagePicker.launchImageLibraryAsync({ base64: true, quality: 0.6 });
+    if (!resultado.canceled) {
+      const asset = resultado.assets[0];
+      setImagem(asset.uri);
+      
+      if (modoVisitante) {
+        // Dados simulados para modo visitante
+        const itensSimulados = [
+          { nome: 'Arroz Integral', calorias: 130, proteinas: 2.7, carboidratos: 27, gorduras: 0.9 },
+          { nome: 'Feijão Preto', calorias: 77, proteinas: 4.5, carboidratos: 14, gorduras: 0.5 },
+          { nome: 'Frango Grelhado', calorias: 165, proteinas: 31, carboidratos: 0, gorduras: 3.6 },
+          { nome: 'Salada de Alface', calorias: 15, proteinas: 1.4, carboidratos: 2.9, gorduras: 0.2 }
+        ];
+        setItens(itensSimulados);
+        recalcular(itensSimulados);
+        Alert.alert('Modo Visitante', 'Análise simulada - dados não são reais');
+      } else {
+        try {
+          const dados = await buscarApi('/api/analise', { method:'POST', token, body:{ dadosImagemBase64: asset.base64 } });
+          setItens(dados.itens || []);
+          recalcular(dados.itens || []);
+        } catch (erro) {
+          Alert.alert('Erro', erro.message);
+        }
+      }
+    }
+  }
+
+  function abrirModal() {
+    setModalVisivel(true);
+  }
+
+  function fecharModal() {
+    setModalVisivel(false);
+    // Limpar campos
+    setAlimentoManual('');
+    setCaloriasManual('');
+    setProteinasManual('');
+    setCarboidratosManual('');
+    setGordurasManual('');
+  }
+
+  function adicionarAlimentoManual() {
+    if (!alimentoManual.trim()) {
+      Alert.alert('Erro', 'Por favor, insira o nome do alimento');
+      return;
+    }
+
+    if (!caloriasManual.trim()) {
+      Alert.alert('Erro', 'Por favor, insira as calorias');
+      return;
+    }
+
+    const novoAlimento = {
+      nome: alimentoManual.trim(),
+      calorias: parseFloat(caloriasManual) || 0,
+      proteinas: parseFloat(proteinasManual) || 0,
+      carboidratos: parseFloat(carboidratosManual) || 0,
+      gorduras: parseFloat(gordurasManual) || 0
+    };
+
+    const novosItens = [...itens, novoAlimento];
+    setItens(novosItens);
+    recalcular(novosItens);
+    fecharModal();
+    
+    Alert.alert('Sucesso', 'Alimento adicionado manualmente!');
   }
 
   async function salvarRefeicao() {
@@ -101,7 +177,7 @@ export default function TelaRefeicoes() {
         <View style={styles.header}>
           <View style={styles.titleContainer}>
             <Text style={styles.title}>Análise de Refeições</Text>
-            <Text style={styles.subtitle}>Fotografe sua refeição para análise nutricional</Text>
+            <Text style={styles.subtitle}>Fotografe sua refeição ou adicione manualmente</Text>
           </View>
           <View style={styles.iconContainer}>
             <MaterialIcons name="camera-alt" size={40} color={colors.primary[600]} />
@@ -117,17 +193,41 @@ export default function TelaRefeicoes() {
           </View>
         )}
 
-        {/* Botão de captura */}
-        <TouchableOpacity 
-          onPress={escolherImagem} 
-          style={styles.captureButton}
-          activeOpacity={0.8}
-        >
-          <View style={styles.captureButtonContent}>
-            <MaterialIcons name="camera-alt" size={32} color={colors.neutral[50]} />
-            <Text style={styles.captureText}>Fotografar Refeição</Text>
-          </View>
-        </TouchableOpacity>
+        {/* Botões de captura */}
+        <View style={styles.captureButtonsContainer}>
+          <TouchableOpacity 
+            onPress={escolherImagem} 
+            style={styles.captureButton}
+            activeOpacity={0.8}
+          >
+            <View style={styles.captureButtonContent}>
+              <MaterialIcons name="camera-alt" size={28} color={colors.neutral[50]} />
+              <Text style={styles.captureText}>Câmera</Text>
+            </View>
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            onPress={escolherDaGaleria} 
+            style={[styles.captureButton, styles.galleryButton]}
+            activeOpacity={0.8}
+          >
+            <View style={styles.captureButtonContent}>
+              <MaterialIcons name="photo-library" size={28} color={colors.neutral[50]} />
+              <Text style={styles.captureText}>Galeria</Text>
+            </View>
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            onPress={abrirModal} 
+            style={[styles.captureButton, styles.manualButton]}
+            activeOpacity={0.8}
+          >
+            <View style={styles.captureButtonContent}>
+              <MaterialIcons name="edit" size={28} color={colors.neutral[50]} />
+              <Text style={styles.captureText}>Manual</Text>
+            </View>
+          </TouchableOpacity>
+        </View>
 
         {/* Imagem capturada */}
         {imagem && (
@@ -207,6 +307,98 @@ export default function TelaRefeicoes() {
           </View>
         )}
       </ScrollView>
+
+      {/* Modal para adicionar alimento manualmente */}
+      <Modal
+        visible={modalVisivel}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={fecharModal}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Adicionar Alimento Manualmente</Text>
+              <TouchableOpacity onPress={fecharModal} style={styles.closeButton}>
+                <Ionicons name="close" size={24} color={colors.neutral[400]} />
+              </TouchableOpacity>
+            </View>
+            
+            <View style={styles.modalForm}>
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Nome do Alimento *</Text>
+                <TextInput
+                  style={styles.textInput}
+                  value={alimentoManual}
+                  onChangeText={setAlimentoManual}
+                  placeholder="Ex: Arroz Integral"
+                  placeholderTextColor={colors.neutral[400]}
+                />
+              </View>
+
+              <View style={styles.inputRow}>
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Calorias *</Text>
+                  <TextInput
+                    style={styles.textInput}
+                    value={caloriasManual}
+                    onChangeText={setCaloriasManual}
+                    placeholder="Ex: 130"
+                    placeholderTextColor={colors.neutral[400]}
+                    keyboardType="numeric"
+                  />
+                </View>
+                
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Proteínas (g)</Text>
+                  <TextInput
+                    style={styles.textInput}
+                    value={proteinasManual}
+                    onChangeText={setProteinasManual}
+                    placeholder="Ex: 2.7"
+                    placeholderTextColor={colors.neutral[400]}
+                    keyboardType="numeric"
+                  />
+                </View>
+              </View>
+
+              <View style={styles.inputRow}>
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Carboidratos (g)</Text>
+                  <TextInput
+                    style={styles.textInput}
+                    value={carboidratosManual}
+                    onChangeText={setCarboidratosManual}
+                    placeholder="Ex: 27"
+                    placeholderTextColor={colors.neutral[400]}
+                    keyboardType="numeric"
+                  />
+                </View>
+                
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Gorduras (g)</Text>
+                  <TextInput
+                    style={styles.textInput}
+                    value={gordurasManual}
+                    onChangeText={setGordurasManual}
+                    placeholder="Ex: 0.9"
+                    placeholderTextColor={colors.neutral[400]}
+                    keyboardType="numeric"
+                  />
+                </View>
+              </View>
+
+              <TouchableOpacity
+                onPress={adicionarAlimentoManual}
+                style={styles.addManualButton}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.addManualButtonText}>Adicionar Alimento</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -283,30 +475,43 @@ const styles = StyleSheet.create({
     lineHeight: typography.lineHeight.normal,
   },
   
+  captureButtonsContainer: {
+    flexDirection: 'row',
+    gap: spacing.md,
+    marginBottom: spacing.lg,
+  },
+  
   captureButton: {
+    flex: 1,
     backgroundColor: colors.primary[600],
     borderRadius: borders.radius.xl,
-    paddingVertical: spacing.xl,
-    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.lg,
+    paddingHorizontal: spacing.md,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: spacing.lg,
     ...shadows.lg,
     elevation: 8,
   },
   
+  galleryButton: {
+    backgroundColor: colors.accent.green,
+  },
+  
+  manualButton: {
+    backgroundColor: colors.accent.purple,
+  },
+  
   captureButtonContent: {
-    flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.md,
+    gap: spacing.xs,
   },
   
   captureIcon: {
-    fontSize: 32,
+    fontSize: 28,
   },
   
   captureText: {
-    fontSize: typography.fontSize.xl,
+    fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.bold,
     color: colors.neutral[50],
     letterSpacing: 0.5,
@@ -494,5 +699,98 @@ const styles = StyleSheet.create({
     color: colors.accent.yellow + 'DD',
     textAlign: 'center',
     lineHeight: typography.lineHeight.normal,
+  },
+
+  // Estilos do modal
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: spacing.lg,
+  },
+
+  modalContent: {
+    backgroundColor: colors.neutral[50],
+    borderRadius: borders.radius.xl,
+    padding: spacing.xl,
+    width: '100%',
+    maxWidth: 400,
+    maxHeight: '80%',
+    ...shadows.xl,
+  },
+
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.lg,
+  },
+
+  modalTitle: {
+    fontSize: typography.fontSize.xl,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.neutral[900],
+    flex: 1,
+  },
+
+  closeButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: colors.neutral[200],
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  modalForm: {
+    gap: spacing.lg,
+  },
+
+  inputGroup: {
+    gap: spacing.sm,
+  },
+
+  inputRow: {
+    flexDirection: 'row',
+    gap: spacing.md,
+  },
+
+  inputLabel: {
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.neutral[700],
+    marginLeft: spacing.sm,
+  },
+
+  textInput: {
+    backgroundColor: colors.neutral[50],
+    borderRadius: borders.radius.lg,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    borderWidth: borders.width.thin,
+    borderColor: colors.neutral[300],
+    fontSize: typography.fontSize.base,
+    color: colors.neutral[900],
+    ...shadows.sm,
+  },
+
+  addManualButton: {
+    backgroundColor: colors.accent.green,
+    borderRadius: borders.radius.xl,
+    paddingVertical: spacing.lg,
+    paddingHorizontal: spacing.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: spacing.md,
+    ...shadows.lg,
+    elevation: 8,
+  },
+
+  addManualButtonText: {
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.neutral[50],
+    letterSpacing: 0.5,
   },
 });
