@@ -122,7 +122,7 @@ export default function SplashScreen({ navigation }) {
               },
             ]}
           />
-          <Text style={styles.loadingText}>Carregando...</Text>
+          <Text style={styles.loadingText}></Text>
         </View>
       </Animated.View>
 

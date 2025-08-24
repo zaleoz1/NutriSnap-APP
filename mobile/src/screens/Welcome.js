@@ -1,14 +1,13 @@
 import React, { useState, useRef } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Dimensions, StatusBar, ScrollView, Animated } from 'react-native';
-import { MaterialIcons, Ionicons, FontAwesome5 } from '@expo/vector-icons';
-import { colors, typography, spacing, borders, shadows } from '../styles/globalStyles';
+import { View, Text, TouchableOpacity, StyleSheet, Dimensions, StatusBar, Animated } from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
+import { typography, spacing, borders, shadows } from '../styles/globalStyles';
 
 const { width, height } = Dimensions.get('window');
 
 export default function WelcomeScreen({ navigation }) {
   const [currentSlide, setCurrentSlide] = useState(0);
   const scrollX = useRef(new Animated.Value(0)).current;
-  const scrollViewRef = useRef(null);
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(30)).current;
   const buttonAnim = useRef(new Animated.Value(0)).current;
@@ -18,37 +17,25 @@ export default function WelcomeScreen({ navigation }) {
     {
       id: 1,
       icon: 'restaurant',
-      title: 'Nutrição Inteligente',
-      subtitle: 'Transforme sua alimentação',
-      description: 'Use inteligência artificial para analisar automaticamente o valor nutricional dos seus alimentos com apenas uma foto',
-      gradient: ['#00C9FF', '#92FE9D'],
+      subtitle: 'Use inteligência artificial para analisar automaticamente o valor nutricional dos seus alimentos com apenas uma foto',
       accentColor: '#00C9FF'
     },
     {
       id: 2,
       icon: 'analytics',
-      title: 'Acompanhe seu Progresso',
-      subtitle: 'Metas personalizadas e resultados reais',
-      description: 'Visualize sua evolução com gráficos detalhados, insights personalizados e acompanhamento completo da sua jornada',
-      gradient: ['#FF6B6B', '#4ECDC4'],
+      subtitle: 'Visualize sua evolução com gráficos detalhados, insights personalizados e acompanhamento completo da sua jornada',
       accentColor: '#FF6B6B'
     },
     {
       id: 3,
       icon: 'fitness-center',
-      title: 'Planos Personalizados',
-      subtitle: 'Treinos e refeições sob medida',
-      description: 'Receba recomendações exclusivas baseadas em seus objetivos, estilo de vida e preferências pessoais',
-      gradient: ['#FFD93D', '#FF6B6B'],
+      subtitle: 'Receba recomendações exclusivas baseadas em seus objetivos, estilo de vida e preferências pessoais',
       accentColor: '#FFD93D'
     },
     {
       id: 4,
       icon: 'trending-up',
-      title: 'Resultados Garantidos',
-      subtitle: 'Alcance seus objetivos de saúde',
-      description: 'Combinando tecnologia avançada e ciência da nutrição para resultados duradouros e sustentáveis',
-      gradient: ['#A8EDEA', '#FED6E3'],
+      subtitle: 'Combinando tecnologia avançada e ciência da nutrição para resultados duradouros e sustentáveis',
       accentColor: '#A8EDEA'
     }
   ];
@@ -210,7 +197,6 @@ export default function WelcomeScreen({ navigation }) {
       {/* Carrossel principal com efeitos visuais */}
       <View style={styles.carouselContainer}>
         <Animated.ScrollView
-          ref={scrollViewRef}
           horizontal
           pagingEnabled
           showsHorizontalScrollIndicator={false}
@@ -220,10 +206,8 @@ export default function WelcomeScreen({ navigation }) {
           style={styles.carousel}
         >
           {slides.map((slide, index) => (
-            <View key={slide.id} style={styles.slideContainer}>
-              {renderSlide(slide, index)}
-            </View>
-          ))}
+  renderSlide(slide, index)
+))}
         </Animated.ScrollView>
       </View>
 
@@ -321,24 +305,22 @@ const styles = StyleSheet.create({
   },
   
   carouselContainer: {
-    flex: 1,
+    height: height * 0.62, // Defina uma altura fixa para o carrossel
     justifyContent: 'center',
+    alignItems: 'center',
   },
   
   carousel: {
-    flex: 1,
-  },
-  
-  slideContainer: {
-    width: width,
-    alignItems: 'center',
-    paddingHorizontal: spacing.lg,
-    justifyContent: 'center',
+    flexGrow: 0, // Não deixa crescer além do necessário
+    height: '100%',
   },
   
   slide: {
     alignItems: 'center',
-    maxWidth: width * 0.9,
+    justifyContent: 'center',
+    width: width,
+    height: '100%', // Ocupa toda a altura do carrossel
+    paddingHorizontal: spacing.lg,
     position: 'relative',
   },
   
@@ -402,6 +384,9 @@ const styles = StyleSheet.create({
   slideContent: {
     alignItems: 'center',
     marginBottom: spacing.xl,
+    width: '100%',
+    paddingHorizontal: spacing.md,
+    flexShrink: 1, // Permite o texto quebrar e não sair da tela
   },
   
   slideTitle: {
@@ -431,7 +416,7 @@ const styles = StyleSheet.create({
   slideDescription: {
     fontSize: typography.fontSize.lg,
     fontWeight: typography.fontWeight.medium,
-    color: 'rgba(255, 255, 255, 0.8)',
+    color: 'rgba(255, 255, 255, 0.9)',
     textAlign: 'center',
     lineHeight: typography.lineHeight.relaxed,
     paddingHorizontal: spacing.md,
@@ -439,6 +424,7 @@ const styles = StyleSheet.create({
     textShadowColor: 'rgba(0, 0, 0, 0.5)',
     textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 6,
+    maxWidth: width * 0.95, // Aumenta o limite para não cortar texto
   },
   
   floatingElements: {
