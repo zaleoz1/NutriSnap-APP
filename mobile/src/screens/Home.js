@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert, StatusBar, ScrollView, Dimensions } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Alert, StatusBar, ScrollView, Dimensions, Modal } from 'react-native';
 import { Ionicons, MaterialIcons, FontAwesome5, MaterialCommunityIcons } from '@expo/vector-icons';
 import { usarAutenticacao } from '../services/AuthContext';
 import { buscarApi } from '../services/api';
@@ -11,6 +11,7 @@ export default function TelaPrincipal({ navigation }) {
   const { usuario, token, modoVisitante, sair, sairModoVisitante } = usarAutenticacao();
   const [meta, setMeta] = useState(null);
   const [consumido, setConsumido] = useState(0);
+  const [modalVisivel, setModalVisivel] = useState(false);
 
   async function carregarDados() {
     if (modoVisitante) {
@@ -47,6 +48,33 @@ export default function TelaPrincipal({ navigation }) {
     } else {
       sair();
       navigation.replace('Login');
+    }
+  }
+
+  function abrirModal() {
+    setModalVisivel(true);
+  }
+
+  function fecharModal() {
+    setModalVisivel(false);
+  }
+
+  function navegarPara(opcao) {
+    fecharModal();
+    switch (opcao) {
+      case 'alimento':
+        navigation.navigate('Refeicoes');
+        break;
+      case 'imc':
+        navigation.navigate('IMC');
+        break;
+      case 'codigo_barras':
+        // Por enquanto, navegar para refeições (pode ser implementado depois)
+        navigation.navigate('Refeicoes');
+        break;
+      case 'treinos':
+        navigation.navigate('PlanoTreino');
+        break;
     }
   }
 
@@ -194,7 +222,7 @@ export default function TelaPrincipal({ navigation }) {
           <Text style={styles.navLabel}>Diário</Text>
         </TouchableOpacity>
         
-        <TouchableOpacity style={styles.centralButton}>
+        <TouchableOpacity style={styles.centralButton} onPress={abrirModal}>
           <Ionicons name="add" size={28} color={colors.neutral[50]} />
         </TouchableOpacity>
         
@@ -208,6 +236,83 @@ export default function TelaPrincipal({ navigation }) {
           <Text style={styles.navLabel}>Mais</Text>
         </TouchableOpacity>
       </View>
+
+      {/* Modal de opções */}
+      <Modal
+        visible={modalVisivel}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={fecharModal}
+      >
+        <TouchableOpacity 
+          style={styles.modalOverlay} 
+          activeOpacity={1} 
+          onPress={fecharModal}
+        >
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>O que você quer fazer?</Text>
+              <TouchableOpacity onPress={fecharModal} style={styles.closeButton}>
+                <Ionicons name="close" size={24} color={colors.neutral[400]} />
+              </TouchableOpacity>
+            </View>
+            
+            <View style={styles.optionsGrid}>
+              {/* Registrar Alimento */}
+              <TouchableOpacity 
+                style={styles.optionCard} 
+                onPress={() => navegarPara('alimento')}
+                activeOpacity={0.8}
+              >
+                <View style={[styles.optionIcon, { backgroundColor: colors.accent.green + '20' }]}>
+                  <MaterialIcons name="restaurant" size={28} color={colors.accent.green} />
+                </View>
+                <Text style={styles.optionTitle}>Registrar Alimento</Text>
+                <Text style={styles.optionDescription}>Fotografe sua refeição</Text>
+              </TouchableOpacity>
+
+              {/* Calcular IMC */}
+              <TouchableOpacity 
+                style={styles.optionCard} 
+                onPress={() => navegarPara('imc')}
+                activeOpacity={0.8}
+              >
+                <View style={[styles.optionIcon, { backgroundColor: colors.accent.blue + '20' }]}>
+                  <MaterialIcons name="analytics" size={28} color={colors.accent.blue} />
+                </View>
+                <Text style={styles.optionTitle}>Calcular IMC</Text>
+                <Text style={styles.optionDescription}>Índice de massa corporal</Text>
+              </TouchableOpacity>
+
+              {/* Código de Barras */}
+              <TouchableOpacity 
+                style={styles.optionCard} 
+                onPress={() => navegarPara('codigo_barras')}
+                activeOpacity={0.8}
+              >
+                <View style={[styles.optionIcon, { backgroundColor: colors.accent.purple + '20' }]}>
+                  <MaterialIcons name="qr-code-scanner" size={28} color={colors.accent.purple} />
+                </View>
+                <Text style={styles.optionTitle}>Código de Barras</Text>
+                <Text style={styles.optionDescription}>Escaneie produtos</Text>
+              </TouchableOpacity>
+
+              {/* Treinos */}
+              <TouchableOpacity 
+                style={styles.optionCard} 
+                onPress={() => navegarPara('treinos')}
+                activeOpacity={0.8}
+              >
+                <View style={[styles.optionIcon, { backgroundColor: colors.accent.orange + '20' }]}>
+                  <MaterialIcons name="fitness-center" size={28} color={colors.accent.orange} />
+                </View>
+                <Text style={styles.optionTitle}>Treinos</Text>
+                <Text style={styles.optionDescription}>Plano de exercícios</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </View>
   );
 }
@@ -515,5 +620,81 @@ const styles = StyleSheet.create({
     color: colors.neutral[50],
     fontSize: typography.fontSize['2xl'],
     fontWeight: typography.fontWeight.bold,
+  },
+
+  // Estilos do modal
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: spacing.lg,
+  },
+
+  modalContent: {
+    backgroundColor: colors.neutral[800],
+    borderRadius: borders.radius.xl,
+    padding: spacing.xl,
+    width: '100%',
+    maxWidth: 400,
+    ...shadows.xl,
+  },
+
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.lg,
+  },
+
+  modalTitle: {
+    fontSize: typography.fontSize.xl,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.neutral[50],
+    flex: 1,
+  },
+
+  closeButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: colors.neutral[700],
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  optionsGrid: {
+    gap: spacing.md,
+  },
+
+  optionCard: {
+    backgroundColor: colors.neutral[700],
+    borderRadius: borders.radius.lg,
+    padding: spacing.lg,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    ...shadows.base,
+  },
+
+  optionIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  optionTitle: {
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.neutral[50],
+    marginBottom: spacing.xs,
+  },
+
+  optionDescription: {
+    fontSize: typography.fontSize.sm,
+    color: colors.neutral[400],
+    lineHeight: typography.lineHeight.normal,
   },
 });
