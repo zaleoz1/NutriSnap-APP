@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet, StatusBar, KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator } from 'react-native';
+import React, { useState, useRef, useEffect } from 'react';
+import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet, StatusBar, KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator, Dimensions, Animated } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { buscarApi, obterDetalhesErro } from '../services/api';
 import { usarAutenticacao } from '../services/AuthContext';
-import { colors, typography, spacing, borders, shadows, componentStyles } from '../styles/globalStyles';
+import { typography, spacing, borders, shadows } from '../styles/globalStyles';
+
+const { height } = Dimensions.get('window');
 
 export default function TelaRegistro({ navigation }) {
   const { conectado } = usarAutenticacao();
@@ -17,36 +19,71 @@ export default function TelaRegistro({ navigation }) {
   const [confirmarSenhaFocused, setConfirmarSenhaFocused] = useState(false);
   const [carregando, setCarregando] = useState(false);
 
-  // Validação de nome
+  // Animações
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(50)).current;
+  const logoAnim = useRef(new Animated.Value(0)).current;
+  const formAnim = useRef(new Animated.Value(30)).current;
+  const buttonAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 1000,
+        useNativeDriver: true,
+      }),
+      Animated.spring(slideAnim, {
+        toValue: 0,
+        tension: 50,
+        friction: 8,
+        useNativeDriver: true,
+      }),
+      Animated.spring(logoAnim, {
+        toValue: 1,
+        tension: 80,
+        friction: 6,
+        useNativeDriver: true,
+      }),
+      Animated.spring(formAnim, {
+        toValue: 0,
+        tension: 60,
+        friction: 8,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    setTimeout(() => {
+      Animated.spring(buttonAnim, {
+        toValue: 1,
+        tension: 100,
+        friction: 8,
+        useNativeDriver: true,
+      }).start();
+    }, 800);
+  }, []);
+
   const validarNome = (nome) => {
     const nomeLimpo = nome.trim();
-    if (nomeLimpo.length < 2) return false;
-    if (nomeLimpo.length > 100) return false;
+    if (nomeLimpo.length < 2 || nomeLimpo.length > 100) return false;
     const regex = /^[a-zA-ZÀ-ÿ\s]+$/;
     return regex.test(nomeLimpo);
   };
 
-  // Validação de email
   const validarEmail = (email) => {
     const emailLimpo = email.trim().toLowerCase();
     const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return regex.test(emailLimpo);
   };
 
-  // Validação de senha
   const validarSenha = (senha) => {
-    if (senha.length < 6) return false;
-    if (senha.length > 255) return false;
-    
-    // Verificar se contém pelo menos uma letra maiúscula, uma minúscula e um número
+    if (senha.length < 6 || senha.length > 255) return false;
     const temMaiuscula = /[A-Z]/.test(senha);
     const temMinuscula = /[a-z]/.test(senha);
     const temNumero = /\d/.test(senha);
-    
     return temMaiuscula && temMinuscula && temNumero;
   };
 
-  // Validar formulário completo
   const validarFormulario = () => {
     if (!nome.trim()) {
       Alert.alert('Campo obrigatório', 'Por favor, insira seu nome completo');
@@ -86,19 +123,14 @@ export default function TelaRegistro({ navigation }) {
     return true;
   };
 
-  // Lidar com registro
   async function lidarComRegistro() {
     if (!validarFormulario()) return;
 
-    // Verificar conectividade
     if (!conectado) {
       Alert.alert(
         'Sem conexão', 
         'Não foi possível conectar ao servidor. Verifique sua internet e tente novamente.',
-        [
-          { text: 'OK' },
-          { text: 'Tentar novamente', onPress: () => navigation.navigate('Register') }
-        ]
+        [{ text: 'OK' }]
       );
       return;
     }
@@ -106,7 +138,7 @@ export default function TelaRegistro({ navigation }) {
     setCarregando(true);
 
     try {
-      const dados = await buscarApi('/api/autenticacao/registrar', { 
+      await buscarApi('/api/autenticacao/registrar', { 
         method: 'POST', 
         body: { 
           nome: nome.trim(),
@@ -114,8 +146,6 @@ export default function TelaRegistro({ navigation }) {
           senha 
         } 
       });
-
-      console.log('✅ Registro realizado com sucesso:', dados);
       
       Alert.alert(
         'Conta criada!', 
@@ -124,7 +154,6 @@ export default function TelaRegistro({ navigation }) {
           { 
             text: 'Fazer Login', 
             onPress: () => {
-              // Limpar campos
               setNome('');
               setEmail('');
               setSenha('');
@@ -136,8 +165,6 @@ export default function TelaRegistro({ navigation }) {
       );
       
     } catch (erro) {
-      console.error('❌ Erro no registro:', erro);
-      
       let mensagem = 'Erro ao criar conta. Tente novamente.';
       
       if (erro.status === 409) {
@@ -150,7 +177,6 @@ export default function TelaRegistro({ navigation }) {
         mensagem = erro.message;
       }
 
-      // Mostrar detalhes do erro se disponível
       const detalhes = obterDetalhesErro(erro);
       if (detalhes && detalhes !== mensagem) {
         mensagem += `\n\nDetalhes: ${detalhes}`;
@@ -164,179 +190,302 @@ export default function TelaRegistro({ navigation }) {
   }
 
   return (
-    <KeyboardAvoidingView 
-      style={styles.container} 
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
-      <StatusBar barStyle="dark-content" backgroundColor={colors.neutral[50]} />
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="#0A0A0A" />
       
-      <ScrollView 
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
+      <View style={styles.backgroundContainer}>
+        <View style={styles.gradientCircle1} />
+        <View style={styles.gradientCircle2} />
+        <View style={styles.gradientCircle3} />
+      </View>
+
+      <KeyboardAvoidingView 
+        style={styles.keyboardContainer} 
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <View style={styles.logoContainer}>
-            <View style={styles.logoCircle}>
-              <MaterialIcons name="restaurant" size={32} color={colors.primary[600]} />
-            </View>
-            <Text style={styles.logoText}>NutriSnap</Text>
-          </View>
-          <Text style={styles.welcomeText}>Junte-se a nós!</Text>
-          <Text style={styles.subtitleText}>Crie sua conta e comece sua jornada para uma vida mais saudável</Text>
-          
-          {/* Indicador de conectividade */}
-          <View style={styles.connectionStatus}>
-            <View style={[
-              styles.connectionDot, 
-              { backgroundColor: conectado ? colors.success : colors.error }
-            ]} />
-            <Text style={[
-              styles.connectionText,
-              { color: conectado ? colors.success : colors.error }
-            ]}>
-              {conectado ? 'Conectado ao servidor' : 'Servidor não acessível'}
-            </Text>
-          </View>
-        </View>
-
-        {/* Formulário */}
-        <View style={styles.formContainer}>
-          <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Nome completo</Text>
-            <TextInput
-              style={[
-                styles.input,
-                nomeFocused && styles.inputFocused,
-                nome.trim() && !validarNome(nome) && styles.inputError
-              ]}
-              placeholder="Seu nome completo"
-              placeholderTextColor={colors.neutral[400]}
-              value={nome}
-              onChangeText={setNome}
-              onFocus={() => setNomeFocused(true)}
-              onBlur={() => setNomeFocused(false)}
-              autoCapitalize="words"
-              autoCorrect={false}
-              editable={!carregando}
-            />
-            {nome.trim() && !validarNome(nome) && (
-              <Text style={styles.errorText}>Nome deve ter entre 2 e 100 caracteres</Text>
-            )}
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Email</Text>
-            <TextInput
-              style={[
-                styles.input,
-                emailFocused && styles.inputFocused,
-                email.trim() && !validarEmail(email) && styles.inputError
-              ]}
-              placeholder="seu@email.com"
-              placeholderTextColor={colors.neutral[400]}
-              value={email}
-              onChangeText={setEmail}
-              onFocus={() => setEmailFocused(true)}
-              onBlur={() => setEmailFocused(false)}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoCorrect={false}
-              editable={!carregando}
-            />
-            {email.trim() && !validarEmail(email) && (
-              <Text style={styles.errorText}>Email deve ter formato válido</Text>
-            )}
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Senha</Text>
-            <TextInput
-              style={[
-                styles.input,
-                senhaFocused && styles.inputFocused,
-                senha && !validarSenha(senha) && styles.inputError
-              ]}
-              placeholder="••••••••"
-              placeholderTextColor={colors.neutral[400]}
-              value={senha}
-              onChangeText={setSenha}
-              onFocus={() => setSenhaFocused(true)}
-              onBlur={() => setSenhaFocused(false)}
-              secureTextEntry
-              autoCapitalize="none"
-              editable={!carregando}
-            />
-            {senha && !validarSenha(senha) && (
-              <Text style={styles.errorText}>Mínimo 6 caracteres, com maiúscula, minúscula e número</Text>
-            )}
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Confirmar senha</Text>
-            <TextInput
-              style={[
-                styles.input,
-                confirmarSenhaFocused && styles.inputFocused,
-                confirmarSenha && senha !== confirmarSenha && styles.inputError
-              ]}
-              placeholder="••••••••"
-              placeholderTextColor={colors.neutral[400]}
-              value={confirmarSenha}
-              onChangeText={setConfirmarSenha}
-              onFocus={() => setConfirmarSenhaFocused(true)}
-              onBlur={() => setConfirmarSenhaFocused(false)}
-              secureTextEntry
-              autoCapitalize="none"
-              editable={!carregando}
-            />
-            {confirmarSenha && senha !== confirmarSenha && (
-              <Text style={styles.errorText}>As senhas não coincidem</Text>
-            )}
-          </View>
-
-          <TouchableOpacity 
-            onPress={lidarComRegistro} 
+        <ScrollView 
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          <Animated.View 
             style={[
-              styles.registerButton,
-              carregando && styles.buttonDisabled
+              styles.header,
+              {
+                opacity: fadeAnim,
+                transform: [{ translateY: slideAnim }]
+              }
             ]}
-            disabled={carregando || !conectado}
-            activeOpacity={0.8}
           >
-            {carregando ? (
-              <View style={styles.buttonWithLoading}>
-                <ActivityIndicator color={colors.neutral[50]} size="small" />
-                <Text style={styles.registerButtonText}>Criando conta...</Text>
+            <Animated.View 
+              style={[
+                styles.logoContainer,
+                {
+                  transform: [{ scale: logoAnim }]
+                }
+              ]}
+            >
+              <View style={styles.logoGlow} />
+              <View style={styles.logoCircle}>
+                <MaterialIcons name="restaurant" size={40} color="#00C9FF" />
               </View>
-            ) : (
-              <Text style={styles.registerButtonText}>Criar Conta</Text>
-            )}
-          </TouchableOpacity>
-        </View>
+              <Text style={styles.logoText}>NutriSnap</Text>
+            </Animated.View>
+            
+            <Text style={styles.welcomeText}>Junte-se a nós!</Text>
+            <Text style={styles.subtitleText}>Crie sua conta e comece sua jornada para uma vida mais saudável</Text>
+            
+            <View style={styles.connectionStatus}>
+              <View style={[
+                styles.connectionDot, 
+                { backgroundColor: conectado ? '#00C9FF' : '#FF6B6B' }
+              ]} />
+              <Text style={[
+                styles.connectionText,
+                { color: conectado ? '#00C9FF' : '#FF6B6B' }
+              ]}>
+                {conectado ? 'Conectado ao servidor' : 'Servidor não acessível'}
+              </Text>
+            </View>
+          </Animated.View>
 
-        {/* Links de navegação */}
-        <View style={styles.navigationContainer}>
-          <TouchableOpacity 
-            onPress={() => navigation.goBack()}
-            style={styles.navLink}
-            disabled={carregando}
+          <Animated.View 
+            style={[
+              styles.formContainer,
+              {
+                opacity: fadeAnim,
+                transform: [{ translateY: formAnim }]
+              }
+            ]}
           >
-            <Text style={styles.navLinkText}>Já tem conta? Fazer login</Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Nome completo</Text>
+              <View style={styles.inputWrapper}>
+                <TextInput
+                  style={[
+                    styles.input,
+                    nomeFocused && styles.inputFocused,
+                    nome.trim() && !validarNome(nome) && styles.inputError
+                  ]}
+                  placeholder="Seu nome completo"
+                  placeholderTextColor="rgba(255, 255, 255, 0.5)"
+                  value={nome}
+                  onChangeText={setNome}
+                  onFocus={() => setNomeFocused(true)}
+                  onBlur={() => setNomeFocused(false)}
+                  autoCapitalize="words"
+                  autoCorrect={false}
+                  editable={!carregando}
+                />
+                <MaterialIcons 
+                  name="person" 
+                  size={20} 
+                  color={nomeFocused ? "#00C9FF" : "rgba(255, 255, 255, 0.6)"} 
+                  style={styles.inputIcon}
+                />
+              </View>
+              {nome.trim() && !validarNome(nome) && (
+                <Text style={styles.errorText}>Nome deve ter entre 2 e 100 caracteres</Text>
+              )}
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Email</Text>
+              <View style={styles.inputWrapper}>
+                <TextInput
+                  style={[
+                    styles.input,
+                    emailFocused && styles.inputFocused,
+                    email.trim() && !validarEmail(email) && styles.inputError
+                  ]}
+                  placeholder="seu@email.com"
+                  placeholderTextColor="rgba(255, 255, 255, 0.5)"
+                  value={email}
+                  onChangeText={setEmail}
+                  onFocus={() => setEmailFocused(true)}
+                  onBlur={() => setEmailFocused(false)}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  editable={!carregando}
+                />
+                <MaterialIcons 
+                  name="email" 
+                  size={20} 
+                  color={emailFocused ? "#00C9FF" : "rgba(255, 255, 255, 0.6)"} 
+                  style={styles.inputIcon}
+                />
+              </View>
+              {email.trim() && !validarEmail(email) && (
+                <Text style={styles.errorText}>Email deve ter formato válido</Text>
+              )}
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Senha</Text>
+              <View style={styles.inputWrapper}>
+                <TextInput
+                  style={[
+                    styles.input,
+                    senhaFocused && styles.inputFocused,
+                    senha && !validarSenha(senha) && styles.inputError
+                  ]}
+                  placeholder="••••••••"
+                  placeholderTextColor="rgba(255, 255, 255, 0.5)"
+                  value={senha}
+                  onChangeText={setSenha}
+                  onFocus={() => setSenhaFocused(true)}
+                  onBlur={() => setSenhaFocused(false)}
+                  secureTextEntry
+                  autoCapitalize="none"
+                  editable={!carregando}
+                />
+                <MaterialIcons 
+                  name="lock" 
+                  size={20} 
+                  color={senhaFocused ? "#00C9FF" : "rgba(255, 255, 255, 0.6)"} 
+                  style={styles.inputIcon}
+                />
+              </View>
+              {senha && !validarSenha(senha) && (
+                <Text style={styles.errorText}>Mínimo 6 caracteres, com maiúscula, minúscula e número</Text>
+              )}
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Confirmar senha</Text>
+              <View style={styles.inputWrapper}>
+                <TextInput
+                  style={[
+                    styles.input,
+                    confirmarSenhaFocused && styles.inputFocused,
+                    confirmarSenha && senha !== confirmarSenha && styles.inputError
+                  ]}
+                  placeholder="••••••••"
+                  placeholderTextColor="rgba(255, 255, 255, 0.5)"
+                  value={confirmarSenha}
+                  onChangeText={setConfirmarSenha}
+                  onFocus={() => setConfirmarSenhaFocused(true)}
+                  onBlur={() => setConfirmarSenhaFocused(false)}
+                  secureTextEntry
+                  autoCapitalize="none"
+                  editable={!carregando}
+                />
+                <MaterialIcons 
+                  name="lock-outline" 
+                  size={20} 
+                  color={confirmarSenhaFocused ? "#00C9FF" : "rgba(255, 255, 255, 0.6)"} 
+                  style={styles.inputIcon}
+                />
+              </View>
+              {confirmarSenha && senha !== confirmarSenha && (
+                <Text style={styles.errorText}>As senhas não coincidem</Text>
+              )}
+            </View>
+
+            <Animated.View
+              style={{
+                opacity: buttonAnim,
+                transform: [{ scale: buttonAnim }]
+              }}
+            >
+              <TouchableOpacity 
+                onPress={lidarComRegistro} 
+                style={[
+                  styles.registerButton,
+                  carregando && styles.buttonDisabled
+                ]}
+                disabled={carregando || !conectado}
+                activeOpacity={0.9}
+              >
+                <View style={styles.buttonGradient}>
+                  {carregando ? (
+                    <View style={styles.buttonWithLoading}>
+                      <ActivityIndicator color="#FFFFFF" size="small" />
+                      <Text style={styles.registerButtonText}>Criando conta...</Text>
+                    </View>
+                  ) : (
+                    <>
+                      <Text style={styles.registerButtonText}>Criar Conta</Text>
+                      <MaterialIcons name="person-add" size={20} color="#FFFFFF" />
+                    </>
+                  )}
+                </View>
+              </TouchableOpacity>
+            </Animated.View>
+          </Animated.View>
+
+          <Animated.View 
+            style={[
+              styles.navigationContainer,
+              {
+                opacity: fadeAnim,
+                transform: [{ translateY: slideAnim }]
+              }
+            ]}
+          >
+            <TouchableOpacity 
+              onPress={() => navigation.goBack()}
+              style={styles.navLink}
+              disabled={carregando}
+            >
+              <Text style={styles.navLinkText}>Já tem conta? Fazer login</Text>
+            </TouchableOpacity>
+          </Animated.View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.neutral[50],
+    backgroundColor: '#0A0A0A',
   },
-  
+
+  backgroundContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+
+  gradientCircle1: {
+    position: 'absolute',
+    top: -100,
+    right: -100,
+    width: 300,
+    height: 300,
+    borderRadius: 150,
+    backgroundColor: 'rgba(0, 201, 255, 0.1)',
+  },
+
+  gradientCircle2: {
+    position: 'absolute',
+    bottom: -150,
+    left: -150,
+    width: 400,
+    height: 400,
+    borderRadius: 200,
+    backgroundColor: 'rgba(255, 107, 107, 0.08)',
+  },
+
+  gradientCircle3: {
+    position: 'absolute',
+    top: height * 0.4,
+    right: -80,
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    backgroundColor: 'rgba(255, 209, 61, 0.06)',
+  },
+
+  keyboardContainer: {
+    flex: 1,
+  },
+
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: spacing.lg,
@@ -344,59 +493,81 @@ const styles = StyleSheet.create({
   
   header: {
     alignItems: 'center',
-    paddingTop: spacing['2xl'],
+    paddingTop: height * 0.08,
     paddingBottom: spacing.xl,
   },
   
   logoContainer: {
     alignItems: 'center',
     marginBottom: spacing.lg,
+    position: 'relative',
+  },
+
+  logoGlow: {
+    position: 'absolute',
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: 'rgba(0, 201, 255, 0.2)',
+    zIndex: -1,
   },
   
   logoCircle: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    backgroundColor: colors.primary[100],
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: 'rgba(0, 201, 255, 0.15)',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing.md,
+    borderWidth: 2,
+    borderColor: 'rgba(0, 201, 255, 0.3)',
     ...shadows.lg,
-  },
-  
-  logoIcon: {
-    fontSize: 32,
   },
   
   logoText: {
     fontSize: typography.fontSize['3xl'],
-    fontWeight: typography.fontWeight.extrabold,
-    color: colors.neutral[900],
-    letterSpacing: -0.5,
+    fontWeight: typography.fontWeight.black,
+    color: '#FFFFFF',
+    letterSpacing: -1,
+    textShadowColor: 'rgba(0, 0, 0, 0.8)',
+    textShadowOffset: { width: 0, height: 4 },
+    textShadowRadius: 12,
   },
   
   welcomeText: {
     fontSize: typography.fontSize['2xl'],
     fontWeight: typography.fontWeight.bold,
-    color: colors.neutral[900],
+    color: '#FFFFFF',
     textAlign: 'center',
     marginBottom: spacing.sm,
+    textShadowColor: 'rgba(0, 0, 0, 0.6)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 8,
   },
   
   subtitleText: {
     fontSize: typography.fontSize.base,
     fontWeight: typography.fontWeight.medium,
-    color: colors.neutral[600],
+    color: 'rgba(255, 255, 255, 0.8)',
     textAlign: 'center',
     lineHeight: typography.lineHeight.normal,
-    maxWidth: 300,
     marginBottom: spacing.md,
+    textShadowColor: 'rgba(0, 0, 0, 0.5)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 4,
   },
   
   connectionStatus: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: borders.radius.full,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
   },
   
   connectionDot: {
@@ -408,6 +579,9 @@ const styles = StyleSheet.create({
   connectionText: {
     fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.medium,
+    textShadowColor: 'rgba(0, 0, 0, 0.5)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
   },
   
   formContainer: {
@@ -422,62 +596,80 @@ const styles = StyleSheet.create({
   inputLabel: {
     fontSize: typography.fontSize.base,
     fontWeight: typography.fontWeight.semibold,
-    color: colors.neutral[700],
+    color: '#FFFFFF',
     marginLeft: spacing.sm,
+    textShadowColor: 'rgba(0, 0, 0, 0.5)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
+  },
+
+  inputWrapper: {
+    position: 'relative',
   },
   
   input: {
-    backgroundColor: colors.neutral[50],
-    borderRadius: borders.radius.lg,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderRadius: borders.radius.xl,
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.lg,
+    paddingRight: spacing.xl + 20,
     borderWidth: borders.width.thin,
-    borderColor: colors.neutral[300],
+    borderColor: 'rgba(255, 255, 255, 0.2)',
     fontSize: typography.fontSize.base,
-    color: colors.neutral[900],
-    ...shadows.sm,
+    color: '#FFFFFF',
+    ...shadows.base,
+  },
+
+  inputIcon: {
+    position: 'absolute',
+    right: spacing.lg,
+    top: '50%',
+    marginTop: -10,
   },
   
   inputFocused: {
-    borderColor: colors.primary[500],
+    borderColor: '#00C9FF',
     borderWidth: borders.width.base,
-    ...shadows.base,
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+    ...shadows.lg,
   },
   
   inputError: {
-    borderColor: colors.error,
+    borderColor: '#FF6B6B',
     borderWidth: borders.width.base,
+    backgroundColor: 'rgba(255, 107, 107, 0.1)',
   },
   
   errorText: {
     fontSize: typography.fontSize.sm,
-    color: colors.error,
+    color: '#FF6B6B',
     marginLeft: spacing.sm,
     fontStyle: 'italic',
-  },
-  
-  passwordHint: {
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.medium,
-    color: colors.neutral[500],
-    marginLeft: spacing.sm,
-    fontStyle: 'italic',
+    textShadowColor: 'rgba(0, 0, 0, 0.5)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   
   registerButton: {
-    backgroundColor: colors.primary[600],
-    borderRadius: borders.radius.xl,
+    borderRadius: borders.radius.full,
+    overflow: 'hidden',
+    marginTop: spacing.md,
+    ...shadows.xl,
+    elevation: 15,
+  },
+
+  buttonGradient: {
     paddingVertical: spacing.lg,
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: spacing['2xl'],
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: spacing.md,
-    ...shadows.lg,
-    elevation: 8,
+    flexDirection: 'row',
+    gap: spacing.md,
+    backgroundColor: '#00C9FF',
   },
   
   buttonDisabled: {
-    backgroundColor: colors.neutral[400],
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     ...shadows.sm,
   },
   
@@ -490,23 +682,35 @@ const styles = StyleSheet.create({
   registerButtonText: {
     fontSize: typography.fontSize.lg,
     fontWeight: typography.fontWeight.bold,
-    color: colors.neutral[50],
+    color: '#FFFFFF',
     letterSpacing: 0.5,
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
   },
   
   navigationContainer: {
     alignItems: 'center',
+    gap: spacing.md,
     paddingBottom: spacing.xl,
   },
   
   navLink: {
     paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    borderRadius: borders.radius.full,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
   },
   
   navLinkText: {
     fontSize: typography.fontSize.base,
     fontWeight: typography.fontWeight.semibold,
-    color: colors.primary[600],
-    textDecorationLine: 'underline',
+    color: '#00C9FF',
+    textDecorationLine: 'none',
+    textShadowColor: 'rgba(0, 0, 0, 0.5)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
   },
 });

@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet, StatusBar, KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator } from 'react-native';
+import React, { useState, useRef, useEffect } from 'react';
+import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet, StatusBar, KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator, Dimensions, Animated } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { buscarApi, obterDetalhesErro } from '../services/api';
 import { usarAutenticacao } from '../services/AuthContext';
 import { colors, typography, spacing, borders, shadows, componentStyles } from '../styles/globalStyles';
+
+const { width, height } = Dimensions.get('window');
 
 export default function TelaLogin({ navigation }) {
   const { entrar, conectado } = usarAutenticacao();
@@ -12,6 +14,52 @@ export default function TelaLogin({ navigation }) {
   const [emailFocused, setEmailFocused] = useState(false);
   const [senhaFocused, setSenhaFocused] = useState(false);
   const [carregando, setCarregando] = useState(false);
+
+  // Animações
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(50)).current;
+  const logoAnim = useRef(new Animated.Value(0)).current;
+  const formAnim = useRef(new Animated.Value(30)).current;
+  const buttonAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    // Animação de entrada
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 1000,
+        useNativeDriver: true,
+      }),
+      Animated.spring(slideAnim, {
+        toValue: 0,
+        tension: 50,
+        friction: 8,
+        useNativeDriver: true,
+      }),
+      Animated.spring(logoAnim, {
+        toValue: 1,
+        tension: 80,
+        friction: 6,
+        useNativeDriver: true,
+      }),
+      Animated.spring(formAnim, {
+        toValue: 0,
+        tension: 60,
+        friction: 8,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    // Animação do botão após um delay
+    setTimeout(() => {
+      Animated.spring(buttonAnim, {
+        toValue: 1,
+        tension: 100,
+        friction: 8,
+        useNativeDriver: true,
+      }).start();
+    }, 800);
+  }, []);
 
   // Validação de email
   const validarEmail = (email) => {
@@ -115,139 +163,266 @@ export default function TelaLogin({ navigation }) {
   }
 
   return (
-    <KeyboardAvoidingView 
-      style={styles.container} 
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
-      <StatusBar barStyle="dark-content" backgroundColor={colors.neutral[50]} />
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="#0A0A0A" />
       
-      <ScrollView 
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
+      {/* Background com gradiente e elementos decorativos */}
+      <View style={styles.backgroundContainer}>
+        <View style={styles.gradientCircle1} />
+        <View style={styles.gradientCircle2} />
+        <View style={styles.gradientCircle3} />
+        <View style={styles.floatingElements}>
+          <View style={styles.floatingDot} />
+          <View style={styles.floatingLine} />
+          <View style={styles.floatingDot} />
+        </View>
+      </View>
+
+      <KeyboardAvoidingView 
+        style={styles.keyboardContainer} 
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <View style={styles.logoContainer}>
-            <View style={styles.logoCircle}>
-              <MaterialIcons name="restaurant" size={32} color={colors.primary[600]} />
-            </View>
-            <Text style={styles.logoText}>NutriSnap</Text>
-          </View>
-          <Text style={styles.welcomeText}>Bem-vindo de volta!</Text>
-          <Text style={styles.subtitleText}>Entre na sua conta para continuar sua jornada</Text>
-          
-          {/* Indicador de conectividade */}
-          <View style={styles.connectionStatus}>
-            <View style={[
-              styles.connectionDot, 
-              { backgroundColor: conectado ? colors.success : colors.error }
-            ]} />
-            <Text style={[
-              styles.connectionText,
-              { color: conectado ? colors.success : colors.error }
-            ]}>
-              {conectado ? 'Conectado ao servidor' : 'Servidor não acessível'}
-            </Text>
-          </View>
-        </View>
-
-        {/* Formulário */}
-        <View style={styles.formContainer}>
-          <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Email</Text>
-            <TextInput
-              style={[
-                styles.input,
-                emailFocused && styles.inputFocused,
-                email.trim() && !validarEmail(email.trim()) && styles.inputError
-              ]}
-              placeholder="seu@email.com"
-              placeholderTextColor={colors.neutral[400]}
-              value={email}
-              onChangeText={setEmail}
-              onFocus={() => setEmailFocused(true)}
-              onBlur={() => setEmailFocused(false)}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoCorrect={false}
-              editable={!carregando}
-            />
-            {email.trim() && !validarEmail(email.trim()) && (
-              <Text style={styles.errorText}>Email deve ter formato válido</Text>
-            )}
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Senha</Text>
-            <TextInput
-              style={[
-                styles.input,
-                senhaFocused && styles.inputFocused,
-                senha.trim() && !validarSenha(senha) && styles.inputError
-              ]}
-              placeholder="••••••••"
-              placeholderTextColor={colors.neutral[400]}
-              value={senha}
-              onChangeText={setSenha}
-              onFocus={() => setSenhaFocused(true)}
-              onBlur={() => setSenhaFocused(false)}
-              secureTextEntry
-              autoCapitalize="none"
-              editable={!carregando}
-            />
-            {senha.trim() && !validarSenha(senha) && (
-              <Text style={styles.errorText}>Mínimo de 6 caracteres</Text>
-            )}
-          </View>
-
-          <TouchableOpacity 
-            onPress={lidarComLogin} 
+        <ScrollView 
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* Header com logo animado */}
+          <Animated.View 
             style={[
-              styles.loginButton,
-              carregando && styles.buttonDisabled
+              styles.header,
+              {
+                opacity: fadeAnim,
+                transform: [{ translateY: slideAnim }]
+              }
             ]}
-            disabled={carregando || !conectado}
-            activeOpacity={0.8}
           >
-            {carregando ? (
-              <View style={styles.buttonWithLoading}>
-                <ActivityIndicator color={colors.neutral[50]} size="small" />
-                <Text style={styles.loginButtonText}>Entrando...</Text>
+            <Animated.View 
+              style={[
+                styles.logoContainer,
+                {
+                  transform: [{ scale: logoAnim }]
+                }
+              ]}
+            >
+              <View style={styles.logoGlow} />
+              <View style={styles.logoCircle}>
+                <MaterialIcons name="restaurant" size={40} color="#00C9FF" />
               </View>
-            ) : (
-              <Text style={styles.loginButtonText}>Entrar</Text>
-            )}
-          </TouchableOpacity>
-        </View>
+              <Text style={styles.logoText}>NutriSnap</Text>
+            </Animated.View>
+            
+            <Text style={styles.welcomeText}>Bem-vindo de volta!</Text>
+            <Text style={styles.subtitleText}>Entre na sua conta para continuar sua jornada</Text>
+            
+            {/* Indicador de conectividade elegante */}
+            <View style={styles.connectionStatus}>
+              <View style={[
+                styles.connectionDot, 
+                { backgroundColor: conectado ? '#00C9FF' : '#FF6B6B' }
+              ]} />
+              <Text style={[
+                styles.connectionText,
+                { color: conectado ? '#00C9FF' : '#FF6B6B' }
+              ]}>
+                {conectado ? 'Conectado ao servidor' : 'Servidor não acessível'}
+              </Text>
+            </View>
+          </Animated.View>
 
-        {/* Links de navegação */}
-        <View style={styles.navigationContainer}>
-          <TouchableOpacity 
-            onPress={() => navigation.navigate('Register')}
-            style={styles.navLink}
-            disabled={carregando}
+          {/* Formulário com animação */}
+          <Animated.View 
+            style={[
+              styles.formContainer,
+              {
+                opacity: fadeAnim,
+                transform: [{ translateY: formAnim }]
+              }
+            ]}
           >
-            <Text style={styles.navLinkText}>Não tem conta? Cadastre-se</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            onPress={() => navigation.goBack()}
-            style={styles.navLink}
-            disabled={carregando}
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Email</Text>
+              <View style={styles.inputWrapper}>
+                <TextInput
+                  style={[
+                    styles.input,
+                    emailFocused && styles.inputFocused,
+                    email.trim() && !validarEmail(email.trim()) && styles.inputError
+                  ]}
+                  placeholder="seu@email.com"
+                  placeholderTextColor="rgba(255, 255, 255, 0.5)"
+                  value={email}
+                  onChangeText={setEmail}
+                  onFocus={() => setEmailFocused(true)}
+                  onBlur={() => setEmailFocused(false)}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  editable={!carregando}
+                />
+                <MaterialIcons 
+                  name="email" 
+                  size={20} 
+                  color={emailFocused ? "#00C9FF" : "rgba(255, 255, 255, 0.6)"} 
+                  style={styles.inputIcon}
+                />
+              </View>
+              {email.trim() && !validarEmail(email.trim()) && (
+                <Text style={styles.errorText}>Email deve ter formato válido</Text>
+              )}
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Senha</Text>
+              <View style={styles.inputWrapper}>
+                <TextInput
+                  style={[
+                    styles.input,
+                    senhaFocused && styles.inputFocused,
+                    senha.trim() && !validarSenha(senha) && styles.inputError
+                  ]}
+                  placeholder="••••••••"
+                  placeholderTextColor="rgba(255, 255, 255, 0.5)"
+                  value={senha}
+                  onChangeText={setSenha}
+                  onFocus={() => setSenhaFocused(true)}
+                  onBlur={() => setSenhaFocused(false)}
+                  secureTextEntry
+                  autoCapitalize="none"
+                  editable={!carregando}
+                />
+                <MaterialIcons 
+                  name="lock" 
+                  size={20} 
+                  color={senhaFocused ? "#00C9FF" : "rgba(255, 255, 255, 0.6)"} 
+                  style={styles.inputIcon}
+                />
+              </View>
+              {senha.trim() && !validarSenha(senha) && (
+                <Text style={styles.errorText}>Mínimo de 6 caracteres</Text>
+              )}
+            </View>
+
+            <Animated.View
+              style={{
+                opacity: buttonAnim,
+                transform: [{ scale: buttonAnim }]
+              }}
+            >
+              <TouchableOpacity 
+                onPress={lidarComLogin} 
+                style={[
+                  styles.loginButton,
+                  carregando && styles.buttonDisabled
+                ]}
+                disabled={carregando || !conectado}
+                activeOpacity={0.9}
+              >
+                <View style={styles.buttonGradient}>
+                  {carregando ? (
+                    <View style={styles.buttonWithLoading}>
+                      <ActivityIndicator color="#FFFFFF" size="small" />
+                      <Text style={styles.loginButtonText}>Entrando...</Text>
+                    </View>
+                  ) : (
+                    <>
+                      <Text style={styles.loginButtonText}>Entrar</Text>
+                      <MaterialIcons name="arrow-forward" size={20} color="#FFFFFF" />
+                    </>
+                  )}
+                </View>
+              </TouchableOpacity>
+            </Animated.View>
+          </Animated.View>
+
+          {/* Links de navegação */}
+          <Animated.View 
+            style={[
+              styles.navigationContainer,
+              {
+                opacity: fadeAnim,
+                transform: [{ translateY: slideAnim }]
+              }
+            ]}
           >
-            <Text style={styles.navLinkText}>Voltar</Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+            <TouchableOpacity 
+              onPress={() => navigation.navigate('Register')}
+              style={styles.navLink}
+              disabled={carregando}
+            >
+              <Text style={styles.navLinkText}>Não tem conta? Cadastre-se</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              onPress={() => navigation.goBack()}
+              style={styles.navLink}
+              disabled={carregando}
+            >
+              <Text style={styles.navLinkText}>Voltar</Text>
+            </TouchableOpacity>
+          </Animated.View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.neutral[50],
+    backgroundColor: '#0A0A0A',
+  },
+
+  backgroundContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+
+  gradientCircle1: {
+    position: 'absolute',
+    top: -100,
+    right: -100,
+    width: 300,
+    height: 300,
+    borderRadius: 150,
+    backgroundColor: 'rgba(0, 201, 255, 0.1)',
+  },
+
+  gradientCircle2: {
+    position: 'absolute',
+    bottom: -150,
+    left: -150,
+    width: 400,
+    height: 400,
+    borderRadius: 200,
+    backgroundColor: 'rgba(255, 107, 107, 0.08)',
+  },
+
+  gradientCircle3: {
+    position: 'absolute',
+    top: height * 0.4,
+    right: -80,
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    backgroundColor: 'rgba(255, 209, 61, 0.06)',
+  },
+
+  floatingElements: {
+    position: 'absolute',
+    top: height * 0.6,
+    left: 50,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+
+
+  keyboardContainer: {
+    flex: 1,
   },
   
   scrollContent: {
@@ -257,58 +432,81 @@ const styles = StyleSheet.create({
   
   header: {
     alignItems: 'center',
-    paddingTop: spacing['3xl'],
+    paddingTop: height * 0.08,
     paddingBottom: spacing.xl,
   },
   
   logoContainer: {
     alignItems: 'center',
     marginBottom: spacing.lg,
+    position: 'relative',
+  },
+
+  logoGlow: {
+    position: 'absolute',
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: 'rgba(0, 201, 255, 0.2)',
+    zIndex: -1,
   },
   
   logoCircle: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    backgroundColor: colors.primary[100],
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: 'rgba(0, 201, 255, 0.15)',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing.md,
+    borderWidth: 2,
+    borderColor: 'rgba(0, 201, 255, 0.3)',
     ...shadows.lg,
-  },
-  
-  logoIcon: {
-    fontSize: 32,
   },
   
   logoText: {
     fontSize: typography.fontSize['3xl'],
-    fontWeight: typography.fontWeight.extrabold,
-    color: colors.neutral[900],
-    letterSpacing: -0.5,
+    fontWeight: typography.fontWeight.black,
+    color: '#FFFFFF',
+    letterSpacing: -1,
+    textShadowColor: 'rgba(0, 0, 0, 0.8)',
+    textShadowOffset: { width: 0, height: 4 },
+    textShadowRadius: 12,
   },
   
   welcomeText: {
     fontSize: typography.fontSize['2xl'],
     fontWeight: typography.fontWeight.bold,
-    color: colors.neutral[900],
+    color: '#FFFFFF',
     textAlign: 'center',
     marginBottom: spacing.sm,
+    textShadowColor: 'rgba(0, 0, 0, 0.6)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 8,
   },
   
   subtitleText: {
     fontSize: typography.fontSize.base,
     fontWeight: typography.fontWeight.medium,
-    color: colors.neutral[600],
+    color: 'rgba(255, 255, 255, 0.8)',
     textAlign: 'center',
     lineHeight: typography.lineHeight.normal,
     marginBottom: spacing.md,
+    textShadowColor: 'rgba(0, 0, 0, 0.5)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 4,
   },
   
   connectionStatus: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: borders.radius.full,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
   },
   
   connectionDot: {
@@ -320,6 +518,9 @@ const styles = StyleSheet.create({
   connectionText: {
     fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.medium,
+    textShadowColor: 'rgba(0, 0, 0, 0.5)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
   },
   
   formContainer: {
@@ -334,54 +535,80 @@ const styles = StyleSheet.create({
   inputLabel: {
     fontSize: typography.fontSize.base,
     fontWeight: typography.fontWeight.semibold,
-    color: colors.neutral[700],
+    color: '#FFFFFF',
     marginLeft: spacing.sm,
+    textShadowColor: 'rgba(0, 0, 0, 0.5)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
+  },
+
+  inputWrapper: {
+    position: 'relative',
   },
   
   input: {
-    backgroundColor: colors.neutral[50],
-    borderRadius: borders.radius.lg,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderRadius: borders.radius.xl,
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.lg,
+    paddingRight: spacing.xl + 20, // Espaço para o ícone
     borderWidth: borders.width.thin,
-    borderColor: colors.neutral[300],
+    borderColor: 'rgba(255, 255, 255, 0.2)',
     fontSize: typography.fontSize.base,
-    color: colors.neutral[900],
-    ...shadows.sm,
+    color: '#FFFFFF',
+    ...shadows.base,
+  },
+
+  inputIcon: {
+    position: 'absolute',
+    right: spacing.lg,
+    top: '50%',
+    marginTop: -10,
   },
   
   inputFocused: {
-    borderColor: colors.primary[500],
+    borderColor: '#00C9FF',
     borderWidth: borders.width.base,
-    ...shadows.base,
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+    ...shadows.lg,
   },
   
   inputError: {
-    borderColor: colors.error,
+    borderColor: '#FF6B6B',
     borderWidth: borders.width.base,
+    backgroundColor: 'rgba(255, 107, 107, 0.1)',
   },
   
   errorText: {
     fontSize: typography.fontSize.sm,
-    color: colors.error,
+    color: '#FF6B6B',
     marginLeft: spacing.sm,
     fontStyle: 'italic',
+    textShadowColor: 'rgba(0, 0, 0, 0.5)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   
   loginButton: {
-    backgroundColor: colors.primary[600],
-    borderRadius: borders.radius.xl,
+    borderRadius: borders.radius.full,
+    overflow: 'hidden',
+    marginTop: spacing.md,
+    ...shadows.xl,
+    elevation: 15,
+  },
+
+  buttonGradient: {
     paddingVertical: spacing.lg,
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: spacing['2xl'],
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: spacing.md,
-    ...shadows.lg,
-    elevation: 8,
+    flexDirection: 'row',
+    gap: spacing.md,
+    backgroundColor: '#00C9FF',
   },
   
   buttonDisabled: {
-    backgroundColor: colors.neutral[400],
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     ...shadows.sm,
   },
   
@@ -394,8 +621,11 @@ const styles = StyleSheet.create({
   loginButtonText: {
     fontSize: typography.fontSize.lg,
     fontWeight: typography.fontWeight.bold,
-    color: colors.neutral[50],
+    color: '#FFFFFF',
     letterSpacing: 0.5,
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
   },
   
   navigationContainer: {
@@ -406,12 +636,20 @@ const styles = StyleSheet.create({
   
   navLink: {
     paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    borderRadius: borders.radius.full,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
   },
   
   navLinkText: {
     fontSize: typography.fontSize.base,
     fontWeight: typography.fontWeight.semibold,
-    color: colors.primary[600],
-    textDecorationLine: 'underline',
+    color: '#00C9FF',
+    textDecorationLine: 'none',
+    textShadowColor: 'rgba(0, 0, 0, 0.5)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
   },
 });
