@@ -67,121 +67,121 @@ export default function TelaPrincipal({ navigation }) {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={estilos.container}>
       <StatusBar barStyle="light-content" backgroundColor={colors.neutral[900]} />
       
       <ScrollView 
-        style={styles.scrollView}
+        style={estilos.scrollView}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={estilos.scrollContent}
       >
         {/* Header com branding */}
-        <View style={styles.header}>
-          <View style={styles.profileIcon}>
-            <Text style={styles.profileText}>
+        <View style={estilos.header}>
+          <View style={estilos.iconePerfil}>
+            <Text style={estilos.textoPerfil}>
               {usuario?.nome?.charAt(0) || 'U'}
             </Text>
           </View>
           
-          <View style={styles.brandingContainer}>
-            <Text style={styles.appName}>nutrisnap</Text>
+          <View style={estilos.containerMarca}>
+            <Text style={estilos.nomeApp}>nutrisnap</Text>
           </View>
           
-          <TouchableOpacity style={styles.notificationIcon}>
+          <TouchableOpacity style={estilos.iconeNotificacao}>
             <Ionicons name="notifications" size={24} color={colors.neutral[400]} />
           </TouchableOpacity>
         </View>
 
         {/* Seção "Hoje" */}
-        <View style={styles.todaySection}>
-          <Text style={styles.todayTitle}>Hoje</Text>
-          <TouchableOpacity style={styles.editButton}>
-            <Text style={styles.editButtonText}>Editar</Text>
+        <View style={estilos.secaoHoje}>
+          <Text style={estilos.tituloHoje}>Hoje</Text>
+          <TouchableOpacity style={estilos.botaoEditar}>
+            <Text style={estilos.textoBotaoEditar}>Editar</Text>
           </TouchableOpacity>
         </View>
 
         {/* Card principal de calorias */}
-        <View style={styles.caloriesCard}>
-          <Text style={styles.caloriesTitle}>Calorias</Text>
-          <Text style={styles.caloriesFormula}>
+        <View style={estilos.cardCalorias}>
+          <Text style={estilos.tituloCalorias}>Calorias</Text>
+          <Text style={estilos.formulaCalorias}>
             Restantes = Meta - Alimentos + Exercício
           </Text>
           
-          <View style={styles.caloriesMainDisplay}>
-            <View style={styles.caloriesCircle}>
-              <Text style={styles.caloriesNumber}>{restantes.toLocaleString()}</Text>
-              <Text style={styles.caloriesLabel}>Restantes</Text>
+          <View style={estilos.displayPrincipalCalorias}>
+            <View style={estilos.circuloCalorias}>
+              <Text style={estilos.numeroCalorias}>{restantes.toLocaleString()}</Text>
+              <Text style={estilos.rotuloCalorias}>Restantes</Text>
             </View>
             
-            <View style={styles.caloriesDetails}>
-              <View style={styles.caloriesDetailItem}>
+            <View style={estilos.detalhesCalorias}>
+              <View style={estilos.itemDetalheCalorias}>
                 <MaterialIcons name="flag" size={16} color={colors.neutral[400]} />
-                <Text style={styles.detailText}>Meta base</Text>
-                <Text style={styles.detailValue}>{diario.toLocaleString()}</Text>
+                <Text style={estilos.textoDetalhe}>Meta base</Text>
+                <Text style={estilos.valorDetalhe}>{diario.toLocaleString()}</Text>
               </View>
               
-              <View style={styles.caloriesDetailItem}>
+              <View style={estilos.itemDetalheCalorias}>
                 <MaterialIcons name="restaurant" size={16} color={colors.neutral[400]} />
-                <Text style={styles.detailText}>Alimentos</Text>
-                <Text style={styles.detailValue}>{consumido.toLocaleString()}</Text>
+                <Text style={estilos.textoDetalhe}>Alimentos</Text>
+                <Text style={estilos.valorDetalhe}>{consumido.toLocaleString()}</Text>
               </View>
               
-              <View style={styles.caloriesDetailItem}>
+              <View style={estilos.itemDetalheCalorias}>
                 <MaterialIcons name="local-fire-department" size={16} color={colors.neutral[400]} />
-                <Text style={styles.detailText}>Exercício</Text>
-                <Text style={styles.detailValue}>0</Text>
+                <Text style={estilos.textoDetalhe}>Exercício</Text>
+                <Text style={estilos.valorDetalhe}>0</Text>
               </View>
             </View>
           </View>
         </View>
 
         {/* Grid de métricas */}
-        <View style={styles.metricsGrid}>
-          <View style={styles.metricsRow}>
+        <View style={estilos.gridMetricas}>
+          <View style={estilos.linhaMetricas}>
             {/* Card de Passos */}
-            <View style={styles.metricCard}>
-              <Text style={styles.metricTitle}>Passos</Text>
-              <View style={styles.metricContent}>
+            <View style={estilos.cardMetrica}>
+              <Text style={estilos.tituloMetrica}>Passos</Text>
+              <View style={estilos.conteudoMetrica}>
                 <FontAwesome5 name="shoe-prints" size={16} color={colors.accent.pink} />
-                <Text style={styles.metricValue}>26</Text>
+                <Text style={estilos.valorMetrica}>26</Text>
               </View>
-              <Text style={styles.metricGoal}>Meta: 10.000 passos</Text>
-              <View style={styles.metricProgressBar}>
-                <View style={[styles.metricProgressFill, { width: '0.26%' }]} />
+              <Text style={estilos.metaMetrica}>Meta: 10.000 passos</Text>
+              <View style={estilos.barraProgressoMetrica}>
+                <View style={[estilos.preenchimentoProgressoMetrica, { width: '0.26%' }]} />
               </View>
             </View>
             
             {/* Card de Exercício */}
-            <View style={styles.metricCard}>
-              <TouchableOpacity style={styles.addButton}>
+            <View style={estilos.cardMetrica}>
+              <TouchableOpacity style={estilos.botaoAdicionar}>
                 <Ionicons name="add" size={20} color={colors.neutral[50]} />
               </TouchableOpacity>
-              <Text style={styles.metricTitle}>Exercício</Text>
-              <View style={styles.metricContent}>
+              <Text style={estilos.tituloMetrica}>Exercício</Text>
+              <View style={estilos.conteudoMetrica}>
                 <MaterialIcons name="local-fire-department" size={16} color={colors.neutral[400]} />
-                <Text style={styles.metricValue}>0 cal</Text>
+                <Text style={estilos.valorMetrica}>0 cal</Text>
               </View>
-              <View style={styles.metricContent}>
+              <View style={estilos.conteudoMetrica}>
                 <MaterialIcons name="access-time" size={16} color={colors.neutral[400]} />
-                <Text style={styles.metricValue}>00:00 h</Text>
+                <Text style={estilos.valorMetrica}>00:00 h</Text>
               </View>
             </View>
           </View>
           
-          <View style={styles.metricsRow}>
+          <View style={estilos.linhaMetricas}>
             {/* Card de Peso */}
-            <View style={styles.metricCard}>
-              <Text style={styles.metricTitle}>Peso</Text>
-              <Text style={styles.metricSubtitle}>Últimos 90 dias</Text>
-              <Text style={styles.weightValue}>82</Text>
+            <View style={estilos.cardMetrica}>
+              <Text style={estilos.tituloMetrica}>Peso</Text>
+              <Text style={estilos.subtituloMetrica}>Últimos 90 dias</Text>
+              <Text style={estilos.valorPeso}>82</Text>
             </View>
             
             {/* Card de Progresso */}
-            <View style={styles.metricCard}>
-              <TouchableOpacity style={styles.addButton}>
+            <View style={estilos.cardMetrica}>
+              <TouchableOpacity style={estilos.botaoAdicionar}>
                 <Ionicons name="add" size={20} color={colors.neutral[50]} />
               </TouchableOpacity>
-              <Text style={styles.metricTitle}>Progresso</Text>
+              <Text style={estilos.tituloMetrica}>Progresso</Text>
             </View>
           </View>
         </View>
@@ -189,37 +189,37 @@ export default function TelaPrincipal({ navigation }) {
         {/* Botão de sair */}
         <TouchableOpacity 
           onPress={lidarComSair} 
-          style={styles.logoutButton}
+          style={estilos.botaoSair}
           activeOpacity={0.8}
         >
-          <Text style={styles.logoutButtonText}>Sair da Conta</Text>
+          <Text style={estilos.textoBotaoSair}>Sair da Conta</Text>
         </TouchableOpacity>
       </ScrollView>
 
       {/* Navegação inferior */}
-      <View style={styles.bottomNavigation}>
-        <TouchableOpacity style={styles.navItem}>
+      <View style={estilos.navegacaoInferior}>
+        <TouchableOpacity style={estilos.itemNavegacao}>
           <MaterialIcons name="dashboard" size={20} color={colors.neutral[400]} />
-          <Text style={styles.navLabel}>Painel</Text>
+          <Text style={estilos.rotuloNavegacao}>Painel</Text>
         </TouchableOpacity>
         
-        <TouchableOpacity style={styles.navItem}>
+        <TouchableOpacity style={estilos.itemNavegacao}>
           <MaterialIcons name="book" size={20} color={colors.neutral[400]} />
-          <Text style={styles.navLabel}>Diário</Text>
+          <Text style={estilos.rotuloNavegacao}>Diário</Text>
         </TouchableOpacity>
         
-        <TouchableOpacity style={styles.centralButton} onPress={abrirModal}>
+        <TouchableOpacity style={estilos.botaoCentral} onPress={abrirModal}>
           <Ionicons name="add" size={28} color={colors.neutral[50]} />
         </TouchableOpacity>
         
-        <TouchableOpacity style={styles.navItem}>
+        <TouchableOpacity style={estilos.itemNavegacao}>
           <MaterialIcons name="trending-up" size={20} color={colors.neutral[400]} />
-          <Text style={styles.navLabel}>Progresso</Text>
+          <Text style={estilos.rotuloNavegacao}>Progresso</Text>
         </TouchableOpacity>
         
-        <TouchableOpacity style={styles.navItem}>
+        <TouchableOpacity style={estilos.itemNavegacao}>
           <MaterialIcons name="more-horiz" size={20} color={colors.neutral[400]} />
-          <Text style={styles.navLabel}>Mais</Text>
+          <Text style={estilos.rotuloNavegacao}>Mais</Text>
         </TouchableOpacity>
       </View>
 
@@ -231,69 +231,69 @@ export default function TelaPrincipal({ navigation }) {
         onRequestClose={fecharModal}
       >
         <TouchableOpacity 
-          style={styles.modalOverlay} 
+          style={estilos.overlayModal} 
           activeOpacity={1} 
           onPress={fecharModal}
         >
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>O que você quer fazer?</Text>
-              <TouchableOpacity onPress={fecharModal} style={styles.closeButton}>
+          <View style={estilos.conteudoModal}>
+            <View style={estilos.cabecalhoModal}>
+              <Text style={estilos.tituloModal}>O que você quer fazer?</Text>
+              <TouchableOpacity onPress={fecharModal} style={estilos.botaoFechar}>
                 <Ionicons name="close" size={24} color={colors.neutral[400]} />
               </TouchableOpacity>
             </View>
             
-            <View style={styles.optionsGrid}>
+            <View style={estilos.gridOpcoes}>
               {/* Registrar Alimento */}
               <TouchableOpacity 
-                style={styles.optionCard} 
+                style={estilos.cardOpcao} 
                 onPress={() => navegarPara('alimento')}
                 activeOpacity={0.8}
               >
-                <View style={[styles.optionIcon, { backgroundColor: colors.accent.green + '20' }]}>
+                <View style={[estilos.iconeOpcao, { backgroundColor: colors.accent.green + '20' }]}>
                   <MaterialIcons name="restaurant" size={28} color={colors.accent.green} />
                 </View>
-                <Text style={styles.optionTitle}>Registrar Alimento</Text>
-                <Text style={styles.optionDescription}>Fotografe sua refeição</Text>
+                <Text style={estilos.tituloOpcao}>Registrar Alimento</Text>
+                <Text style={estilos.descricaoOpcao}>Fotografe sua refeição</Text>
               </TouchableOpacity>
 
               {/* Calcular IMC */}
               <TouchableOpacity 
-                style={styles.optionCard} 
+                style={estilos.cardOpcao} 
                 onPress={() => navegarPara('imc')}
                 activeOpacity={0.8}
               >
-                <View style={[styles.optionIcon, { backgroundColor: colors.accent.blue + '20' }]}>
+                <View style={[estilos.iconeOpcao, { backgroundColor: colors.accent.blue + '20' }]}>
                   <MaterialIcons name="analytics" size={28} color={colors.accent.blue} />
                 </View>
-                <Text style={styles.optionTitle}>Calcular IMC</Text>
-                <Text style={styles.optionDescription}>Índice de massa corporal</Text>
+                <Text style={estilos.tituloOpcao}>Calcular IMC</Text>
+                <Text style={estilos.descricaoOpcao}>Índice de massa corporal</Text>
               </TouchableOpacity>
 
               {/* Código de Barras */}
               <TouchableOpacity 
-                style={styles.optionCard} 
+                style={estilos.cardOpcao} 
                 onPress={() => navegarPara('codigo_barras')}
                 activeOpacity={0.8}
               >
-                <View style={[styles.optionIcon, { backgroundColor: colors.accent.purple + '20' }]}>
+                <View style={[estilos.iconeOpcao, { backgroundColor: colors.accent.purple + '20' }]}>
                   <MaterialIcons name="qr-code-scanner" size={28} color={colors.accent.purple} />
                 </View>
-                <Text style={styles.optionTitle}>Código de Barras</Text>
-                <Text style={styles.optionDescription}>Escaneie produtos</Text>
+                <Text style={estilos.tituloOpcao}>Código de Barras</Text>
+                <Text style={estilos.descricaoOpcao}>Escaneie produtos</Text>
               </TouchableOpacity>
 
               {/* Treinos */}
               <TouchableOpacity 
-                style={styles.optionCard} 
+                style={estilos.cardOpcao} 
                 onPress={() => navegarPara('treinos')}
                 activeOpacity={0.8}
               >
-                <View style={[styles.optionIcon, { backgroundColor: colors.accent.orange + '20' }]}>
+                <View style={[estilos.iconeOpcao, { backgroundColor: colors.accent.orange + '20' }]}>
                   <MaterialIcons name="fitness-center" size={28} color={colors.accent.orange} />
                 </View>
-                <Text style={styles.optionTitle}>Treinos</Text>
-                <Text style={styles.optionDescription}>Plano de exercícios</Text>
+                <Text style={estilos.tituloOpcao}>Treinos</Text>
+                <Text style={estilos.descricaoOpcao}>Plano de exercícios</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -303,7 +303,7 @@ export default function TelaPrincipal({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
+const estilos = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.neutral[900],
@@ -325,7 +325,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xl,
   },
   
-  profileIcon: {
+  iconePerfil: {
     width: 40,
     height: 40,
     borderRadius: 20,
@@ -335,142 +335,142 @@ const styles = StyleSheet.create({
     marginRight: spacing.md,
   },
   
-  profileText: {
+  textoPerfil: {
     color: colors.neutral[50],
     fontSize: typography.fontSize.lg,
     fontWeight: typography.fontWeight.bold,
   },
   
-  brandingContainer: {
+  containerMarca: {
     flex: 1,
     alignItems: 'center',
   },
   
-  appName: {
+  nomeApp: {
     fontSize: typography.fontSize.xl,
     fontWeight: typography.fontWeight.bold,
     color: colors.accent.blue,
     marginBottom: spacing.xs,
   },
   
-  notificationIcon: {
+  iconeNotificacao: {
     width: 40,
     height: 40,
     alignItems: 'center',
     justifyContent: 'center',
   },
   
-  notificationText: {
+  textoNotificacao: {
     fontSize: 20,
   },
   
-  todaySection: {
+  secaoHoje: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: spacing.lg,
   },
   
-  todayTitle: {
+  tituloHoje: {
     fontSize: typography.fontSize['2xl'],
     fontWeight: typography.fontWeight.bold,
     color: colors.neutral[50],
   },
   
-  editButton: {
+  botaoEditar: {
     backgroundColor: colors.accent.blue,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderRadius: borders.radius.base,
   },
   
-  editButtonText: {
+  textoBotaoEditar: {
     color: colors.neutral[50],
     fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.medium,
   },
   
-  caloriesCard: {
+  cardCalorias: {
     backgroundColor: colors.neutral[800],
     borderRadius: borders.radius.xl,
     padding: spacing.xl,
     marginBottom: spacing.lg,
   },
   
-  caloriesTitle: {
+  tituloCalorias: {
     fontSize: typography.fontSize.xl,
     fontWeight: typography.fontWeight.bold,
     color: colors.neutral[50],
     marginBottom: spacing.sm,
   },
   
-  caloriesFormula: {
+  formulaCalorias: {
     fontSize: typography.fontSize.sm,
     color: colors.neutral[400],
     marginBottom: spacing.lg,
   },
   
-  caloriesMainDisplay: {
+  displayPrincipalCalorias: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   
-  caloriesCircle: {
+  circuloCalorias: {
     flex: 1,
     alignItems: 'center',
   },
   
-  caloriesNumber: {
+  numeroCalorias: {
     fontSize: typography.fontSize['4xl'],
     fontWeight: typography.fontWeight.extrabold,
     color: colors.neutral[50],
     lineHeight: typography.lineHeight.tight,
   },
   
-  caloriesLabel: {
+  rotuloCalorias: {
     fontSize: typography.fontSize.base,
     color: colors.neutral[400],
     marginTop: spacing.xs,
   },
   
-  caloriesDetails: {
+  detalhesCalorias: {
     flex: 1,
     gap: spacing.md,
   },
   
-  caloriesDetailItem: {
+  itemDetalheCalorias: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
   },
   
-  detailIcon: {
+  iconeDetalhe: {
     fontSize: 16,
   },
   
-  detailText: {
+  textoDetalhe: {
     flex: 1,
     fontSize: typography.fontSize.sm,
     color: colors.neutral[400],
   },
   
-  detailValue: {
+  valorDetalhe: {
     fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.bold,
     color: colors.neutral[50],
   },
   
-  metricsGrid: {
+  gridMetricas: {
     gap: spacing.md,
     marginBottom: spacing.xl,
   },
   
-  metricsRow: {
+  linhaMetricas: {
     flexDirection: 'row',
     gap: spacing.md,
   },
   
-  metricCard: {
+  cardMetrica: {
     flex: 1,
     backgroundColor: colors.neutral[800],
     borderRadius: borders.radius.lg,
@@ -478,62 +478,62 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   
-  metricTitle: {
+  tituloMetrica: {
     fontSize: typography.fontSize.lg,
     fontWeight: typography.fontWeight.bold,
     color: colors.neutral[50],
     marginBottom: spacing.md,
   },
   
-  metricSubtitle: {
+  subtituloMetrica: {
     fontSize: typography.fontSize.sm,
     color: colors.neutral[400],
     marginBottom: spacing.md,
   },
   
-  metricContent: {
+  conteudoMetrica: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: spacing.sm,
   },
   
-  metricIcon: {
+  iconeMetrica: {
     fontSize: 16,
     marginRight: spacing.sm,
   },
   
-  metricValue: {
+  valorMetrica: {
     fontSize: typography.fontSize.base,
     fontWeight: typography.fontWeight.bold,
     color: colors.neutral[50],
   },
   
-  metricGoal: {
+  metaMetrica: {
     fontSize: typography.fontSize.sm,
     color: colors.neutral[400],
     marginBottom: spacing.sm,
   },
   
-  metricProgressBar: {
+  barraProgressoMetrica: {
     height: 4,
     backgroundColor: colors.neutral[700],
     borderRadius: borders.radius.full,
     overflow: 'hidden',
   },
   
-  metricProgressFill: {
+  preenchimentoProgressoMetrica: {
     height: '100%',
     backgroundColor: colors.accent.pink,
     borderRadius: borders.radius.full,
   },
   
-  weightValue: {
+  valorPeso: {
     fontSize: typography.fontSize['3xl'],
     fontWeight: typography.fontWeight.extrabold,
     color: colors.neutral[50],
   },
   
-  addButton: {
+  botaoAdicionar: {
     position: 'absolute',
     top: spacing.md,
     right: spacing.md,
@@ -545,13 +545,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   
-  addButtonText: {
+  textoBotaoAdicionar: {
     color: colors.neutral[50],
     fontSize: typography.fontSize.lg,
     fontWeight: typography.fontWeight.bold,
   },
   
-  logoutButton: {
+  botaoSair: {
     backgroundColor: colors.neutral[800],
     borderRadius: borders.radius.lg,
     paddingVertical: spacing.md,
@@ -559,13 +559,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   
-  logoutButtonText: {
+  textoBotaoSair: {
     fontSize: typography.fontSize.base,
     fontWeight: typography.fontWeight.semibold,
     color: colors.neutral[300],
   },
   
-  bottomNavigation: {
+  navegacaoInferior: {
     flexDirection: 'row',
     backgroundColor: colors.neutral[800],
     paddingVertical: spacing.md,
@@ -574,24 +574,24 @@ const styles = StyleSheet.create({
     borderTopColor: colors.neutral[700],
   },
   
-  navItem: {
+  itemNavegacao: {
     flex: 1,
     alignItems: 'center',
     gap: spacing.xs,
   },
   
-  navIcon: {
+  iconeNavegacao: {
     fontSize: 20,
     color: colors.neutral[400],
   },
   
-  navLabel: {
+  rotuloNavegacao: {
     fontSize: typography.fontSize.xs,
     color: colors.neutral[400],
     fontWeight: typography.fontWeight.medium,
   },
   
-  centralButton: {
+  botaoCentral: {
     width: 56,
     height: 56,
     borderRadius: 28,
@@ -602,14 +602,14 @@ const styles = StyleSheet.create({
     ...shadows.lg,
   },
   
-  centralButtonText: {
+  textoBotaoCentral: {
     color: colors.neutral[50],
     fontSize: typography.fontSize['2xl'],
     fontWeight: typography.fontWeight.bold,
   },
 
   // Estilos do modal
-  modalOverlay: {
+  overlayModal: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
@@ -617,7 +617,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
   },
 
-  modalContent: {
+  conteudoModal: {
     backgroundColor: colors.neutral[800],
     borderRadius: borders.radius.xl,
     padding: spacing.xl,
@@ -626,21 +626,21 @@ const styles = StyleSheet.create({
     ...shadows.xl,
   },
 
-  modalHeader: {
+  cabecalhoModal: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: spacing.lg,
   },
 
-  modalTitle: {
+  tituloModal: {
     fontSize: typography.fontSize.xl,
     fontWeight: typography.fontWeight.bold,
     color: colors.neutral[50],
     flex: 1,
   },
 
-  closeButton: {
+  botaoFechar: {
     width: 32,
     height: 32,
     borderRadius: 16,
@@ -649,11 +649,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 
-  optionsGrid: {
+  gridOpcoes: {
     gap: spacing.md,
   },
 
-  optionCard: {
+  cardOpcao: {
     backgroundColor: colors.neutral[700],
     borderRadius: borders.radius.lg,
     padding: spacing.lg,
@@ -663,7 +663,7 @@ const styles = StyleSheet.create({
     ...shadows.base,
   },
 
-  optionIcon: {
+  iconeOpcao: {
     width: 56,
     height: 56,
     borderRadius: 28,
@@ -671,14 +671,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 
-  optionTitle: {
+  tituloOpcao: {
     fontSize: typography.fontSize.lg,
     fontWeight: typography.fontWeight.bold,
     color: colors.neutral[50],
     marginBottom: spacing.xs,
   },
 
-  optionDescription: {
+  descricaoOpcao: {
     fontSize: typography.fontSize.sm,
     color: colors.neutral[400],
     lineHeight: typography.lineHeight.normal,

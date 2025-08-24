@@ -11,8 +11,8 @@ export default function TelaIMC() {
   const [imc, setImc] = useState(null);
   const [categoria, setCategoria] = useState('');
   const [calculando, setCalculando] = useState(false);
-  const [pesoFocused, setPesoFocused] = useState(false);
-  const [alturaFocused, setAlturaFocused] = useState(false);
+  const [pesoFocado, setPesoFocado] = useState(false);
+  const [alturaFocada, setAlturaFocada] = useState(false);
   const [erroPeso, setErroPeso] = useState('');
   const [erroAltura, setErroAltura] = useState('');
 
@@ -126,19 +126,19 @@ export default function TelaIMC() {
     setAltura('');
     setImc(null);
     setCategoria('');
-    setPesoFocused(false);
-    setAlturaFocused(false);
+    setPesoFocado(false);
+    setAlturaFocada(false);
     setErroPeso('');
     setErroAltura('');
     setCalculando(false);
   }
 
-  function obterCorCategoria(cat) {
-    if (!cat || typeof cat !== 'string') {
+  function obterCorCategoria(categoria) {
+    if (!categoria || typeof categoria !== 'string') {
       return colors.neutral[500];
     }
     
-    switch (cat) {
+    switch (categoria) {
       case 'Abaixo do peso': return colors.accent.blue;
       case 'Peso normal': return colors.success;
       case 'Sobrepeso': return colors.accent.yellow;
@@ -150,34 +150,34 @@ export default function TelaIMC() {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={estilos.container}>
       <StatusBar barStyle="dark-content" backgroundColor={colors.neutral[50]} />
       
       <ScrollView 
-        style={styles.scrollView}
+        style={estilos.scrollView}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={estilos.scrollContent}
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <View style={styles.titleContainer}>
-            <Text style={styles.title}>Calculadora de IMC</Text>
-            <Text style={styles.subtitle}>Índice de Massa Corporal</Text>
+        {/* Cabeçalho */}
+        <View style={estilos.cabecalho}>
+          <View style={estilos.containerTitulo}>
+            <Text style={estilos.titulo}>Calculadora de IMC</Text>
+            <Text style={estilos.subtitulo}>Índice de Massa Corporal</Text>
           </View>
-          <View style={styles.iconContainer}>
+          <View style={estilos.containerIcone}>
             <MaterialIcons name="analytics" size={40} color={colors.primary[600]} />
           </View>
         </View>
 
         {/* Formulário */}
-        <View style={styles.formContainer}>
-          <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Peso (kg)</Text>
-            <Text style={styles.inputHint}>Use ponto ou vírgula como separador decimal (ex: 70.5)</Text>
+        <View style={estilos.containerFormulario}>
+          <View style={estilos.grupoEntrada}>
+            <Text style={estilos.rotuloEntrada}>Peso (kg)</Text>
+            <Text style={estilos.dicaEntrada}>Use ponto ou vírgula como separador decimal (ex: 70.5)</Text>
             <TextInput
               style={[
-                styles.input,
-                pesoFocused ? styles.inputFocused : null
+                estilos.entrada,
+                pesoFocado ? estilos.entradaFocada : null
               ]}
               placeholder="Ex: 70.5"
               placeholderTextColor={colors.neutral[400]}
@@ -187,21 +187,21 @@ export default function TelaIMC() {
                 setPeso(valorConvertido);
                 validarPeso(valorConvertido);
               }}
-              onFocus={() => setPesoFocused(true)}
-              onBlur={() => setPesoFocused(false)}
+              onFocus={() => setPesoFocado(true)}
+              onBlur={() => setPesoFocado(false)}
               keyboardType="numeric"
               editable={!calculando}
             />
-            {erroPeso && erroPeso.length > 0 ? <Text style={styles.errorText}>{erroPeso}</Text> : null}
+            {erroPeso && erroPeso.length > 0 ? <Text style={estilos.textoErro}>{erroPeso}</Text> : null}
           </View>
 
-          <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Altura (m)</Text>
-            <Text style={styles.inputHint}>Use ponto ou vírgula como separador decimal (ex: 1.75)</Text>
+          <View style={estilos.grupoEntrada}>
+            <Text style={estilos.rotuloEntrada}>Altura (m)</Text>
+            <Text style={estilos.dicaEntrada}>Use ponto ou vírgula como separador decimal (ex: 1.75)</Text>
             <TextInput
               style={[
-                styles.input,
-                alturaFocused ? styles.inputFocused : null
+                estilos.entrada,
+                alturaFocada ? estilos.entradaFocada : null
               ]}
               placeholder="Ex: 1.75"
               placeholderTextColor={colors.neutral[400]}
@@ -211,58 +211,58 @@ export default function TelaIMC() {
                 setAltura(valorConvertido);
                 validarAltura(valorConvertido);
               }}
-              onFocus={() => setAlturaFocused(true)}
-              onBlur={() => setAlturaFocused(false)}
+              onFocus={() => setAlturaFocada(true)}
+              onBlur={() => setAlturaFocada(false)}
               keyboardType="numeric"
               editable={!calculando}
             />
-            {erroAltura && erroAltura.length > 0 ? <Text style={styles.errorText}>{erroAltura}</Text> : null}
+            {erroAltura && erroAltura.length > 0 ? <Text style={estilos.textoErro}>{erroAltura}</Text> : null}
           </View>
 
           <TouchableOpacity
             onPress={calcularIMC}
             style={[
-              styles.calculateButton,
-              (calculando || !!erroPeso || !!erroAltura) ? styles.buttonDisabled : null
+              estilos.botaoCalcular,
+              (calculando || !!erroPeso || !!erroAltura) ? estilos.botaoDesabilitado : null
             ]}
             disabled={calculando || !!erroPeso || !!erroAltura}
             activeOpacity={0.8}
           >
             {calculando ? (
-              <View style={styles.buttonWithLoading}>
+              <View style={estilos.botaoComCarregamento}>
                 <ActivityIndicator color={colors.neutral[50]} size="small" />
-                <Text style={styles.buttonText}>Calculando...</Text>
+                <Text style={estilos.textoBotao}>Calculando...</Text>
               </View>
             ) : (
-              <Text style={styles.buttonText}>Calcular IMC</Text>
+              <Text style={estilos.textoBotao}>Calcular IMC</Text>
             )}
           </TouchableOpacity>
         </View>
 
         {/* Resultado */}
         {imc && imc !== null && imc !== '' && imc !== undefined ? (
-          <View style={styles.resultContainer}>
-            <View style={styles.resultHeader}>
-              <Text style={styles.resultTitle}>Seu IMC</Text>
-              <Text style={styles.resultValue}>{imc}</Text>
+          <View style={estilos.containerResultado}>
+            <View style={estilos.cabecalhoResultado}>
+              <Text style={estilos.tituloResultado}>Seu IMC</Text>
+              <Text style={estilos.valorResultado}>{imc}</Text>
             </View>
             
-            <View style={styles.categoryContainer}>
+            <View style={estilos.containerCategoria}>
               <Text style={[
-                styles.categoryText,
+                estilos.textoCategoria,
                 { color: obterCorCategoria(categoria) }
               ]}>
                 {categoria || 'Não definido'}
               </Text>
-              <Text style={styles.categorySubtext}>
+              <Text style={estilos.subtextoCategoria}>
                 IMC: {imc} kg/m²
               </Text>
             </View>
 
             {/* Interpretação do resultado */}
-            <View style={styles.interpretationContainer}>
-              <Text style={styles.interpretationTitle}>O que isso significa?</Text>
-              <Text style={styles.interpretationText}>
+            <View style={estilos.containerInterpretacao}>
+              <Text style={estilos.tituloInterpretacao}>O que isso significa?</Text>
+              <Text style={estilos.textoInterpretacao}>
                 {categoria === 'Abaixo do peso' ? 
                   'Seu IMC indica que você está abaixo do peso considerado saudável para sua altura. Considere consultar um nutricionista para orientações sobre ganho de peso saudável.' :
                 categoria === 'Peso normal' ? 
@@ -281,38 +281,38 @@ export default function TelaIMC() {
             </View>
 
             {/* Legenda */}
-            <View style={styles.legendContainer}>
-              <Text style={styles.legendTitle}>Classificação IMC</Text>
+            <View style={estilos.containerLegenda}>
+              <Text style={estilos.tituloLegenda}>Classificação IMC</Text>
               
-              <View style={styles.legendItems}>
-                <View style={styles.legendItem}>
-                  <View style={[styles.legendDot, { backgroundColor: colors.accent.blue }]} />
-                  <Text style={styles.legendText}>Abaixo do peso: {'<'} 18.5</Text>
+              <View style={estilos.itensLegenda}>
+                <View style={estilos.itemLegenda}>
+                  <View style={[estilos.pontoLegenda, { backgroundColor: colors.accent.blue }]} />
+                  <Text style={estilos.textoLegenda}>Abaixo do peso: {'<'} 18.5</Text>
                 </View>
                 
-                <View style={styles.legendItem}>
-                  <View style={[styles.legendDot, { backgroundColor: colors.success }]} />
-                  <Text style={styles.legendText}>Peso normal: 18.5 - 24.9</Text>
+                <View style={estilos.itemLegenda}>
+                  <View style={[estilos.pontoLegenda, { backgroundColor: colors.success }]} />
+                  <Text style={estilos.textoLegenda}>Peso normal: 18.5 - 24.9</Text>
                 </View>
                 
-                <View style={styles.legendItem}>
-                  <View style={[styles.legendDot, { backgroundColor: colors.accent.yellow }]} />
-                  <Text style={styles.legendText}>Sobrepeso: 25.0 - 29.9</Text>
+                <View style={estilos.itemLegenda}>
+                  <View style={[estilos.pontoLegenda, { backgroundColor: colors.accent.yellow }]} />
+                  <Text style={estilos.textoLegenda}>Sobrepeso: 25.0 - 29.9</Text>
                 </View>
                 
-                <View style={styles.legendItem}>
-                  <View style={[styles.legendDot, { backgroundColor: colors.accent.orange }]} />
-                  <Text style={styles.legendText}>Obesidade I: 30.0 - 34.9</Text>
+                <View style={estilos.itemLegenda}>
+                  <View style={[estilos.pontoLegenda, { backgroundColor: colors.accent.orange }]} />
+                  <Text style={estilos.textoLegenda}>Obesidade I: 30.0 - 34.9</Text>
                 </View>
                 
-                <View style={styles.legendItem}>
-                  <View style={[styles.legendDot, { backgroundColor: colors.accent.red }]} />
-                  <Text style={styles.legendText}>Obesidade II: 35.0 - 39.9</Text>
+                <View style={estilos.itemLegenda}>
+                  <View style={[estilos.pontoLegenda, { backgroundColor: colors.accent.red }]} />
+                  <Text style={estilos.textoLegenda}>Obesidade II: 35.0 - 39.9</Text>
                 </View>
                 
-                <View style={styles.legendItem}>
-                  <View style={[styles.legendDot, { backgroundColor: colors.error }]} />
-                  <Text style={styles.legendText}>Obesidade III: ≥ 40.0</Text>
+                <View style={estilos.itemLegenda}>
+                  <View style={[estilos.pontoLegenda, { backgroundColor: colors.error }]} />
+                  <Text style={estilos.textoLegenda}>Obesidade III: ≥ 40.0</Text>
                 </View>
               </View>
             </View>
@@ -322,18 +322,18 @@ export default function TelaIMC() {
         {/* Botão limpar */}
         <TouchableOpacity
           onPress={limparDados}
-          style={[styles.clearButton, calculando ? styles.buttonDisabled : null]}
+          style={[estilos.botaoLimpar, calculando ? estilos.botaoDesabilitado : null]}
           disabled={calculando}
           activeOpacity={0.8}
         >
-          <Text style={styles.clearButtonText}>Limpar Dados</Text>
+          <Text style={estilos.textoBotaoLimpar}>Limpar Dados</Text>
         </TouchableOpacity>
       </ScrollView>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const estilos = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.neutral[50],
@@ -349,32 +349,32 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.xl,
   },
   
-  header: {
+  cabecalho: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: spacing.xl,
   },
   
-  titleContainer: {
+  containerTitulo: {
     flex: 1,
   },
   
-  title: {
+  titulo: {
     fontSize: typography.fontSize['3xl'],
     fontWeight: typography.fontWeight.extrabold,
     color: colors.primary[600],
     marginBottom: spacing.xs,
   },
   
-  subtitle: {
+  subtitulo: {
     fontSize: typography.fontSize.lg,
     fontWeight: typography.fontWeight.medium,
     color: colors.neutral[600],
     lineHeight: typography.lineHeight.normal,
   },
   
-  iconContainer: {
+  containerIcone: {
     width: 80,
     height: 80,
     borderRadius: 40,
@@ -384,27 +384,27 @@ const styles = StyleSheet.create({
     ...shadows.lg,
   },
   
-  icon: {
+  icone: {
     fontSize: 40,
   },
   
-  formContainer: {
+  containerFormulario: {
     gap: spacing.lg,
     marginBottom: spacing.xl,
   },
   
-  inputGroup: {
+  grupoEntrada: {
     gap: spacing.sm,
   },
   
-  inputLabel: {
+  rotuloEntrada: {
     fontSize: typography.fontSize.base,
     fontWeight: typography.fontWeight.semibold,
     color: colors.neutral[700],
     marginLeft: spacing.sm,
   },
   
-  inputHint: {
+  dicaEntrada: {
     fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.medium,
     color: colors.neutral[500],
@@ -413,7 +413,7 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
   },
   
-  errorText: {
+  textoErro: {
     fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.medium,
     color: colors.error,
@@ -422,7 +422,7 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
   },
   
-  input: {
+  entrada: {
     backgroundColor: colors.neutral[50],
     borderRadius: borders.radius.lg,
     paddingVertical: spacing.md,
@@ -434,13 +434,13 @@ const styles = StyleSheet.create({
     ...shadows.sm,
   },
   
-  inputFocused: {
+  entradaFocada: {
     borderColor: colors.primary[500],
     borderWidth: borders.width.base,
     ...shadows.base,
   },
   
-  calculateButton: {
+  botaoCalcular: {
     backgroundColor: colors.primary[600],
     borderRadius: borders.radius.xl,
     paddingVertical: spacing.lg,
@@ -452,25 +452,25 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   
-  buttonDisabled: {
+  botaoDesabilitado: {
     backgroundColor: colors.neutral[400],
     ...shadows.sm,
   },
   
-  buttonWithLoading: {
+  botaoComCarregamento: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
   },
   
-  buttonText: {
+  textoBotao: {
     fontSize: typography.fontSize.lg,
     fontWeight: typography.fontWeight.bold,
     color: colors.neutral[50],
     letterSpacing: 0.5,
   },
   
-  resultContainer: {
+  containerResultado: {
     backgroundColor: colors.neutral[50],
     borderRadius: borders.radius.xl,
     padding: spacing.xl,
@@ -480,26 +480,26 @@ const styles = StyleSheet.create({
     borderColor: colors.neutral[200],
   },
   
-  resultHeader: {
+  cabecalhoResultado: {
     alignItems: 'center',
     marginBottom: spacing.lg,
   },
   
-  resultTitle: {
+  tituloResultado: {
     fontSize: typography.fontSize.lg,
     fontWeight: typography.fontWeight.semibold,
     color: colors.neutral[600],
     marginBottom: spacing.sm,
   },
   
-  resultValue: {
+  valorResultado: {
     fontSize: typography.fontSize['4xl'],
     fontWeight: typography.fontWeight.extrabold,
     color: colors.primary[600],
     lineHeight: typography.lineHeight.tight,
   },
   
-  categoryContainer: {
+  containerCategoria: {
     alignItems: 'center',
     marginBottom: spacing.lg,
     paddingVertical: spacing.md,
@@ -507,26 +507,50 @@ const styles = StyleSheet.create({
     borderRadius: borders.radius.lg,
   },
   
-  categoryText: {
+  textoCategoria: {
     fontSize: typography.fontSize.xl,
     fontWeight: typography.fontWeight.bold,
     textAlign: 'center',
   },
   
-  categorySubtext: {
+  subtextoCategoria: {
     fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.medium,
     color: colors.neutral[600],
     marginTop: spacing.xs,
   },
   
-  legendContainer: {
+  containerInterpretacao: {
+    marginBottom: spacing.lg,
+    paddingVertical: spacing.md,
+    backgroundColor: colors.neutral[100],
+    borderRadius: borders.radius.lg,
+    padding: spacing.md,
+  },
+  
+  tituloInterpretacao: {
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.neutral[800],
+    marginBottom: spacing.sm,
+    textAlign: 'center',
+  },
+  
+  textoInterpretacao: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.neutral[700],
+    lineHeight: typography.lineHeight.normal,
+    textAlign: 'justify',
+  },
+  
+  containerLegenda: {
     borderTopWidth: borders.width.thin,
     borderTopColor: colors.neutral[200],
     paddingTop: spacing.lg,
   },
   
-  legendTitle: {
+  tituloLegenda: {
     fontSize: typography.fontSize.lg,
     fontWeight: typography.fontWeight.semibold,
     color: colors.neutral[800],
@@ -534,30 +558,30 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   
-  legendItems: {
+  itensLegenda: {
     gap: spacing.sm,
   },
   
-  legendItem: {
+  itemLegenda: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
   },
   
-  legendDot: {
+  pontoLegenda: {
     width: 12,
     height: 12,
     borderRadius: 6,
   },
   
-  legendText: {
+  textoLegenda: {
     fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.medium,
     color: colors.neutral[700],
     flex: 1,
   },
   
-  clearButton: {
+  botaoLimpar: {
     backgroundColor: colors.neutral[200],
     borderRadius: borders.radius.lg,
     paddingVertical: spacing.md,
@@ -567,7 +591,7 @@ const styles = StyleSheet.create({
     ...shadows.sm,
   },
   
-  clearButtonText: {
+  textoBotaoLimpar: {
     fontSize: typography.fontSize.base,
     fontWeight: typography.fontWeight.semibold,
     color: colors.neutral[700],

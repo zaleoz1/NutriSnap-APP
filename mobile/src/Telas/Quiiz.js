@@ -6,14 +6,14 @@ import { colors, typography, spacing, borders, shadows } from '../styles/globalS
 
 const { width, height } = Dimensions.get('window');
 
-export default function OnboardingScreen({ navigation }) {
-  const [currentStep, setCurrentStep] = useState(0);
-  const [answers, setAnswers] = useState({});
-  const [textInputs, setTextInputs] = useState({});
+export default function TelaQuiz({ navigation }) {
+  const [passoAtual, setPassoAtual] = useState(0);
+  const [respostas, setRespostas] = useState({});
+  const [entradasTexto, setEntradasTexto] = useState({});
 
 
 
-  const steps = [
+  const passos = [
     {
       id: 'goals',
       title: 'Metas',
@@ -104,70 +104,70 @@ export default function OnboardingScreen({ navigation }) {
     }
   ];
 
-  const currentStepData = steps[currentStep];
+  const dadosPassoAtual = passos[passoAtual];
 
   useEffect(() => {
-    if (currentStepData.options?.length > 0) {
+    if (dadosPassoAtual.options?.length > 0) {
       // Se já temos respostas para este passo, não sobrescrever
-      if (!answers[currentStepData.id]) {
-        const initialOptions = currentStepData.options.map(option => ({
+      if (!respostas[dadosPassoAtual.id]) {
+        const opcoesIniciais = dadosPassoAtual.options.map(option => ({
           ...option,
           selected: false
         }));
-        setAnswers(prev => ({
+        setRespostas(prev => ({
           ...prev,
-          [currentStepData.id]: initialOptions
+          [dadosPassoAtual.id]: opcoesIniciais
         }));
       }
     }
-  }, [currentStep, currentStepData.id, currentStepData.options, answers]);
+  }, [passoAtual, dadosPassoAtual.id, dadosPassoAtual.options, respostas]);
 
-  const handleOptionSelect = (optionId) => {
-    const updatedOptions = currentStepData.options.map(option => ({
+  const selecionarOpcao = (optionId) => {
+    const opcoesAtualizadas = dadosPassoAtual.options.map(option => ({
       ...option,
-      selected: currentStepData.multiSelect 
+      selected: dadosPassoAtual.multiSelect 
         ? option.id === optionId ? !option.selected : option.selected
         : option.id === optionId
     }));
     
-    setAnswers(prev => {
-      const newAnswers = {
+    setRespostas(prev => {
+      const novasRespostas = {
         ...prev,
-        [currentStepData.id]: updatedOptions
+        [dadosPassoAtual.id]: opcoesAtualizadas
       };
-      return newAnswers;
+      return novasRespostas;
     });
   };
 
-  const handleTextInputChange = (field, value) => {
-    setTextInputs(prev => ({ ...prev, [field]: value }));
+  const alterarEntradaTexto = (field, value) => {
+    setEntradasTexto(prev => ({ ...prev, [field]: value }));
   };
 
-  const canProceed = () => {
+  const podeProsseguir = () => {
     // Se for o último passo, sempre permitir prosseguir
-    if (currentStep === steps.length - 1) {
+    if (passoAtual === passos.length - 1) {
       return true;
     }
     
-    if (currentStepData.options?.length > 0) {
-      const currentAnswers = answers[currentStepData.id];
-      const canProceedResult = currentAnswers?.some(option => option.selected);
-      return canProceedResult;
+    if (dadosPassoAtual.options?.length > 0) {
+      const respostasAtuais = respostas[dadosPassoAtual.id];
+      const podeProsseguirResultado = respostasAtuais?.some(option => option.selected);
+      return podeProsseguirResultado;
     }
     
-    if (currentStepData.additionalFields) {
-      const canProceedResult = currentStepData.additionalFields.every(field => 
-        textInputs[field]?.trim().length > 0
+    if (dadosPassoAtual.additionalFields) {
+      const podeProsseguirResultado = dadosPassoAtual.additionalFields.every(field => 
+        entradasTexto[field]?.trim().length > 0
       );
-      return canProceedResult;
+      return podeProsseguirResultado;
     }
     
     return true;
   };
 
-  const handleNext = () => {
-    if (currentStep < steps.length - 1) {
-      setCurrentStep(currentStep + 1);
+  const proximoPasso = () => {
+    if (passoAtual < passos.length - 1) {
+      setPassoAtual(passoAtual + 1);
     } else {
       try {
         navigation.replace('Principal');
@@ -178,24 +178,24 @@ export default function OnboardingScreen({ navigation }) {
     }
   };
 
-  const handleBack = () => {
-    if (currentStep > 0) {
-      setCurrentStep(currentStep - 1);
+  const passoAnterior = () => {
+    if (passoAtual > 0) {
+      setPassoAtual(passoAtual - 1);
     } else {
       navigation.goBack();
     }
   };
 
-  const renderProgressBar = () => (
-    <View style={styles.progressContainer}>
-      <Text style={styles.progressTitle}>{currentStepData.title}</Text>
-      <View style={styles.progressBar}>
-        {steps.map((_, index) => (
+  const renderizarBarraProgresso = () => (
+    <View style={styles.containerProgresso}>
+      <Text style={styles.tituloProgresso}>{dadosPassoAtual.title}</Text>
+      <View style={styles.barraProgresso}>
+        {passos.map((_, index) => (
           <View
             key={index}
             style={[
-              styles.progressSegment,
-              index <= currentStep && styles.progressSegmentActive
+              styles.segmentoProgresso,
+              index <= passoAtual && styles.segmentoProgressoAtivo
             ]}
           />
         ))}
@@ -203,47 +203,47 @@ export default function OnboardingScreen({ navigation }) {
     </View>
   );
 
-  const renderOptions = () => {
-    if (!currentStepData.options?.length) return null;
+  const renderizarOpcoes = () => {
+    if (!dadosPassoAtual.options?.length) return null;
 
-    const currentAnswers = answers[currentStepData.id] || currentStepData.options;
+    const respostasAtuais = respostas[dadosPassoAtual.id] || dadosPassoAtual.options;
     
     return (
-      <View style={styles.optionsContainer}>
-        {currentAnswers.map((option) => (
+      <View style={styles.containerOpcoes}>
+        {respostasAtuais.map((option) => (
           <TouchableOpacity
             key={option.id}
             style={[
-              styles.optionButton,
-              option.selected && styles.optionButtonSelected
+              styles.botaoOpcao,
+              option.selected && styles.botaoOpcaoSelecionado
             ]}
-            onPress={() => handleOptionSelect(option.id)}
+            onPress={() => selecionarOpcao(option.id)}
             activeOpacity={0.8}
           >
-            <View style={styles.optionContent}>
+            <View style={styles.conteudoOpcao}>
               <Text style={[
-                styles.optionText,
-                option.selected && styles.optionTextSelected
+                styles.textoOpcao,
+                option.selected && styles.textoOpcaoSelecionado
               ]}>
                 {option.text}
               </Text>
               {option.description && (
                 <Text style={[
-                  styles.optionDescription,
-                  option.selected && styles.optionDescriptionSelected
+                  styles.descricaoOpcao,
+                  option.selected && styles.descricaoOpcaoSelecionada
                 ]}>
                   {option.description}
                 </Text>
               )}
               {option.recommended && (
-                <Text style={styles.recommendedTag}>(Recomendado)</Text>
+                <Text style={styles.tagRecomendado}>(Recomendado)</Text>
               )}
             </View>
             <View style={[
-              styles.optionIndicator,
-              option.selected && styles.optionIndicatorSelected
+              styles.indicadorOpcao,
+              option.selected && styles.indicadorOpcaoSelecionado
             ]}>
-              {option.selected && <Text style={styles.checkmark}>✓</Text>}
+              {option.selected && <Text style={styles.marcaVerificacao}>✓</Text>}
             </View>
           </TouchableOpacity>
         ))}
@@ -251,10 +251,10 @@ export default function OnboardingScreen({ navigation }) {
     );
   };
 
-  const renderTextInputs = () => {
-    if (!currentStepData.additionalFields) return null;
+  const renderizarEntradasTexto = () => {
+    if (!dadosPassoAtual.additionalFields) return null;
 
-    const fieldLabels = {
+    const rotulosCampos = {
       idade: 'Idade',
       altura: 'Altura (cm)',
       peso_atual: 'Peso Atual (kg)',
@@ -269,14 +269,14 @@ export default function OnboardingScreen({ navigation }) {
     };
 
     return (
-      <View style={styles.textInputsContainer}>
-        {currentStepData.additionalFields.map((field) => (
-          <View key={field} style={styles.inputContainer}>
-            <Text style={styles.inputLabel}>{fieldLabels[field] || field}</Text>
+      <View style={styles.containerEntradasTexto}>
+        {dadosPassoAtual.additionalFields.map((field) => (
+          <View key={field} style={styles.containerEntrada}>
+            <Text style={styles.rotuloEntrada}>{rotulosCampos[field] || field}</Text>
             <TextInput
-              style={styles.textInput}
-              value={textInputs[field] || ''}
-              onChangeText={(value) => handleTextInputChange(field, value)}
+              style={styles.entradaTexto}
+              value={entradasTexto[field] || ''}
+              onChangeText={(value) => alterarEntradaTexto(field, value)}
               placeholder={`Digite sua ${placeholders[field] || field}`}
               placeholderTextColor={colors.neutral[500]}
               keyboardType={['idade', 'altura', 'peso_atual', 'peso_meta'].includes(field) ? 'numeric' : 'default'}
@@ -288,45 +288,45 @@ export default function OnboardingScreen({ navigation }) {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={styles.areaSegura} edges={['top', 'left', 'right']}>
       <StatusBar barStyle="light-content" backgroundColor={colors.neutral[900]} />
       
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <View style={styles.container}>
-          <View style={styles.contentContainer}>
-            {renderProgressBar()}
-            <View style={styles.questionContainer}>
-              <Text style={styles.questionText}>{currentStepData.question}</Text>
-              {currentStepData.instruction && (
-                <Text style={styles.instructionText}>{currentStepData.instruction}</Text>
+          <View style={styles.containerConteudo}>
+            {renderizarBarraProgresso()}
+            <View style={styles.containerPergunta}>
+              <Text style={styles.textoPergunta}>{dadosPassoAtual.question}</Text>
+              {dadosPassoAtual.instruction && (
+                <Text style={styles.textoInstrucao}>{dadosPassoAtual.instruction}</Text>
               )}
             </View>
-            <View style={styles.mainContent}>
-              {renderOptions()}
-              {renderTextInputs()}
+            <View style={styles.conteudoPrincipal}>
+              {renderizarOpcoes()}
+              {renderizarEntradasTexto()}
             </View>
           </View>
 
-          <View style={styles.navigationContainer}>
+          <View style={styles.containerNavegacao}>
             <TouchableOpacity
-              onPress={handleBack}
-              style={styles.backButton}
+              onPress={passoAnterior}
+              style={styles.botaoVoltar}
               activeOpacity={0.8}
             >
-              <Text style={styles.backButtonText}>←</Text>
+              <Text style={styles.textoBotaoVoltar}>←</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              onPress={handleNext}
+              onPress={proximoPasso}
               style={[
-                styles.nextButton,
-                !canProceed() && styles.nextButtonDisabled
+                styles.botaoProximo,
+                !podeProsseguir() && styles.botaoProximoDesabilitado
               ]}
-              disabled={!canProceed()}
+              disabled={!podeProsseguir()}
               activeOpacity={0.8}
             >
-              <Text style={styles.nextButtonText}>
-                {currentStep === steps.length - 1 ? 'Finalizar' : 'Próximo'}
+              <Text style={styles.textoBotaoProximo}>
+                {passoAtual === passos.length - 1 ? 'Finalizar' : 'Próximo'}
               </Text>
             </TouchableOpacity>
           </View>
@@ -337,7 +337,7 @@ export default function OnboardingScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
+  areaSegura: {
     flex: 1,
     backgroundColor: colors.neutral[900],
   },
@@ -347,21 +347,21 @@ const styles = StyleSheet.create({
     backgroundColor: colors.neutral[900],
   },
   
-  contentContainer: {
+  containerConteudo: {
     flex: 1,
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.md,
     paddingBottom: spacing.xl,
   },
   
-  progressContainer: {
+  containerProgresso: {
     alignItems: 'center',
     marginBottom: spacing.lg,
     marginTop: spacing.sm,
     paddingHorizontal: spacing.sm,
   },
   
-  progressTitle: {
+  tituloProgresso: {
     fontSize: Math.min(typography.fontSize.xl, Math.max(18, width * 0.055)),
     fontWeight: typography.fontWeight.bold,
     color: colors.neutral[50],
@@ -369,30 +369,30 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   
-  progressBar: {
+  barraProgresso: {
     flexDirection: 'row',
     gap: Math.min(spacing.xs, width * 0.02),
     justifyContent: 'center',
     flexWrap: 'wrap',
   },
   
-  progressSegment: {
+  segmentoProgresso: {
     width: Math.min(40, Math.max(30, width * 0.08)),
     height: 4,
     backgroundColor: colors.neutral[700],
     borderRadius: 2,
   },
   
-  progressSegmentActive: {
+  segmentoProgressoAtivo: {
     backgroundColor: colors.success,
   },
   
-  questionContainer: {
+  containerPergunta: {
     marginBottom: spacing.lg,
     paddingHorizontal: spacing.sm,
   },
   
-  questionText: {
+  textoPergunta: {
     fontSize: Math.min(typography.fontSize['2xl'], Math.max(20, width * 0.06)),
     fontWeight: typography.fontWeight.bold,
     color: colors.neutral[50],
@@ -401,7 +401,7 @@ const styles = StyleSheet.create({
     lineHeight: typography.lineHeight.relaxed,
   },
   
-  instructionText: {
+  textoInstrucao: {
     fontSize: Math.min(typography.fontSize.base, Math.max(16, width * 0.04)),
     fontWeight: typography.fontWeight.medium,
     color: colors.neutral[400],
@@ -409,18 +409,18 @@ const styles = StyleSheet.create({
     lineHeight: typography.lineHeight.normal,
   },
   
-  mainContent: {
+  conteudoPrincipal: {
     flex: 1,
     justifyContent: 'flex-start',
   },
   
-  optionsContainer: {
+  containerOpcoes: {
     gap: spacing.md,
     paddingHorizontal: spacing.sm,
     marginBottom: spacing.lg,
   },
   
-  optionButton: {
+  botaoOpcao: {
     backgroundColor: colors.neutral[800],
     borderRadius: borders.radius.lg,
     padding: Math.min(spacing.lg, width * 0.04),
@@ -431,45 +431,45 @@ const styles = StyleSheet.create({
     minHeight: Math.max(60, height * 0.07),
   },
   
-  optionButtonSelected: {
+  botaoOpcaoSelecionado: {
     backgroundColor: colors.primary[600],
   },
   
-  optionContent: {
+  conteudoOpcao: {
     flex: 1,
     paddingRight: spacing.sm,
   },
   
-  optionText: {
+  textoOpcao: {
     fontSize: Math.min(typography.fontSize.lg, Math.max(16, width * 0.045)),
     fontWeight: typography.fontWeight.semibold,
     color: colors.neutral[50],
     marginBottom: spacing.xs,
   },
   
-  optionTextSelected: {
+  textoOpcaoSelecionado: {
     color: colors.neutral[50],
   },
   
-  optionDescription: {
+  descricaoOpcao: {
     fontSize: Math.min(typography.fontSize.sm, Math.max(14, width * 0.035)),
     fontWeight: typography.fontWeight.medium,
     color: colors.neutral[400],
     lineHeight: typography.lineHeight.normal,
   },
   
-  optionDescriptionSelected: {
+  descricaoOpcaoSelecionada: {
     color: colors.neutral[200],
   },
   
-  recommendedTag: {
+  tagRecomendado: {
     fontSize: Math.min(typography.fontSize.sm, Math.max(14, width * 0.035)),
     fontWeight: typography.fontWeight.medium,
     color: colors.accent.blue,
     marginTop: spacing.xs,
   },
   
-  optionIndicator: {
+  indicadorOpcao: {
     width: Math.max(24, width * 0.06),
     height: Math.max(24, width * 0.06),
     borderRadius: Math.max(12, width * 0.03),
@@ -477,22 +477,22 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   
-  optionIndicatorSelected: {
+  indicadorOpcaoSelecionado: {
     backgroundColor: colors.primary[600],
   },
   
-  checkmark: {
+  marcaVerificacao: {
     color: colors.neutral[50],
     fontSize: Math.max(typography.fontSize.sm, width * 0.035),
     fontWeight: typography.fontWeight.bold,
   },
   
-  textInputsContainer: {
+  containerEntradasTexto: {
     gap: spacing.md,
     paddingHorizontal: spacing.sm,
   },
 
-  inputContainer: {
+  containerEntrada: {
     backgroundColor: colors.neutral[800],
     borderRadius: borders.radius.md,
     padding: Math.min(spacing.md, width * 0.035),
@@ -500,14 +500,14 @@ const styles = StyleSheet.create({
     minHeight: Math.max(70, height * 0.08),
   },
 
-  inputLabel: {
+  rotuloEntrada: {
     fontSize: Math.min(typography.fontSize.sm, Math.max(14, width * 0.035)),
     fontWeight: typography.fontWeight.medium,
     color: colors.neutral[400],
     marginBottom: spacing.xs,
   },
 
-  textInput: {
+  entradaTexto: {
     fontSize: Math.min(typography.fontSize.base, Math.max(16, width * 0.04)),
     color: colors.neutral[50],
     paddingVertical: spacing.sm,
@@ -515,7 +515,7 @@ const styles = StyleSheet.create({
     minHeight: Math.max(40, height * 0.05),
   },
   
-  navigationContainer: {
+  containerNavegacao: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -524,7 +524,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.neutral[900],
   },
   
-  backButton: {
+  botaoVoltar: {
     width: Math.max(40, Math.min(width * 0.12, 50)),
     height: Math.max(40, Math.min(width * 0.12, 50)),
     borderRadius: Math.max(20, Math.min(width * 0.06, 25)),
@@ -534,13 +534,13 @@ const styles = StyleSheet.create({
     ...shadows.base,
   },
   
-  backButtonText: {
+  textoBotaoVoltar: {
     fontSize: Math.min(typography.fontSize.xl, Math.max(18, width * 0.06)),
     fontWeight: typography.fontWeight.bold,
     color: colors.neutral[50],
   },
   
-  nextButton: {
+  botaoProximo: {
     backgroundColor: colors.primary[600],
     borderRadius: borders.radius.xl,
     paddingVertical: Math.min(spacing.md, height * 0.015),
@@ -551,11 +551,11 @@ const styles = StyleSheet.create({
     ...shadows.lg,
   },
   
-  nextButtonDisabled: {
+  botaoProximoDesabilitado: {
     backgroundColor: colors.neutral[700],
   },
   
-  nextButtonText: {
+  textoBotaoProximo: {
     fontSize: Math.min(typography.fontSize.lg, Math.max(16, width * 0.045)),
     fontWeight: typography.fontWeight.bold,
     color: colors.neutral[50],

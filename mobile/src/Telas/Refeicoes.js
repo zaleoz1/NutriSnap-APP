@@ -20,11 +20,11 @@ export default function TelaRefeicoes() {
   const [carboidratosManual, setCarboidratosManual] = useState('');
   const [gordurasManual, setGordurasManual] = useState('');
 
-  function recalcular(itens) {
+  function recalcularTotal(itens) {
     setTotal(itens.reduce((soma, item) => soma + (item.calorias||0), 0));
   }
 
-  async function escolherImagem() {
+  async function capturarComCamera() {
     const resultado = await ImagePicker.launchCameraAsync({ base64: true, quality: 0.6 });
     if (!resultado.canceled) {
       const asset = resultado.assets[0];
@@ -33,14 +33,14 @@ export default function TelaRefeicoes() {
       try {
         const dados = await buscarApi('/api/analise', { method:'POST', token, body:{ dadosImagemBase64: asset.base64 } });
         setItens(dados.itens || []);
-        recalcular(dados.itens || []);
+        recalcularTotal(dados.itens || []);
       } catch (erro) {
         Alert.alert('Erro', erro.message);
       }
     }
   }
 
-  async function escolherDaGaleria() {
+  async function selecionarDaGaleria() {
     const resultado = await ImagePicker.launchImageLibraryAsync({ base64: true, quality: 0.6 });
     if (!resultado.canceled) {
       const asset = resultado.assets[0];
@@ -49,18 +49,18 @@ export default function TelaRefeicoes() {
       try {
         const dados = await buscarApi('/api/analise', { method:'POST', token, body:{ dadosImagemBase64: asset.base64 } });
         setItens(dados.itens || []);
-        recalcular(dados.itens || []);
+        recalcularTotal(dados.itens || []);
       } catch (erro) {
         Alert.alert('Erro', erro.message);
       }
     }
   }
 
-  function abrirModal() {
+  function abrirModalAdicao() {
     setModalVisivel(true);
   }
 
-  function fecharModal() {
+  function fecharModalAdicao() {
     setModalVisivel(false);
     // Limpar campos
     setAlimentoManual('');
@@ -70,7 +70,7 @@ export default function TelaRefeicoes() {
     setGordurasManual('');
   }
 
-  function adicionarAlimentoManual() {
+  function adicionarAlimentoManualmente() {
     if (!alimentoManual.trim()) {
       Alert.alert('Erro', 'Por favor, insira o nome do alimento');
       return;
@@ -91,8 +91,8 @@ export default function TelaRefeicoes() {
 
     const novosItens = [...itens, novoAlimento];
     setItens(novosItens);
-    recalcular(novosItens);
-    fecharModal();
+    recalcularTotal(novosItens);
+    fecharModalAdicao();
     
     Alert.alert('Sucesso', 'Alimento adicionado manualmente!');
   }
@@ -107,26 +107,26 @@ export default function TelaRefeicoes() {
     }
   }
 
-  function renderizarItem({ item, index }) {
+  function renderizarItemAlimento({ item, index }) {
     return (
-      <View style={styles.foodItem}>
-        <View style={styles.foodHeader}>
-          <Text style={styles.foodName}>{item.nome}</Text>
-          <Text style={styles.foodCalories}>{Math.round(item.calorias)} kcal</Text>
+      <View style={styles.itemAlimento}>
+        <View style={styles.cabecalhoAlimento}>
+          <Text style={styles.nomeAlimento}>{item.nome}</Text>
+          <Text style={styles.caloriasAlimento}>{Math.round(item.calorias)} kcal</Text>
         </View>
         
-        <View style={styles.nutritionInfo}>
-          <View style={styles.nutritionItem}>
-            <Text style={styles.nutritionLabel}>Proteínas</Text>
-            <Text style={styles.nutritionValue}>{item.proteinas || 0}g</Text>
+        <View style={styles.informacoesNutricionais}>
+          <View style={styles.itemNutricional}>
+            <Text style={styles.rotuloNutricional}>Proteínas</Text>
+            <Text style={styles.valorNutricional}>{item.proteinas || 0}g</Text>
           </View>
-          <View style={styles.nutritionItem}>
-            <Text style={styles.nutritionLabel}>Carboidratos</Text>
-            <Text style={styles.nutritionValue}>{item.carboidratos || 0}g</Text>
+          <View style={styles.itemNutricional}>
+            <Text style={styles.rotuloNutricional}>Carboidratos</Text>
+            <Text style={styles.valorNutricional}>{item.carboidratos || 0}g</Text>
           </View>
-          <View style={styles.nutritionItem}>
-            <Text style={styles.nutritionLabel}>Gorduras</Text>
-            <Text style={styles.nutritionValue}>{item.gorduras || 0}g</Text>
+          <View style={styles.itemNutricional}>
+            <Text style={styles.rotuloNutricional}>Gorduras</Text>
+            <Text style={styles.valorNutricional}>{item.gorduras || 0}g</Text>
           </View>
         </View>
       </View>
@@ -140,73 +140,73 @@ export default function TelaRefeicoes() {
       <ScrollView 
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={styles.conteudoScroll}
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <View style={styles.titleContainer}>
-            <Text style={styles.title}>Análise de Refeições</Text>
-            <Text style={styles.subtitle}>Fotografe sua refeição ou adicione manualmente</Text>
+        {/* Cabeçalho */}
+        <View style={styles.cabecalho}>
+          <View style={styles.containerTitulo}>
+            <Text style={styles.titulo}>Análise de Refeições</Text>
+            <Text style={styles.subtitulo}>Fotografe sua refeição ou adicione manualmente</Text>
           </View>
-          <View style={styles.iconContainer}>
+          <View style={styles.containerIcone}>
             <MaterialIcons name="camera-alt" size={40} color={colors.primary[600]} />
           </View>
         </View>
 
         {/* Botões de captura */}
-        <View style={styles.captureButtonsContainer}>
+        <View style={styles.containerBotoesCaptura}>
           <TouchableOpacity 
-            onPress={escolherImagem} 
-            style={styles.captureButton}
+            onPress={capturarComCamera} 
+            style={styles.botaoCaptura}
             activeOpacity={0.8}
           >
-            <View style={styles.captureButtonContent}>
+            <View style={styles.conteudoBotaoCaptura}>
               <MaterialIcons name="camera-alt" size={28} color={colors.neutral[50]} />
-              <Text style={styles.captureText}>Câmera</Text>
+              <Text style={styles.textoCaptura}>Câmera</Text>
             </View>
           </TouchableOpacity>
 
           <TouchableOpacity 
-            onPress={escolherDaGaleria} 
-            style={[styles.captureButton, styles.galleryButton]}
+            onPress={selecionarDaGaleria} 
+            style={[styles.botaoCaptura, styles.botaoGaleria]}
             activeOpacity={0.8}
           >
-            <View style={styles.captureButtonContent}>
+            <View style={styles.conteudoBotaoCaptura}>
               <MaterialIcons name="photo-library" size={28} color={colors.neutral[50]} />
-              <Text style={styles.captureText}>Galeria</Text>
+              <Text style={styles.textoCaptura}>Galeria</Text>
             </View>
           </TouchableOpacity>
 
           <TouchableOpacity 
-            onPress={abrirModal} 
-            style={[styles.captureButton, styles.manualButton]}
+            onPress={abrirModalAdicao} 
+            style={[styles.botaoCaptura, styles.botaoManual]}
             activeOpacity={0.8}
           >
-            <View style={styles.captureButtonContent}>
+            <View style={styles.conteudoBotaoCaptura}>
               <MaterialIcons name="edit" size={28} color={colors.neutral[50]} />
-              <Text style={styles.captureText}>Manual</Text>
+              <Text style={styles.textoCaptura}>Manual</Text>
             </View>
           </TouchableOpacity>
         </View>
 
         {/* Imagem capturada */}
         {imagem && (
-          <View style={styles.imageContainer}>
-            <Image source={{ uri: imagem }} style={styles.foodImage} />
-            <View style={styles.imageOverlay}>
-              <Text style={styles.imageText}>Refeição Capturada</Text>
+          <View style={styles.containerImagem}>
+            <Image source={{ uri: imagem }} style={styles.imagemAlimento} />
+            <View style={styles.sobreposicaoImagem}>
+              <Text style={styles.textoImagem}>Refeição Capturada</Text>
             </View>
           </View>
         )}
 
         {/* Lista de itens */}
         {itens.length > 0 && (
-          <View style={styles.itemsContainer}>
-            <Text style={styles.itemsTitle}>Itens Identificados</Text>
+          <View style={styles.containerItens}>
+            <Text style={styles.tituloItens}>Itens Identificados</Text>
             <FlatList
               data={itens}
               keyExtractor={(item, idx) => idx.toString()}
-              renderItem={renderizarItem}
+              renderItem={renderizarItemAlimento}
               scrollEnabled={false}
               showsVerticalScrollIndicator={false}
             />
@@ -215,28 +215,28 @@ export default function TelaRefeicoes() {
 
         {/* Total de calorias */}
         {itens.length > 0 && (
-          <View style={styles.totalContainer}>
-            <View style={styles.totalHeader}>
-              <Text style={styles.totalTitle}>Total da Refeição</Text>
-              <Text style={styles.totalCalories}>{Math.round(total)} kcal</Text>
+          <View style={styles.containerTotal}>
+            <View style={styles.cabecalhoTotal}>
+              <Text style={styles.tituloTotal}>Total da Refeição</Text>
+              <Text style={styles.caloriasTotais}>{Math.round(total)} kcal</Text>
             </View>
             
-            <View style={styles.totalBreakdown}>
-              <View style={styles.totalItem}>
-                <Text style={styles.totalLabel}>Proteínas</Text>
-                <Text style={styles.totalValue}>
+            <View style={styles.detalhamentoTotal}>
+              <View style={styles.itemTotal}>
+                <Text style={styles.rotuloTotal}>Proteínas</Text>
+                <Text style={styles.valorTotal}>
                   {Math.round(itens.reduce((soma, item) => soma + (item.proteinas || 0), 0))}g
                 </Text>
               </View>
-              <View style={styles.totalItem}>
-                <Text style={styles.totalLabel}>Carboidratos</Text>
-                <Text style={styles.totalValue}>
+              <View style={styles.itemTotal}>
+                <Text style={styles.rotuloTotal}>Carboidratos</Text>
+                <Text style={styles.valorTotal}>
                   {Math.round(itens.reduce((soma, item) => soma + (item.carboidratos || 0), 0))}g
                 </Text>
               </View>
-              <View style={styles.totalItem}>
-                <Text style={styles.totalLabel}>Gorduras</Text>
-                <Text style={styles.totalValue}>
+              <View style={styles.itemTotal}>
+                <Text style={styles.rotuloTotal}>Gorduras</Text>
+                <Text style={styles.valorTotal}>
                   {Math.round(itens.reduce((soma, item) => soma + (item.gorduras || 0), 0))}g
                 </Text>
               </View>
@@ -246,13 +246,13 @@ export default function TelaRefeicoes() {
 
         {/* Botões de ação */}
         {itens.length > 0 && (
-          <View style={styles.actionButtons}>
+          <View style={styles.botoesAcao}>
             <TouchableOpacity 
               onPress={salvarRefeicao} 
-              style={styles.saveButton}
+              style={styles.botaoSalvar}
               activeOpacity={0.8}
             >
-              <Text style={styles.saveButtonText}>Salvar Refeição</Text>
+              <Text style={styles.textoBotaoSalvar}>Salvar Refeição</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -263,22 +263,22 @@ export default function TelaRefeicoes() {
         visible={modalVisivel}
         transparent={true}
         animationType="slide"
-        onRequestClose={fecharModal}
+        onRequestClose={fecharModalAdicao}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Adicionar Alimento Manualmente</Text>
-              <TouchableOpacity onPress={fecharModal} style={styles.closeButton}>
+        <View style={styles.sobreposicaoModal}>
+          <View style={styles.conteudoModal}>
+            <View style={styles.cabecalhoModal}>
+              <Text style={styles.tituloModal}>Adicionar Alimento Manualmente</Text>
+              <TouchableOpacity onPress={fecharModalAdicao} style={styles.botaoFechar}>
                 <Ionicons name="close" size={24} color={colors.neutral[400]} />
               </TouchableOpacity>
             </View>
             
-            <View style={styles.modalForm}>
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Nome do Alimento *</Text>
+            <View style={styles.formularioModal}>
+              <View style={styles.grupoInput}>
+                <Text style={styles.rotuloInput}>Nome do Alimento *</Text>
                 <TextInput
-                  style={styles.textInput}
+                  style={styles.campoTexto}
                   value={alimentoManual}
                   onChangeText={setAlimentoManual}
                   placeholder="Ex: Arroz Integral"
@@ -286,11 +286,11 @@ export default function TelaRefeicoes() {
                 />
               </View>
 
-              <View style={styles.inputRow}>
-                <View style={styles.inputGroup}>
-                  <Text style={styles.inputLabel}>Calorias *</Text>
+              <View style={styles.linhaInput}>
+                <View style={styles.grupoInput}>
+                  <Text style={styles.rotuloInput}>Calorias *</Text>
                   <TextInput
-                    style={styles.textInput}
+                    style={styles.campoTexto}
                     value={caloriasManual}
                     onChangeText={setCaloriasManual}
                     placeholder="Ex: 130"
@@ -299,10 +299,10 @@ export default function TelaRefeicoes() {
                   />
                 </View>
                 
-                <View style={styles.inputGroup}>
-                  <Text style={styles.inputLabel}>Proteínas (g)</Text>
+                <View style={styles.grupoInput}>
+                  <Text style={styles.rotuloInput}>Proteínas (g)</Text>
                   <TextInput
-                    style={styles.textInput}
+                    style={styles.campoTexto}
                     value={proteinasManual}
                     onChangeText={setProteinasManual}
                     placeholder="Ex: 2.7"
@@ -312,11 +312,11 @@ export default function TelaRefeicoes() {
                 </View>
               </View>
 
-              <View style={styles.inputRow}>
-                <View style={styles.inputGroup}>
-                  <Text style={styles.inputLabel}>Carboidratos (g)</Text>
+              <View style={styles.linhaInput}>
+                <View style={styles.grupoInput}>
+                  <Text style={styles.rotuloInput}>Carboidratos (g)</Text>
                   <TextInput
-                    style={styles.textInput}
+                    style={styles.campoTexto}
                     value={carboidratosManual}
                     onChangeText={setCarboidratosManual}
                     placeholder="Ex: 27"
@@ -325,10 +325,10 @@ export default function TelaRefeicoes() {
                   />
                 </View>
                 
-                <View style={styles.inputGroup}>
-                  <Text style={styles.inputLabel}>Gorduras (g)</Text>
+                <View style={styles.grupoInput}>
+                  <Text style={styles.rotuloInput}>Gorduras (g)</Text>
                   <TextInput
-                    style={styles.textInput}
+                    style={styles.campoTexto}
                     value={gordurasManual}
                     onChangeText={setGordurasManual}
                     placeholder="Ex: 0.9"
@@ -339,11 +339,11 @@ export default function TelaRefeicoes() {
               </View>
 
               <TouchableOpacity
-                onPress={adicionarAlimentoManual}
-                style={styles.addManualButton}
+                onPress={adicionarAlimentoManualmente}
+                style={styles.botaoAdicionarManual}
                 activeOpacity={0.8}
               >
-                <Text style={styles.addManualButtonText}>Adicionar Alimento</Text>
+                <Text style={styles.textoBotaoAdicionarManual}>Adicionar Alimento</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -363,38 +363,38 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   
-  scrollContent: {
+  conteudoScroll: {
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.lg,
     paddingBottom: spacing.xl,
   },
   
-  header: {
+  cabecalho: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: spacing.xl,
   },
   
-  titleContainer: {
+  containerTitulo: {
     flex: 1,
   },
   
-  title: {
+  titulo: {
     fontSize: typography.fontSize['3xl'],
     fontWeight: typography.fontWeight.extrabold,
     color: colors.neutral[900],
     marginBottom: spacing.xs,
   },
   
-  subtitle: {
+  subtitulo: {
     fontSize: typography.fontSize.base,
     fontWeight: typography.fontWeight.medium,
     color: colors.neutral[600],
     lineHeight: typography.lineHeight.normal,
   },
   
-  iconContainer: {
+  containerIcone: {
     width: 80,
     height: 80,
     borderRadius: 40,
@@ -404,11 +404,11 @@ const styles = StyleSheet.create({
     ...shadows.lg,
   },
   
-  icon: {
+  icone: {
     fontSize: 40,
   },
   
-  alertContainer: {
+  containerAlerta: {
     backgroundColor: colors.accent.yellow + '15',
     padding: spacing.md,
     borderRadius: borders.radius.lg,
@@ -417,7 +417,7 @@ const styles = StyleSheet.create({
     borderColor: colors.accent.yellow + '30',
   },
   
-  alertText: {
+  textoAlerta: {
     fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.medium,
     color: colors.accent.yellow + 'DD',
@@ -425,13 +425,13 @@ const styles = StyleSheet.create({
     lineHeight: typography.lineHeight.normal,
   },
   
-  captureButtonsContainer: {
+  containerBotoesCaptura: {
     flexDirection: 'row',
     gap: spacing.md,
     marginBottom: spacing.lg,
   },
   
-  captureButton: {
+  botaoCaptura: {
     flex: 1,
     backgroundColor: colors.primary[600],
     borderRadius: borders.radius.xl,
@@ -443,44 +443,44 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   
-  galleryButton: {
+  botaoGaleria: {
     backgroundColor: colors.accent.green,
   },
   
-  manualButton: {
+  botaoManual: {
     backgroundColor: colors.accent.purple,
   },
   
-  captureButtonContent: {
+  conteudoBotaoCaptura: {
     alignItems: 'center',
     gap: spacing.xs,
   },
   
-  captureIcon: {
+  iconeCaptura: {
     fontSize: 28,
   },
   
-  captureText: {
+  textoCaptura: {
     fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.bold,
     color: colors.neutral[50],
     letterSpacing: 0.5,
   },
   
-  imageContainer: {
+  containerImagem: {
     marginBottom: spacing.lg,
     borderRadius: borders.radius.lg,
     overflow: 'hidden',
     ...shadows.lg,
   },
   
-  foodImage: {
+  imagemAlimento: {
     width: '100%',
     height: 250,
     resizeMode: 'cover',
   },
   
-  imageOverlay: {
+  sobreposicaoImagem: {
     position: 'absolute',
     bottom: 0,
     left: 0,
@@ -489,25 +489,25 @@ const styles = StyleSheet.create({
     padding: spacing.md,
   },
   
-  imageText: {
+  textoImagem: {
     color: colors.neutral[50],
     fontSize: typography.fontSize.base,
     fontWeight: typography.fontWeight.semibold,
     textAlign: 'center',
   },
   
-  itemsContainer: {
+  containerItens: {
     marginBottom: spacing.lg,
   },
   
-  itemsTitle: {
+  tituloItens: {
     fontSize: typography.fontSize.xl,
     fontWeight: typography.fontWeight.bold,
     color: colors.neutral[800],
     marginBottom: spacing.md,
   },
   
-  foodItem: {
+  itemAlimento: {
     backgroundColor: colors.neutral[50],
     borderRadius: borders.radius.lg,
     padding: spacing.lg,
@@ -517,49 +517,49 @@ const styles = StyleSheet.create({
     borderColor: colors.neutral[200],
   },
   
-  foodHeader: {
+  cabecalhoAlimento: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: spacing.md,
   },
   
-  foodName: {
+  nomeAlimento: {
     fontSize: typography.fontSize.lg,
     fontWeight: typography.fontWeight.bold,
     color: colors.neutral[900],
     flex: 1,
   },
   
-  foodCalories: {
+  caloriasAlimento: {
     fontSize: typography.fontSize.lg,
     fontWeight: typography.fontWeight.bold,
     color: colors.primary[600],
   },
   
-  nutritionInfo: {
+  informacoesNutricionais: {
     flexDirection: 'row',
     justifyContent: 'space-around',
   },
   
-  nutritionItem: {
+  itemNutricional: {
     alignItems: 'center',
   },
   
-  nutritionLabel: {
+  rotuloNutricional: {
     fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.medium,
     color: colors.neutral[600],
     marginBottom: spacing.xs,
   },
   
-  nutritionValue: {
+  valorNutricional: {
     fontSize: typography.fontSize.base,
     fontWeight: typography.fontWeight.bold,
     color: colors.neutral[800],
   },
   
-  totalContainer: {
+  containerTotal: {
     backgroundColor: colors.neutral[50],
     borderRadius: borders.radius.xl,
     padding: spacing.xl,
@@ -569,26 +569,26 @@ const styles = StyleSheet.create({
     borderColor: colors.neutral[200],
   },
   
-  totalHeader: {
+  cabecalhoTotal: {
     alignItems: 'center',
     marginBottom: spacing.lg,
   },
   
-  totalTitle: {
+  tituloTotal: {
     fontSize: typography.fontSize.lg,
     fontWeight: typography.fontWeight.semibold,
     color: colors.neutral[600],
     marginBottom: spacing.sm,
   },
   
-  totalCalories: {
+  caloriasTotais: {
     fontSize: typography.fontSize['4xl'],
     fontWeight: typography.fontWeight.extrabold,
     color: colors.primary[600],
     lineHeight: typography.lineHeight.tight,
   },
   
-  totalBreakdown: {
+  detalhamentoTotal: {
     flexDirection: 'row',
     justifyContent: 'space-around',
     borderTopWidth: borders.width.thin,
@@ -596,28 +596,28 @@ const styles = StyleSheet.create({
     paddingTop: spacing.lg,
   },
   
-  totalItem: {
+  itemTotal: {
     alignItems: 'center',
   },
   
-  totalLabel: {
+  rotuloTotal: {
     fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.medium,
     color: colors.neutral[600],
     marginBottom: spacing.xs,
   },
   
-  totalValue: {
+  valorTotal: {
     fontSize: typography.fontSize.lg,
     fontWeight: typography.fontWeight.bold,
     color: colors.neutral[800],
   },
   
-  actionButtons: {
+  botoesAcao: {
     gap: spacing.md,
   },
   
-  saveButton: {
+  botaoSalvar: {
     backgroundColor: colors.accent.blue,
     borderRadius: borders.radius.xl,
     paddingVertical: spacing.lg,
@@ -628,14 +628,14 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   
-  saveButtonText: {
+  textoBotaoSalvar: {
     fontSize: typography.fontSize.lg,
     fontWeight: typography.fontWeight.bold,
     color: colors.neutral[50],
     letterSpacing: 0.5,
   },
   
-  visitorAlert: {
+  alertaVisitante: {
     backgroundColor: colors.accent.yellow + '15',
     padding: spacing.md,
     borderRadius: borders.radius.lg,
@@ -643,7 +643,7 @@ const styles = StyleSheet.create({
     borderColor: colors.accent.yellow + '30',
   },
   
-  visitorAlertText: {
+  textoAlertaVisitante: {
     fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.medium,
     color: colors.accent.yellow + 'DD',
@@ -652,7 +652,7 @@ const styles = StyleSheet.create({
   },
 
   // Estilos do modal
-  modalOverlay: {
+  sobreposicaoModal: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
@@ -660,7 +660,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
   },
 
-  modalContent: {
+  conteudoModal: {
     backgroundColor: colors.neutral[50],
     borderRadius: borders.radius.xl,
     padding: spacing.xl,
@@ -670,21 +670,21 @@ const styles = StyleSheet.create({
     ...shadows.xl,
   },
 
-  modalHeader: {
+  cabecalhoModal: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: spacing.lg,
   },
 
-  modalTitle: {
+  tituloModal: {
     fontSize: typography.fontSize.xl,
     fontWeight: typography.fontWeight.bold,
     color: colors.neutral[900],
     flex: 1,
   },
 
-  closeButton: {
+  botaoFechar: {
     width: 32,
     height: 32,
     borderRadius: 16,
@@ -693,27 +693,27 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 
-  modalForm: {
+  formularioModal: {
     gap: spacing.lg,
   },
 
-  inputGroup: {
+  grupoInput: {
     gap: spacing.sm,
   },
 
-  inputRow: {
+  linhaInput: {
     flexDirection: 'row',
     gap: spacing.md,
   },
 
-  inputLabel: {
+  rotuloInput: {
     fontSize: typography.fontSize.base,
     fontWeight: typography.fontWeight.semibold,
     color: colors.neutral[700],
     marginLeft: spacing.sm,
   },
 
-  textInput: {
+  campoTexto: {
     backgroundColor: colors.neutral[50],
     borderRadius: borders.radius.lg,
     paddingVertical: spacing.md,
@@ -725,7 +725,7 @@ const styles = StyleSheet.create({
     ...shadows.sm,
   },
 
-  addManualButton: {
+  botaoAdicionarManual: {
     backgroundColor: colors.accent.green,
     borderRadius: borders.radius.xl,
     paddingVertical: spacing.lg,
@@ -737,7 +737,7 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
 
-  addManualButtonText: {
+  textoBotaoAdicionarManual: {
     fontSize: typography.fontSize.lg,
     fontWeight: typography.fontWeight.bold,
     color: colors.neutral[50],

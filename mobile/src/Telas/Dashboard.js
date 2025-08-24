@@ -6,255 +6,255 @@ import { colors, typography, spacing, borders, shadows } from '../styles/globalS
 
 const { width, height } = Dimensions.get('window');
 
-export default function DashboardScreen({ navigation }) {
+export default function TelaPainel({ navegacao }) {
   const { usuario } = usarAutenticacao();
-  const [currentDate] = useState(new Date());
+  const [dataAtual] = useState(new Date());
 
   // Dados simulados para demonstração
-  const userData = {
-    name: usuario?.nome || 'Usuário',
-    dailyCalories: 2290,
-    consumedCalories: 0,
-    exerciseCalories: 0,
-    steps: 26,
-    weight: 82,
-    waterIntake: 0
+  const dadosUsuario = {
+    nome: usuario?.nome || 'Usuário',
+    caloriasDiarias: 2290,
+    caloriasConsumidas: 0,
+    caloriasExercicio: 0,
+    passos: 26,
+    peso: 82,
+    ingestaoAgua: 0
   };
 
-  const remainingCalories = userData.dailyCalories - userData.consumedCalories + userData.exerciseCalories;
-  const caloriesProgress = Math.min(100, Math.round((userData.consumedCalories / userData.dailyCalories) * 100));
-  const stepsProgress = Math.min(100, Math.round((userData.steps / 10000) * 100));
+  const caloriasRestantes = dadosUsuario.caloriasDiarias - dadosUsuario.caloriasConsumidas + dadosUsuario.caloriasExercicio;
+  const progressoCalorias = Math.min(100, Math.round((dadosUsuario.caloriasConsumidas / dadosUsuario.caloriasDiarias) * 100));
+  const progressoPassos = Math.min(100, Math.round((dadosUsuario.passos / 10000) * 100));
 
-  const formatDate = (date) => {
-    const options = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
-    return date.toLocaleDateString('pt-BR', options);
+  const formatarData = (data) => {
+    const opcoes = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
+    return data.toLocaleDateString('pt-BR', opcoes);
   };
 
-  const getGreeting = () => {
-    const hour = currentDate.getHours();
-    if (hour < 12) return 'Bom dia';
-    if (hour < 18) return 'Boa tarde';
+  const obterSaudacao = () => {
+    const hora = dataAtual.getHours();
+    if (hora < 12) return 'Bom dia';
+    if (hora < 18) return 'Boa tarde';
     return 'Boa noite';
   };
 
   return (
-    <View style={styles.container}>
+    <View style={estilos.container}>
       <StatusBar barStyle="light-content" backgroundColor={colors.neutral[900]} />
       
       <ScrollView 
-        style={styles.scrollView}
+        style={estilos.scrollView}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={estilos.conteudoScroll}
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <View style={styles.userInfo}>
-            <View style={styles.avatarContainer}>
-              <Text style={styles.avatarText}>
-                {userData.name.charAt(0).toUpperCase()}
+        {/* Cabeçalho */}
+        <View style={estilos.cabecalho}>
+          <View style={estilos.informacoesUsuario}>
+            <View style={estilos.containerAvatar}>
+              <Text style={estilos.textoAvatar}>
+                {dadosUsuario.nome.charAt(0).toUpperCase()}
               </Text>
             </View>
-            <View style={styles.userDetails}>
-              <Text style={styles.greeting}>{getGreeting()}, {userData.name}!</Text>
-              <Text style={styles.date}>{formatDate(currentDate)}</Text>
+            <View style={estilos.detalhesUsuario}>
+              <Text style={estilos.saudacao}>{obterSaudacao()}, {dadosUsuario.nome}!</Text>
+              <Text style={estilos.data}>{formatarData(dataAtual)}</Text>
             </View>
           </View>
           
-          <TouchableOpacity style={styles.notificationButton}>
+          <TouchableOpacity style={estilos.botaoNotificacao}>
             <Ionicons name="notifications" size={20} color={colors.neutral[400]} />
           </TouchableOpacity>
         </View>
 
         {/* Card principal de calorias */}
-        <View style={styles.mainCard}>
-          <View style={styles.cardHeader}>
-            <Text style={styles.cardTitle}>Calorias</Text>
-            <TouchableOpacity style={styles.editButton}>
-              <Text style={styles.editButtonText}>EDITAR</Text>
+        <View style={estilos.cardPrincipal}>
+          <View style={estilos.cabecalhoCard}>
+            <Text style={estilos.tituloCard}>Calorias</Text>
+            <TouchableOpacity style={estilos.botaoEditar}>
+              <Text style={estilos.textoBotaoEditar}>EDITAR</Text>
             </TouchableOpacity>
           </View>
           
-          <Text style={styles.caloriesSubtitle}>
+          <Text style={estilos.subtituloCalorias}>
             Restantes = Meta - Alimentos + Exercício
           </Text>
           
-          <View style={styles.caloriesDisplay}>
-            <View style={styles.caloriesCircle}>
-              <Text style={styles.caloriesNumber}>{remainingCalories}</Text>
-              <Text style={styles.caloriesLabel}>Restantes</Text>
+          <View style={estilos.exibicaoCalorias}>
+            <View style={estilos.circuloCalorias}>
+              <Text style={estilos.numeroCalorias}>{caloriasRestantes}</Text>
+              <Text style={estilos.rotuloCalorias}>Restantes</Text>
             </View>
             
-            <View style={styles.caloriesBreakdown}>
-              <View style={styles.breakdownItem}>
+            <View style={estilos.detalhamentoCalorias}>
+              <View style={estilos.itemDetalhamento}>
                 <MaterialIcons name="flag" size={16} color={colors.neutral[400]} />
-                <Text style={styles.breakdownLabel}>Meta base</Text>
-                <Text style={styles.breakdownValue}>{userData.dailyCalories}</Text>
+                <Text style={estilos.rotuloDetalhamento}>Meta base</Text>
+                <Text style={estilos.valorDetalhamento}>{dadosUsuario.caloriasDiarias}</Text>
               </View>
               
-              <View style={styles.breakdownItem}>
+              <View style={estilos.itemDetalhamento}>
                 <MaterialIcons name="restaurant" size={16} color={colors.neutral[400]} />
-                <Text style={styles.breakdownLabel}>Alimentos</Text>
-                <Text style={styles.breakdownValue}>{userData.consumedCalories}</Text>
+                <Text style={estilos.rotuloDetalhamento}>Alimentos</Text>
+                <Text style={estilos.valorDetalhamento}>{dadosUsuario.caloriasConsumidas}</Text>
               </View>
               
-              <View style={styles.breakdownItem}>
+              <View style={estilos.itemDetalhamento}>
                 <MaterialIcons name="local-fire-department" size={16} color={colors.neutral[400]} />
-                <Text style={styles.breakdownLabel}>Exercício</Text>
-                <Text style={styles.breakdownValue}>{userData.exerciseCalories}</Text>
+                <Text style={estilos.rotuloDetalhamento}>Exercício</Text>
+                <Text style={estilos.valorDetalhamento}>{dadosUsuario.caloriasExercicio}</Text>
               </View>
             </View>
           </View>
         </View>
 
         {/* Banner de anúncio */}
-        <View style={styles.adBanner}>
-          <View style={styles.adContent}>
-            <View style={styles.adLeft}>
-              <Text style={styles.adLogo}>rent day</Text>
-              <Text style={styles.adSubtext}>rentcars</Text>
+        <View style={estilos.bannerAnuncio}>
+          <View style={estilos.conteudoAnuncio}>
+            <View style={estilos.anuncioEsquerda}>
+              <Text style={estilos.logoAnuncio}>rent day</Text>
+              <Text style={estilos.subtextoAnuncio}>rentcars</Text>
             </View>
-            <View style={styles.adCenter}>
-              <Text style={styles.adText}>Chance única para alugar carro com desconto!</Text>
+            <View style={estilos.anuncioCentro}>
+              <Text style={estilos.textoAnuncio}>Chance única para alugar carro com desconto!</Text>
             </View>
-            <View style={styles.adRight}>
-              <Text style={styles.adDiscount}>% ATÉ 40% OFF</Text>
-              <View style={styles.adImage}>
+            <View style={estilos.anuncioDireita}>
+              <Text style={estilos.descontoAnuncio}>% ATÉ 40% OFF</Text>
+              <View style={estilos.imagemAnuncio}>
                 <MaterialIcons name="directions-car" size={24} color={colors.neutral[700]} />
               </View>
-              <TouchableOpacity style={styles.adButton}>
-                <Text style={styles.adButtonText}>Baixe agora</Text>
+              <TouchableOpacity style={estilos.botaoAnuncio}>
+                <Text style={estilos.textoBotaoAnuncio}>Baixe agora</Text>
               </TouchableOpacity>
             </View>
           </View>
           
           {/* Indicadores do carrossel */}
-          <View style={styles.adIndicators}>
-            <View style={[styles.adIndicator, styles.adIndicatorActive]} />
-            <View style={styles.adIndicator} />
-            <View style={styles.adIndicator} />
+          <View style={estilos.indicadoresAnuncio}>
+            <View style={[estilos.indicadorAnuncio, estilos.indicadorAnuncioAtivo]} />
+            <View style={estilos.indicadorAnuncio} />
+            <View style={estilos.indicadorAnuncio} />
           </View>
         </View>
 
         {/* Call to action Premium */}
-        <View style={styles.premiumCTA}>
-          <Text style={styles.premiumText}>Diga adeus aos anúncios. Seja Premium</Text>
-          <TouchableOpacity style={styles.premiumButton}>
-            <Text style={styles.premiumButtonText}>Seja Premium</Text>
+        <View style={estilos.chamadaPremium}>
+          <Text style={estilos.textoPremium}>Diga adeus aos anúncios. Seja Premium</Text>
+          <TouchableOpacity style={estilos.botaoPremium}>
+            <Text style={estilos.textoBotaoPremium}>Seja Premium</Text>
           </TouchableOpacity>
         </View>
 
         {/* Cards de métricas */}
-        <View style={styles.metricsGrid}>
-          <View style={styles.metricCard}>
-            <Text style={styles.metricTitle}>Passos</Text>
-            <View style={styles.metricContent}>
+        <View style={estilos.gradeMetricas}>
+          <View style={estilos.cardMetrica}>
+            <Text style={estilos.tituloMetrica}>Passos</Text>
+            <View style={estilos.conteudoMetrica}>
               <FontAwesome5 name="shoe-prints" size={20} color={colors.accent.pink} />
-              <Text style={styles.metricValue}>{userData.steps}</Text>
+              <Text style={estilos.valorMetrica}>{dadosUsuario.passos}</Text>
             </View>
-            <Text style={styles.metricGoal}>Meta: 10.000 passos</Text>
-            <View style={styles.metricProgress}>
-              <View style={[styles.metricProgressFill, { width: `${stepsProgress}%` }]} />
+            <Text style={estilos.metaMetrica}>Meta: 10.000 passos</Text>
+            <View style={estilos.progressoMetrica}>
+              <View style={[estilos.preenchimentoProgressoMetrica, { width: `${progressoPassos}%` }]} />
             </View>
           </View>
           
-          <View style={styles.metricCard}>
-            <TouchableOpacity style={styles.addButton}>
+          <View style={estilos.cardMetrica}>
+            <TouchableOpacity style={estilos.botaoAdicionar}>
               <Ionicons name="add" size={16} color={colors.neutral[50]} />
             </TouchableOpacity>
-            <Text style={styles.metricTitle}>Exercício</Text>
-            <View style={styles.metricContent}>
+            <Text style={estilos.tituloMetrica}>Exercício</Text>
+            <View style={estilos.conteudoMetrica}>
               <MaterialIcons name="local-fire-department" size={20} color={colors.neutral[400]} />
-              <Text style={styles.metricValue}>{userData.exerciseCalories} cal</Text>
+              <Text style={estilos.valorMetrica}>{dadosUsuario.caloriasExercicio} cal</Text>
             </View>
-            <Text style={styles.metricGoal}>00:00 h</Text>
+            <Text style={estilos.metaMetrica}>00:00 h</Text>
           </View>
           
-          <View style={styles.metricCard}>
-            <TouchableOpacity style={styles.addButton}>
+          <View style={estilos.cardMetrica}>
+            <TouchableOpacity style={estilos.botaoAdicionar}>
               <Ionicons name="add" size={16} color={colors.neutral[50]} />
             </TouchableOpacity>
-            <Text style={styles.metricTitle}>Peso</Text>
-            <Text style={styles.metricValue}>{userData.weight}</Text>
-            <Text style={styles.metricGoal}>Últimos 90 dias</Text>
+            <Text style={estilos.tituloMetrica}>Peso</Text>
+            <Text style={estilos.valorMetrica}>{dadosUsuario.peso}</Text>
+            <Text style={estilos.metaMetrica}>Últimos 90 dias</Text>
           </View>
           
-          <View style={styles.metricCard}>
-            <TouchableOpacity style={styles.addButton}>
+          <View style={estilos.cardMetrica}>
+            <TouchableOpacity style={estilos.botaoAdicionar}>
               <Ionicons name="add" size={16} color={colors.neutral[50]} />
             </TouchableOpacity>
-            <Text style={styles.metricTitle}>Água</Text>
-            <Text style={styles.metricValue}>{userData.waterIntake}</Text>
-            <Text style={styles.metricGoal}>Meta: 2L</Text>
+            <Text style={estilos.tituloMetrica}>Água</Text>
+            <Text style={estilos.valorMetrica}>{dadosUsuario.ingestaoAgua}</Text>
+            <Text style={estilos.metaMetrica}>Meta: 2L</Text>
           </View>
         </View>
 
         {/* Seções de refeições */}
-        <View style={styles.mealsSection}>
-          <Text style={styles.mealsTitle}>Refeições de Hoje</Text>
+        <View style={estilos.secaoRefeicoes}>
+          <Text style={estilos.tituloRefeicoes}>Refeições de Hoje</Text>
           
-          {['Café da manhã', 'Almoço', 'Jantar'].map((meal, index) => (
-            <View key={index} style={styles.mealItem}>
-              <Text style={styles.mealName}>{meal}</Text>
-              <TouchableOpacity style={styles.addMealButton}>
-                <Text style={styles.addMealButtonText}>ADICIONAR ALIMENTO</Text>
+          {['Café da manhã', 'Almoço', 'Jantar'].map((refeicao, indice) => (
+            <View key={indice} style={estilos.itemRefeicao}>
+              <Text style={estilos.nomeRefeicao}>{refeicao}</Text>
+              <TouchableOpacity style={estilos.botaoAdicionarRefeicao}>
+                <Text style={estilos.textoBotaoAdicionarRefeicao}>ADICIONAR ALIMENTO</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.mealMenu}>
-                <Text style={styles.mealMenuText}>⋯</Text>
+              <TouchableOpacity style={estilos.menuRefeicao}>
+                <Text style={estilos.textoMenuRefeicao}>⋯</Text>
               </TouchableOpacity>
             </View>
           ))}
         </View>
 
         {/* Botões de ação rápida */}
-        <View style={styles.quickActions}>
-          <TouchableOpacity style={styles.quickActionButton}>
-            <View style={styles.quickActionIcon}>
+        <View style={estilos.acoesRapidas}>
+          <TouchableOpacity style={estilos.botaoAcaoRapida}>
+            <View style={estilos.iconeAcaoRapida}>
               <MaterialIcons name="search" size={24} color={colors.primary[600]} />
             </View>
-            <Text style={styles.quickActionText}>Registrar alimento</Text>
+            <Text style={estilos.textoAcaoRapida}>Registrar alimento</Text>
           </TouchableOpacity>
           
-          <TouchableOpacity style={styles.quickActionButton}>
-            <View style={styles.quickActionIcon}>
+          <TouchableOpacity style={estilos.botaoAcaoRapida}>
+            <View style={estilos.iconeAcaoRapida}>
               <MaterialIcons name="qr-code-scanner" size={24} color={colors.primary[600]} />
             </View>
-            <Text style={styles.quickActionText}>Leitor de código de barras</Text>
+            <Text style={estilos.textoAcaoRapida}>Leitor de código de barras</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
 
       {/* Barra de navegação inferior */}
-      <View style={styles.bottomNav}>
-        <TouchableOpacity style={[styles.navItem, styles.navItemActive]}>
+      <View style={estilos.navegacaoInferior}>
+        <TouchableOpacity style={[estilos.itemNavegacao, estilos.itemNavegacaoAtivo]}>
           <MaterialIcons name="dashboard" size={20} color={colors.primary[600]} />
-          <Text style={styles.navLabel}>Painel</Text>
+          <Text style={estilos.rotuloNavegacao}>Painel</Text>
         </TouchableOpacity>
         
-        <TouchableOpacity style={styles.navItem}>
+        <TouchableOpacity style={estilos.itemNavegacao}>
           <MaterialIcons name="book" size={20} color={colors.neutral[400]} />
-          <Text style={styles.navLabel}>Diário</Text>
+          <Text style={estilos.rotuloNavegacao}>Diário</Text>
         </TouchableOpacity>
         
-        <TouchableOpacity style={styles.navItem}>
+        <TouchableOpacity style={estilos.itemNavegacao}>
           <MaterialIcons name="restaurant" size={20} color={colors.neutral[400]} />
-          <Text style={styles.navLabel}>Refeições</Text>
+          <Text style={estilos.rotuloNavegacao}>Refeições</Text>
         </TouchableOpacity>
         
-        <TouchableOpacity style={styles.navItem}>
+        <TouchableOpacity style={estilos.itemNavegacao}>
           <MaterialIcons name="trending-up" size={20} color={colors.neutral[400]} />
-          <Text style={styles.navLabel}>Progresso</Text>
+          <Text style={estilos.rotuloNavegacao}>Progresso</Text>
         </TouchableOpacity>
         
-        <TouchableOpacity style={styles.navItem}>
+        <TouchableOpacity style={estilos.itemNavegacao}>
           <MaterialIcons name="settings" size={20} color={colors.neutral[400]} />
-          <Text style={styles.navLabel}>Mais</Text>
+          <Text style={estilos.rotuloNavegacao}>Mais</Text>
         </TouchableOpacity>
       </View>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const estilos = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.neutral[900],
@@ -264,25 +264,25 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   
-  scrollContent: {
+  conteudoScroll: {
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.lg,
     paddingBottom: spacing.xl,
   },
   
-  header: {
+  cabecalho: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: spacing.xl,
   },
   
-  userInfo: {
+  informacoesUsuario: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   
-  avatarContainer: {
+  containerAvatar: {
     width: 50,
     height: 50,
     borderRadius: 25,
@@ -292,30 +292,30 @@ const styles = StyleSheet.create({
     marginRight: spacing.md,
   },
   
-  avatarText: {
+  textoAvatar: {
     fontSize: typography.fontSize.xl,
     fontWeight: typography.fontWeight.bold,
     color: colors.neutral[50],
   },
   
-  userDetails: {
+  detalhesUsuario: {
     flex: 1,
   },
   
-  greeting: {
+  saudacao: {
     fontSize: typography.fontSize.lg,
     fontWeight: typography.fontWeight.bold,
     color: colors.neutral[50],
     marginBottom: spacing.xs,
   },
   
-  date: {
+  data: {
     fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.medium,
     color: colors.neutral[400],
   },
   
-  notificationButton: {
+  botaoNotificacao: {
     width: 40,
     height: 40,
     borderRadius: 20,
@@ -324,11 +324,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   
-  notificationIcon: {
+  iconeNotificacao: {
     fontSize: 20,
   },
   
-  mainCard: {
+  cardPrincipal: {
     backgroundColor: colors.neutral[800],
     borderRadius: borders.radius.xl,
     padding: spacing.xl,
@@ -336,31 +336,31 @@ const styles = StyleSheet.create({
     ...shadows.lg,
   },
   
-  cardHeader: {
+  cabecalhoCard: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: spacing.sm,
   },
   
-  cardTitle: {
+  tituloCard: {
     fontSize: typography.fontSize.xl,
     fontWeight: typography.fontWeight.bold,
     color: colors.neutral[50],
   },
   
-  editButton: {
+  botaoEditar: {
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
   },
   
-  editButtonText: {
+  textoBotaoEditar: {
     fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.semibold,
     color: colors.primary[400],
   },
   
-  caloriesSubtitle: {
+  subtituloCalorias: {
     fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.medium,
     color: colors.neutral[400],
@@ -368,59 +368,59 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   
-  caloriesDisplay: {
+  exibicaoCalorias: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   
-  caloriesCircle: {
+  circuloCalorias: {
     flex: 1,
     alignItems: 'center',
     marginRight: spacing.lg,
   },
   
-  caloriesNumber: {
+  numeroCalorias: {
     fontSize: typography.fontSize['4xl'],
     fontWeight: typography.fontWeight.extrabold,
     color: colors.primary[400],
     lineHeight: typography.lineHeight.tight,
   },
   
-  caloriesLabel: {
+  rotuloCalorias: {
     fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.medium,
     color: colors.neutral[400],
   },
   
-  caloriesBreakdown: {
+  detalhamentoCalorias: {
     flex: 1,
     gap: spacing.md,
   },
   
-  breakdownItem: {
+  itemDetalhamento: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
   },
   
-  breakdownIcon: {
+  iconeDetalhamento: {
     fontSize: 16,
   },
   
-  breakdownLabel: {
+  rotuloDetalhamento: {
     fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.medium,
     color: colors.neutral[400],
     flex: 1,
   },
   
-  breakdownValue: {
+  valorDetalhamento: {
     fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.bold,
     color: colors.neutral[50],
   },
   
-  adBanner: {
+  bannerAnuncio: {
     backgroundColor: colors.accent.yellow,
     borderRadius: borders.radius.lg,
     padding: spacing.lg,
@@ -428,53 +428,53 @@ const styles = StyleSheet.create({
     ...shadows.base,
   },
   
-  adContent: {
+  conteudoAnuncio: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: spacing.md,
   },
   
-  adLeft: {
+  anuncioEsquerda: {
     alignItems: 'center',
     marginRight: spacing.md,
   },
   
-  adLogo: {
+  logoAnuncio: {
     fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.bold,
     color: colors.neutral[900],
   },
   
-  adSubtext: {
+  subtextoAnuncio: {
     fontSize: typography.fontSize.xs,
     fontWeight: typography.fontWeight.medium,
     color: colors.neutral[700],
   },
   
-  adCenter: {
+  anuncioCentro: {
     flex: 1,
     marginRight: spacing.md,
   },
   
-  adText: {
+  textoAnuncio: {
     fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.medium,
     color: colors.neutral[900],
     textAlign: 'center',
   },
   
-  adRight: {
+  anuncioDireita: {
     alignItems: 'center',
   },
   
-  adDiscount: {
+  descontoAnuncio: {
     fontSize: typography.fontSize.xs,
     fontWeight: typography.fontWeight.bold,
     color: colors.success,
     marginBottom: spacing.xs,
   },
   
-  adImage: {
+  imagemAnuncio: {
     width: 40,
     height: 40,
     backgroundColor: colors.neutral[700],
@@ -484,74 +484,74 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   
-  adCarIcon: {
+  iconeCarroAnuncio: {
     fontSize: 24,
   },
   
-  adButton: {
+  botaoAnuncio: {
     backgroundColor: colors.success,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderRadius: borders.radius.md,
   },
   
-  adButtonText: {
+  textoBotaoAnuncio: {
     fontSize: typography.fontSize.xs,
     fontWeight: typography.fontWeight.bold,
     color: colors.neutral[50],
   },
   
-  adIndicators: {
+  indicadoresAnuncio: {
     flexDirection: 'row',
     justifyContent: 'center',
     gap: spacing.xs,
   },
   
-  adIndicator: {
+  indicadorAnuncio: {
     width: 6,
     height: 6,
     borderRadius: 3,
     backgroundColor: colors.neutral[400],
   },
   
-  adIndicatorActive: {
+  indicadorAnuncioAtivo: {
     backgroundColor: colors.primary[600],
     width: 18,
   },
   
-  premiumCTA: {
+  chamadaPremium: {
     alignItems: 'center',
     marginBottom: spacing.lg,
   },
   
-  premiumText: {
+  textoPremium: {
     fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.medium,
     color: colors.neutral[400],
     marginBottom: spacing.sm,
   },
   
-  premiumButton: {
+  botaoPremium: {
     backgroundColor: colors.accent.yellow,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
     borderRadius: borders.radius.lg,
   },
   
-  premiumButtonText: {
+  textoBotaoPremium: {
     fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.bold,
     color: colors.neutral[900],
   },
   
-  metricsGrid: {
+  gradeMetricas: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: spacing.md,
     marginBottom: spacing.lg,
   },
   
-  metricCard: {
+  cardMetrica: {
     width: (width - spacing.lg * 3) / 2,
     backgroundColor: colors.neutral[800],
     borderRadius: borders.radius.lg,
@@ -559,14 +559,14 @@ const styles = StyleSheet.create({
     ...shadows.base,
   },
   
-  metricTitle: {
+  tituloMetrica: {
     fontSize: typography.fontSize.base,
     fontWeight: typography.fontWeight.semibold,
     color: colors.neutral[400],
     marginBottom: spacing.sm,
   },
   
-  addButton: {
+  botaoAdicionar: {
     position: 'absolute',
     top: spacing.sm,
     right: spacing.sm,
@@ -578,36 +578,36 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   
-  addButtonText: {
+  textoBotaoAdicionar: {
     fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.bold,
     color: colors.neutral[50],
   },
   
-  metricContent: {
+  conteudoMetrica: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
     marginBottom: spacing.sm,
   },
   
-  metricIcon: {
+  iconeMetrica: {
     fontSize: 20,
   },
   
-  metricValue: {
+  valorMetrica: {
     fontSize: typography.fontSize.xl,
     fontWeight: typography.fontWeight.bold,
     color: colors.neutral[50],
   },
   
-  metricGoal: {
+  metaMetrica: {
     fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.medium,
     color: colors.neutral[400],
   },
   
-  metricProgress: {
+  progressoMetrica: {
     height: 4,
     backgroundColor: colors.neutral[700],
     borderRadius: borders.radius.full,
@@ -615,24 +615,24 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   
-  metricProgressFill: {
+  preenchimentoProgressoMetrica: {
     height: '100%',
     backgroundColor: colors.primary[500],
     borderRadius: borders.radius.full,
   },
   
-  mealsSection: {
+  secaoRefeicoes: {
     marginBottom: spacing.lg,
   },
   
-  mealsTitle: {
+  tituloRefeicoes: {
     fontSize: typography.fontSize.lg,
     fontWeight: typography.fontWeight.bold,
     color: colors.neutral[50],
     marginBottom: spacing.md,
   },
   
-  mealItem: {
+  itemRefeicao: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.neutral[800],
@@ -642,14 +642,14 @@ const styles = StyleSheet.create({
     ...shadows.base,
   },
   
-  mealName: {
+  nomeRefeicao: {
     fontSize: typography.fontSize.base,
     fontWeight: typography.fontWeight.semibold,
     color: colors.neutral[50],
     flex: 1,
   },
   
-  addMealButton: {
+  botaoAdicionarRefeicao: {
     backgroundColor: colors.primary[600],
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
@@ -657,32 +657,32 @@ const styles = StyleSheet.create({
     marginRight: spacing.sm,
   },
   
-  addMealButtonText: {
+  textoBotaoAdicionarRefeicao: {
     fontSize: typography.fontSize.xs,
     fontWeight: typography.fontWeight.bold,
     color: colors.neutral[50],
   },
   
-  mealMenu: {
+  menuRefeicao: {
     width: 24,
     height: 24,
     alignItems: 'center',
     justifyContent: 'center',
   },
   
-  mealMenuText: {
+  textoMenuRefeicao: {
     fontSize: typography.fontSize.lg,
     fontWeight: typography.fontWeight.bold,
     color: colors.neutral[400],
   },
   
-  quickActions: {
+  acoesRapidas: {
     flexDirection: 'row',
     gap: spacing.md,
     marginBottom: spacing.xl,
   },
   
-  quickActionButton: {
+  botaoAcaoRapida: {
     flex: 1,
     backgroundColor: colors.neutral[800],
     borderRadius: borders.radius.lg,
@@ -691,7 +691,7 @@ const styles = StyleSheet.create({
     ...shadows.base,
   },
   
-  quickActionIcon: {
+  iconeAcaoRapida: {
     width: 50,
     height: 50,
     borderRadius: 25,
@@ -701,18 +701,18 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   
-  quickActionEmoji: {
+  emojiAcaoRapida: {
     fontSize: 24,
   },
   
-  quickActionText: {
+  textoAcaoRapida: {
     fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.medium,
     color: colors.neutral[400],
     textAlign: 'center',
   },
   
-  bottomNav: {
+  navegacaoInferior: {
     flexDirection: 'row',
     backgroundColor: colors.neutral[800],
     paddingVertical: spacing.md,
@@ -721,23 +721,23 @@ const styles = StyleSheet.create({
     borderTopColor: colors.neutral[700],
   },
   
-  navItem: {
+  itemNavegacao: {
     flex: 1,
     alignItems: 'center',
     paddingVertical: spacing.sm,
   },
   
-  navItemActive: {
+  itemNavegacaoAtivo: {
     borderTopWidth: 2,
     borderTopColor: colors.primary[600],
   },
   
-  navIcon: {
+  iconeNavegacao: {
     fontSize: 20,
     marginBottom: spacing.xs,
   },
   
-  navLabel: {
+  rotuloNavegacao: {
     fontSize: typography.fontSize.xs,
     fontWeight: typography.fontWeight.medium,
     color: colors.neutral[400],

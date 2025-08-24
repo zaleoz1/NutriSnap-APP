@@ -5,49 +5,49 @@ import { typography, spacing, borders, shadows } from '../styles/globalStyles';
 
 const { width, height } = Dimensions.get('window');
 
-export default function WelcomeScreen({ navigation }) {
-  const [currentSlide, setCurrentSlide] = useState(0);
+export default function TelaBoasVindas({ navigation }) {
+  const [slideAtual, setSlideAtual] = useState(0);
   const scrollX = useRef(new Animated.Value(0)).current;
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(30)).current;
-  const buttonAnim = useRef(new Animated.Value(0)).current;
-  const buttonScale = useRef(new Animated.Value(0.8)).current;
+  const animacaoFade = useRef(new Animated.Value(0)).current;
+  const animacaoSlide = useRef(new Animated.Value(30)).current;
+  const animacaoBotao = useRef(new Animated.Value(0)).current;
+  const escalaBotao = useRef(new Animated.Value(0.8)).current;
 
   const slides = [
     {
       id: 1,
-      icon: 'restaurant',
-      subtitle: 'Use inteligência artificial para analisar automaticamente o valor nutricional dos seus alimentos com apenas uma foto',
-      accentColor: '#00C9FF'
+      icone: 'restaurant',
+      subtitulo: 'Use inteligência artificial para analisar automaticamente o valor nutricional dos seus alimentos com apenas uma foto',
+      corDestaque: '#00C9FF'
     },
     {
       id: 2,
-      icon: 'analytics',
-      subtitle: 'Visualize sua evolução com gráficos detalhados, insights personalizados e acompanhamento completo da sua jornada',
-      accentColor: '#FF6B6B'
+      icone: 'analytics',
+      subtitulo: 'Visualize sua evolução com gráficos detalhados, insights personalizados e acompanhamento completo da sua jornada',
+      corDestaque: '#FF6B6B'
     },
     {
       id: 3,
-      icon: 'fitness-center',
-      subtitle: 'Receba recomendações exclusivas baseadas em seus objetivos, estilo de vida e preferências pessoais',
-      accentColor: '#FFD93D'
+      icone: 'fitness-center',
+      subtitulo: 'Receba recomendações exclusivas baseadas em seus objetivos, estilo de vida e preferências pessoais',
+      corDestaque: '#FFD93D'
     },
     {
       id: 4,
-      icon: 'trending-up',
-      subtitle: 'Combinando tecnologia avançada e ciência da nutrição para resultados duradouros e sustentáveis',
-      accentColor: '#A8EDEA'
+      icone: 'trending-up',
+      subtitulo: 'Combinando tecnologia avançada e ciência da nutrição para resultados duradouros e sustentáveis',
+      corDestaque: '#A8EDEA'
     }
   ];
 
   React.useEffect(() => {
     Animated.parallel([
-      Animated.timing(fadeAnim, {
+      Animated.timing(animacaoFade, {
         toValue: 1,
         duration: 1000,
         useNativeDriver: true,
       }),
-      Animated.spring(slideAnim, {
+      Animated.spring(animacaoSlide, {
         toValue: 0,
         tension: 50,
         friction: 8,
@@ -58,19 +58,19 @@ export default function WelcomeScreen({ navigation }) {
 
   // Efeito para animar o botão quando aparecer
   React.useEffect(() => {
-    if (currentSlide === slides.length - 1) {
+    if (slideAtual === slides.length - 1) {
       // Reset das animações do botão
-      buttonAnim.setValue(0);
-      buttonScale.setValue(0.8);
+      animacaoBotao.setValue(0);
+      escalaBotao.setValue(0.8);
       
       // Animação de entrada do botão
       Animated.parallel([
-        Animated.timing(buttonAnim, {
+        Animated.timing(animacaoBotao, {
           toValue: 1,
           duration: 600,
           useNativeDriver: true,
         }),
-        Animated.spring(buttonScale, {
+        Animated.spring(escalaBotao, {
           toValue: 1,
           tension: 100,
           friction: 8,
@@ -78,35 +78,35 @@ export default function WelcomeScreen({ navigation }) {
         }),
       ]).start();
     }
-  }, [currentSlide]);
+  }, [slideAtual]);
 
-  const renderSlide = (slide, index) => {
-    const inputRange = [
+  const renderizarSlide = (slide, index) => {
+    const faixaEntrada = [
       (index - 1) * width,
       index * width,
       (index + 1) * width
     ];
 
-    const scale = scrollX.interpolate({
-      inputRange,
+    const escala = scrollX.interpolate({
+      inputRange: faixaEntrada,
       outputRange: [0.85, 1, 0.85],
       extrapolate: 'clamp'
     });
 
-    const opacity = scrollX.interpolate({
-      inputRange,
+    const opacidade = scrollX.interpolate({
+      inputRange: faixaEntrada,
       outputRange: [0.3, 1, 0.3],
       extrapolate: 'clamp'
     });
 
     const translateY = scrollX.interpolate({
-      inputRange,
+      inputRange: faixaEntrada,
       outputRange: [60, 0, 60],
       extrapolate: 'clamp'
     });
 
-    const rotateY = scrollX.interpolate({
-      inputRange,
+    const rotacaoY = scrollX.interpolate({
+      inputRange: faixaEntrada,
       outputRange: ['-15deg', '0deg', '15deg'],
       extrapolate: 'clamp'
     });
@@ -115,118 +115,118 @@ export default function WelcomeScreen({ navigation }) {
       <Animated.View
         key={slide.id}
         style={[
-          styles.slide,
+          estilos.slide,
           {
-            transform: [{ scale }, { translateY }, { rotateY }],
-            opacity
+            transform: [{ scale: escala }, { translateY }, { rotateY: rotacaoY }],
+            opacity: opacidade
           }
         ]}
       >
         {/* Background com gradiente */}
-        <View style={[styles.slideBackground, { backgroundColor: slide.accentColor + '15' }]}>
-          <View style={[styles.gradientCircle, { backgroundColor: slide.accentColor + '20' }]} />
-          <View style={[styles.gradientCircle2, { backgroundColor: slide.accentColor + '10' }]} />
+        <View style={[estilos.fundoSlide, { backgroundColor: slide.corDestaque + '15' }]}>
+          <View style={[estilos.circuloGradiente, { backgroundColor: slide.corDestaque + '20' }]} />
+          <View style={[estilos.circuloGradiente2, { backgroundColor: slide.corDestaque + '10' }]} />
         </View>
 
         {/* Ícone principal com efeito de brilho */}
-        <View style={styles.iconContainer}>
-          <View style={[styles.iconGlow, { backgroundColor: slide.accentColor + '30' }]} />
-          <View style={[styles.iconCircle, { backgroundColor: slide.accentColor + '20' }]}>
-            <MaterialIcons name={slide.icon} size={70} color={slide.accentColor} />
+        <View style={estilos.containerIcone}>
+          <View style={[estilos.brilhoIcone, { backgroundColor: slide.corDestaque + '30' }]} />
+          <View style={[estilos.circuloIcone, { backgroundColor: slide.corDestaque + '20' }]}>
+            <MaterialIcons name={slide.icone} size={70} color={slide.corDestaque} />
           </View>
         </View>
         
         {/* Conteúdo do slide */}
-        <View style={styles.slideContent}>
-          <Text style={styles.slideTitle}>{slide.title}</Text>
-          <Text style={styles.slideSubtitle}>{slide.subtitle}</Text>
-          <Text style={styles.slideDescription}>{slide.description}</Text>
+        <View style={estilos.conteudoSlide}>
+          <Text style={estilos.tituloSlide}>{slide.titulo}</Text>
+          <Text style={estilos.subtituloSlide}>{slide.subtitulo}</Text>
+          <Text style={estilos.descricaoSlide}>{slide.descricao}</Text>
         </View>
         
         {/* Elementos decorativos flutuantes */}
-        <View style={styles.floatingElements}>
-          <View style={[styles.floatingDot, { backgroundColor: slide.accentColor + '40' }]} />
-          <View style={[styles.floatingLine, { backgroundColor: slide.accentColor + '30' }]} />
-          <View style={[styles.floatingDot, { backgroundColor: slide.accentColor + '40' }]} />
+        <View style={estilos.elementosFlutuantes}>
+          <View style={[estilos.pontoFlutuante, { backgroundColor: slide.corDestaque + '40' }]} />
+          <View style={[estilos.linhaFlutuante, { backgroundColor: slide.corDestaque + '30' }]} />
+          <View style={[estilos.pontoFlutuante, { backgroundColor: slide.corDestaque + '40' }]} />
         </View>
       </Animated.View>
     );
   };
 
-  const handleScroll = Animated.event(
+  const lidarComScroll = Animated.event(
     [{ nativeEvent: { contentOffset: { x: scrollX } } }],
     { useNativeDriver: false }
   );
 
-  const handleScrollEnd = (event) => {
-    const slideIndex = Math.round(event.nativeEvent.contentOffset.x / width);
-    setCurrentSlide(slideIndex);
+  const lidarComFimScroll = (event) => {
+    const indiceSlide = Math.round(event.nativeEvent.contentOffset.x / width);
+    setSlideAtual(indiceSlide);
   };
 
-  const handleProceed = () => {
+  const lidarComProsseguir = () => {
     navigation.navigate('Login');
   };
 
-  const handleSkip = () => {
+  const lidarComPular = () => {
     navigation.navigate('Login');
   };
 
   return (
-    <View style={styles.container}>
+    <View style={estilos.container}>
       <StatusBar barStyle="light-content" backgroundColor="#0A0A0A" />
       
       {/* Header moderno com gradiente */}
       <Animated.View 
         style={[
-          styles.header,
+          estilos.cabecalho,
           {
-            opacity: fadeAnim,
-            transform: [{ translateY: slideAnim }]
+            opacity: animacaoFade,
+            transform: [{ translateY: animacaoSlide }]
           }
         ]}
       >
-        <View style={styles.logoContainer}>
-          <Text style={styles.appName}>NutriSnap</Text>
+        <View style={estilos.containerLogo}>
+          <Text style={estilos.nomeApp}>NutriSnap</Text>
         </View>
         
-        <TouchableOpacity onPress={handleSkip} style={styles.skipButton}>
-          <Text style={styles.skipButtonText}>Pular</Text>
+        <TouchableOpacity onPress={lidarComPular} style={estilos.botaoPular}>
+          <Text style={estilos.textoBotaoPular}>Pular</Text>
         </TouchableOpacity>
       </Animated.View>
 
       {/* Carrossel principal com efeitos visuais */}
-      <View style={styles.carouselContainer}>
+      <View style={estilos.containerCarrossel}>
         <Animated.ScrollView
           horizontal
           pagingEnabled
           showsHorizontalScrollIndicator={false}
-          onScroll={handleScroll}
-          onMomentumScrollEnd={handleScrollEnd}
+          onScroll={lidarComScroll}
+          onMomentumScrollEnd={lidarComFimScroll}
           scrollEventThrottle={16}
-          style={styles.carousel}
+          style={estilos.carrossel}
         >
           {slides.map((slide, index) => (
-  renderSlide(slide, index)
-))}
+            renderizarSlide(slide, index)
+          ))}
         </Animated.ScrollView>
       </View>
 
       {/* Botão de ação com design moderno */}
-      <View style={styles.actionsContainer}>
-        {currentSlide === slides.length - 1 ? (
+      <View style={estilos.containerAcoes}>
+        {slideAtual === slides.length - 1 ? (
           <Animated.View
             style={{
-              opacity: buttonAnim,
-              transform: [{ scale: buttonScale }]
+              opacity: animacaoBotao,
+              transform: [{ scale: escalaBotao }]
             }}
           >
             <TouchableOpacity 
-              onPress={handleProceed} 
-              style={styles.proceedButton}
+              onPress={lidarComProsseguir} 
+              style={estilos.botaoProsseguir}
               activeOpacity={0.9}
             >
-              <View style={styles.proceedButtonGradient}>
-                <Text style={styles.proceedButtonText}>Prosseguir</Text>
+              <View style={estilos.gradienteBotaoProsseguir}>
+                <Text style={estilos.textoBotaoProsseguir}>Prosseguir</Text>
                 <MaterialIcons name="arrow-forward" size={24} color="#FFFFFF" />
               </View>
             </TouchableOpacity>
@@ -237,33 +237,33 @@ export default function WelcomeScreen({ navigation }) {
       {/* Footer elegante */}
       <Animated.View 
         style={[
-          styles.footer,
+          estilos.rodape,
           {
-            opacity: fadeAnim,
-            transform: [{ translateY: slideAnim }]
+            opacity: animacaoFade,
+            transform: [{ translateY: animacaoSlide }]
           }
         ]}
       >
-        <Text style={styles.footerText}>
+        <Text style={estilos.textoRodape}>
           Comece sua jornada para uma vida mais saudável hoje mesmo
         </Text>
-        <View style={styles.footerDecorations}>
-          <View style={[styles.footerDot, { backgroundColor: '#667eea' }]} />
-          <View style={[styles.footerDot, { backgroundColor: '#764ba2' }]} />
-          <View style={[styles.footerDot, { backgroundColor: '#f093fb' }]} />
+        <View style={estilos.decoracoesRodape}>
+          <View style={[estilos.pontoRodape, { backgroundColor: '#667eea' }]} />
+          <View style={[estilos.pontoRodape, { backgroundColor: '#764ba2' }]} />
+          <View style={[estilos.pontoRodape, { backgroundColor: '#f093fb' }]} />
         </View>
       </Animated.View>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const estilos = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#0A0A0A',
   },
   
-  header: {
+  cabecalho: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -273,12 +273,12 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   
-  logoContainer: {
+  containerLogo: {
     flex: 1,
     alignItems: 'flex-start',
   },
   
-  appName: {
+  nomeApp: {
     fontSize: typography.fontSize['3xl'],
     fontWeight: typography.fontWeight.black,
     color: '#FFFFFF',
@@ -288,7 +288,7 @@ const styles = StyleSheet.create({
     textShadowRadius: 8,
   },
   
-  skipButton: {
+  botaoPular: {
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
     borderRadius: borders.radius.full,
@@ -297,20 +297,20 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255, 255, 255, 0.2)',
   },
   
-  skipButtonText: {
+  textoBotaoPular: {
     fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.semibold,
     color: '#FFFFFF',
     letterSpacing: 0.5,
   },
   
-  carouselContainer: {
+  containerCarrossel: {
     height: height * 0.62, // Defina uma altura fixa para o carrossel
     justifyContent: 'center',
     alignItems: 'center',
   },
   
-  carousel: {
+  carrossel: {
     flexGrow: 0, // Não deixa crescer além do necessário
     height: '100%',
   },
@@ -324,7 +324,7 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   
-  slideBackground: {
+  fundoSlide: {
     position: 'absolute',
     top: -100,
     left: -100,
@@ -334,7 +334,7 @@ const styles = StyleSheet.create({
     opacity: 0.3,
   },
   
-  gradientCircle: {
+  circuloGradiente: {
     position: 'absolute',
     top: -50,
     right: -50,
@@ -344,7 +344,7 @@ const styles = StyleSheet.create({
     opacity: 0.4,
   },
   
-  gradientCircle2: {
+  circuloGradiente2: {
     position: 'absolute',
     bottom: -80,
     left: -80,
@@ -354,13 +354,13 @@ const styles = StyleSheet.create({
     opacity: 0.3,
   },
   
-  iconContainer: {
+  containerIcone: {
     alignItems: 'center',
     marginBottom: spacing['2xl'],
     position: 'relative',
   },
   
-  iconGlow: {
+  brilhoIcone: {
     position: 'absolute',
     width: 200,
     height: 200,
@@ -369,7 +369,7 @@ const styles = StyleSheet.create({
     zIndex: -1,
   },
   
-  iconCircle: {
+  circuloIcone: {
     width: 140,
     height: 140,
     borderRadius: 70,
@@ -381,7 +381,7 @@ const styles = StyleSheet.create({
     elevation: 15,
   },
   
-  slideContent: {
+  conteudoSlide: {
     alignItems: 'center',
     marginBottom: spacing.xl,
     width: '100%',
@@ -389,7 +389,7 @@ const styles = StyleSheet.create({
     flexShrink: 1, // Permite o texto quebrar e não sair da tela
   },
   
-  slideTitle: {
+  tituloSlide: {
     fontSize: typography.fontSize['4xl'],
     fontWeight: typography.fontWeight.black,
     color: '#FFFFFF',
@@ -401,7 +401,7 @@ const styles = StyleSheet.create({
     textShadowRadius: 12,
   },
   
-  slideSubtitle: {
+  subtituloSlide: {
     fontSize: typography.fontSize.xl,
     fontWeight: typography.fontWeight.bold,
     color: '#FFFFFF',
@@ -413,7 +413,7 @@ const styles = StyleSheet.create({
     textShadowRadius: 8,
   },
   
-  slideDescription: {
+  descricaoSlide: {
     fontSize: typography.fontSize.lg,
     fontWeight: typography.fontWeight.medium,
     color: 'rgba(255, 255, 255, 0.9)',
@@ -427,41 +427,41 @@ const styles = StyleSheet.create({
     maxWidth: width * 0.95, // Aumenta o limite para não cortar texto
   },
   
-  floatingElements: {
+  elementosFlutuantes: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
     marginTop: spacing.lg,
   },
   
-  floatingDot: {
+  pontoFlutuante: {
     width: 12,
     height: 12,
     borderRadius: 6,
     opacity: 0.8,
   },
   
-  floatingLine: {
+  linhaFlutuante: {
     width: 60,
     height: 3,
     borderRadius: 2,
     opacity: 0.6,
   },
   
-  actionsContainer: {
+  containerAcoes: {
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing.xl,
     alignItems: 'center',
   },
   
-  proceedButton: {
+  botaoProsseguir: {
     borderRadius: borders.radius.full,
     overflow: 'hidden',
     ...shadows.xl,
     elevation: 15,
   },
   
-  proceedButtonGradient: {
+  gradienteBotaoProsseguir: {
     paddingVertical: spacing.lg,
     paddingHorizontal: spacing['2xl'],
     alignItems: 'center',
@@ -471,7 +471,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#667eea',
   },
   
-  proceedButtonText: {
+  textoBotaoProsseguir: {
     fontSize: typography.fontSize.xl,
     fontWeight: typography.fontWeight.black,
     color: '#FFFFFF',
@@ -481,13 +481,13 @@ const styles = StyleSheet.create({
     textShadowRadius: 4,
   },
   
-  footer: {
+  rodape: {
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing.xl,
     alignItems: 'center',
   },
   
-  footerText: {
+  textoRodape: {
     fontSize: typography.fontSize.base,
     fontWeight: typography.fontWeight.medium,
     color: 'rgba(255, 255, 255, 0.6)',
@@ -499,12 +499,12 @@ const styles = StyleSheet.create({
     textShadowRadius: 3,
   },
   
-  footerDecorations: {
+  decoracoesRodape: {
     flexDirection: 'row',
     gap: spacing.md,
   },
   
-  footerDot: {
+  pontoRodape: {
     width: 8,
     height: 8,
     borderRadius: 4,

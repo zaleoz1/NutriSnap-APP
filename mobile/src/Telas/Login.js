@@ -3,49 +3,46 @@ import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet, StatusBar, 
 import { MaterialIcons } from '@expo/vector-icons';
 import { buscarApi, obterDetalhesErro } from '../services/api';
 import { usarAutenticacao } from '../services/AuthContext';
-import { typography, spacing, borders, shadows } from '../styles/globalStyles';
+import { colors, typography, spacing, borders, shadows, componentStyles } from '../styles/globalStyles';
 
-const { height } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 
-export default function TelaRegistro({ navigation }) {
-  const { conectado } = usarAutenticacao();
-  const [nome, setNome] = useState('');
+export default function TelaLogin({ navigation }) {
+  const { entrar, conectado } = usarAutenticacao();
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
-  const [confirmarSenha, setConfirmarSenha] = useState('');
-  const [nomeFocused, setNomeFocused] = useState(false);
-  const [emailFocused, setEmailFocused] = useState(false);
-  const [senhaFocused, setSenhaFocused] = useState(false);
-  const [confirmarSenhaFocused, setConfirmarSenhaFocused] = useState(false);
+  const [emailFocado, setEmailFocado] = useState(false);
+  const [senhaFocada, setSenhaFocada] = useState(false);
   const [carregando, setCarregando] = useState(false);
 
   // Animações
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(50)).current;
-  const logoAnim = useRef(new Animated.Value(0)).current;
-  const formAnim = useRef(new Animated.Value(30)).current;
-  const buttonAnim = useRef(new Animated.Value(0)).current;
+  const animacaoFade = useRef(new Animated.Value(0)).current;
+  const animacaoDeslizar = useRef(new Animated.Value(50)).current;
+  const animacaoLogo = useRef(new Animated.Value(0)).current;
+  const animacaoFormulario = useRef(new Animated.Value(30)).current;
+  const animacaoBotao = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
+    // Animação de entrada
     Animated.parallel([
-      Animated.timing(fadeAnim, {
+      Animated.timing(animacaoFade, {
         toValue: 1,
         duration: 1000,
         useNativeDriver: true,
       }),
-      Animated.spring(slideAnim, {
+      Animated.spring(animacaoDeslizar, {
         toValue: 0,
         tension: 50,
         friction: 8,
         useNativeDriver: true,
       }),
-      Animated.spring(logoAnim, {
+      Animated.spring(animacaoLogo, {
         toValue: 1,
         tension: 80,
         friction: 6,
         useNativeDriver: true,
       }),
-      Animated.spring(formAnim, {
+      Animated.spring(animacaoFormulario, {
         toValue: 0,
         tension: 60,
         friction: 8,
@@ -53,8 +50,9 @@ export default function TelaRegistro({ navigation }) {
       }),
     ]).start();
 
+    // Animação do botão após um delay
     setTimeout(() => {
-      Animated.spring(buttonAnim, {
+      Animated.spring(animacaoBotao, {
         toValue: 1,
         tension: 100,
         friction: 8,
@@ -63,74 +61,55 @@ export default function TelaRegistro({ navigation }) {
     }, 800);
   }, []);
 
-  const validarNome = (nome) => {
-    const nomeLimpo = nome.trim();
-    if (nomeLimpo.length < 2 || nomeLimpo.length > 100) return false;
-    const regex = /^[a-zA-ZÀ-ÿ\s]+$/;
-    return regex.test(nomeLimpo);
-  };
-
+  // Validação de email
   const validarEmail = (email) => {
-    const emailLimpo = email.trim().toLowerCase();
     const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return regex.test(emailLimpo);
+    return regex.test(email);
   };
 
+  // Validação de senha
   const validarSenha = (senha) => {
-    if (senha.length < 6 || senha.length > 255) return false;
-    const temMaiuscula = /[A-Z]/.test(senha);
-    const temMinuscula = /[a-z]/.test(senha);
-    const temNumero = /\d/.test(senha);
-    return temMaiuscula && temMinuscula && temNumero;
+    return senha.length >= 6;
   };
 
+  // Validar formulário
   const validarFormulario = () => {
-    if (!nome.trim()) {
-      Alert.alert('Campo obrigatório', 'Por favor, insira seu nome completo');
-      return false;
-    }
-
-    if (!validarNome(nome)) {
-      Alert.alert('Nome inválido', 'Nome deve ter entre 2 e 100 caracteres e conter apenas letras e espaços');
-      return false;
-    }
-
     if (!email.trim()) {
       Alert.alert('Campo obrigatório', 'Por favor, insira seu email');
       return false;
     }
 
-    if (!validarEmail(email)) {
+    if (!validarEmail(email.trim())) {
       Alert.alert('Email inválido', 'Por favor, insira um email válido');
       return false;
     }
 
-    if (!senha) {
-      Alert.alert('Campo obrigatório', 'Por favor, insira uma senha');
+    if (!senha.trim()) {
+      Alert.alert('Campo obrigatório', 'Por favor, insira sua senha');
       return false;
     }
 
     if (!validarSenha(senha)) {
-      Alert.alert('Senha inválida', 'Senha deve ter entre 6 e 255 caracteres, com pelo menos uma letra maiúscula, uma minúscula e um número');
-      return false;
-    }
-
-    if (senha !== confirmarSenha) {
-      Alert.alert('Senhas não coincidem', 'A confirmação de senha deve ser igual à senha');
+      Alert.alert('Senha inválida', 'A senha deve ter pelo menos 6 caracteres');
       return false;
     }
 
     return true;
   };
 
-  async function lidarComRegistro() {
+  // Lidar com login
+  async function lidarComLogin() {
     if (!validarFormulario()) return;
 
+    // Verificar conectividade
     if (!conectado) {
       Alert.alert(
         'Sem conexão', 
         'Não foi possível conectar ao servidor. Verifique sua internet e tente novamente.',
-        [{ text: 'OK' }]
+        [
+          { text: 'OK' },
+          { text: 'Tentar novamente', onPress: () => navigation.navigate('Login') }
+        ]
       );
       return;
     }
@@ -138,51 +117,45 @@ export default function TelaRegistro({ navigation }) {
     setCarregando(true);
 
     try {
-      await buscarApi('/api/autenticacao/registrar', { 
+      const dados = await buscarApi('/api/autenticacao/entrar', { 
         method: 'POST', 
         body: { 
-          nome: nome.trim(),
           email: email.trim().toLowerCase(), 
           senha 
         } 
       });
+
+      await entrar(dados.token, dados.usuario);
       
-      Alert.alert(
-        'Conta criada!', 
-        'Sua conta foi criada com sucesso! Faça login para continuar.',
-        [
-          { 
-            text: 'Fazer Login', 
-            onPress: () => {
-              setNome('');
-              setEmail('');
-              setSenha('');
-              setConfirmarSenha('');
-              navigation.goBack();
-            }
-          }
-        ]
-      );
+      // Limpar campos
+      setEmail('');
+      setSenha('');
+      
+      // Navegar para tela principal
+      navigation.replace('Principal');
       
     } catch (erro) {
-      let mensagem = 'Erro ao criar conta. Tente novamente.';
+      console.error('❌ Erro no login:', erro);
       
-      if (erro.status === 409) {
-        mensagem = 'Este email já está cadastrado. Use outro email ou faça login.';
-      } else if (erro.status === 400) {
-        mensagem = 'Dados inválidos. Verifique as informações inseridas.';
+      let mensagem = 'Erro ao fazer login. Tente novamente.';
+      
+      if (erro.status === 401) {
+        mensagem = 'Email ou senha incorretos. Verifique suas credenciais.';
+      } else if (erro.status === 404) {
+        mensagem = 'Serviço de autenticação não disponível.';
       } else if (erro.status === 500) {
         mensagem = 'Erro interno do servidor. Tente novamente mais tarde.';
       } else if (erro.message) {
         mensagem = erro.message;
       }
 
+      // Mostrar detalhes do erro se disponível
       const detalhes = obterDetalhesErro(erro);
       if (detalhes && detalhes !== mensagem) {
         mensagem += `\n\nDetalhes: ${detalhes}`;
       }
 
-      Alert.alert('Erro no Registro', mensagem);
+      Alert.alert('Erro no Login', mensagem);
       
     } finally {
       setCarregando(false);
@@ -190,58 +163,65 @@ export default function TelaRegistro({ navigation }) {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={estilos.container}>
       <StatusBar barStyle="light-content" backgroundColor="#0A0A0A" />
       
-      <View style={styles.backgroundContainer}>
-        <View style={styles.gradientCircle1} />
-        <View style={styles.gradientCircle2} />
-        <View style={styles.gradientCircle3} />
+      {/* Background com gradiente e elementos decorativos */}
+      <View style={estilos.containerBackground}>
+        <View style={estilos.circuloGradiente1} />
+        <View style={estilos.circuloGradiente2} />
+        <View style={estilos.circuloGradiente3} />
+        <View style={estilos.elementosFlutuantes}>
+          <View style={estilos.pontoFlutuante} />
+          <View style={estilos.linhaFlutuante} />
+          <View style={estilos.pontoFlutuante} />
+        </View>
       </View>
 
       <KeyboardAvoidingView 
-        style={styles.keyboardContainer} 
+        style={estilos.containerTeclado} 
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         <ScrollView 
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={estilos.conteudoRolagem}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
+          {/* Header com logo animado */}
           <Animated.View 
             style={[
-              styles.header,
+              estilos.cabecalho,
               {
-                opacity: fadeAnim,
-                transform: [{ translateY: slideAnim }]
+                opacity: animacaoFade,
+                transform: [{ translateY: animacaoDeslizar }]
               }
             ]}
           >
             <Animated.View 
               style={[
-                styles.logoContainer,
+                estilos.containerLogo,
                 {
-                  transform: [{ scale: logoAnim }]
+                  transform: [{ scale: animacaoLogo }]
                 }
               ]}
             >
-              <View style={styles.logoGlow} />
-              <View style={styles.logoCircle}>
+              <View style={estilos.brilhoLogo} />
+              <View style={estilos.circuloLogo}>
                 <MaterialIcons name="restaurant" size={40} color="#00C9FF" />
               </View>
-              <Text style={styles.logoText}>NutriSnap</Text>
+              <Text style={estilos.textoLogo}>NutriSnap</Text>
             </Animated.View>
             
-            <Text style={styles.welcomeText}>Junte-se a nós!</Text>
-            <Text style={styles.subtitleText}>Crie sua conta e comece sua jornada para uma vida mais saudável</Text>
-            
-            <View style={styles.connectionStatus}>
+            <Text style={estilos.textoBoasVindas}>Bem-vindo de volta!</Text>
+
+            {/* Indicador de conectividade elegante */}
+            <View style={estilos.statusConexao}>
               <View style={[
-                styles.connectionDot, 
+                estilos.pontoConexao, 
                 { backgroundColor: conectado ? '#00C9FF' : '#FF6B6B' }
               ]} />
               <Text style={[
-                styles.connectionText,
+                estilos.textoConexao,
                 { color: conectado ? '#00C9FF' : '#FF6B6B' }
               ]}>
                 {conectado ? 'Conectado ao servidor' : 'Servidor não acessível'}
@@ -249,61 +229,31 @@ export default function TelaRegistro({ navigation }) {
             </View>
           </Animated.View>
 
+          {/* Formulário com animação */}
           <Animated.View 
             style={[
-              styles.formContainer,
+              estilos.containerFormulario,
               {
-                opacity: fadeAnim,
-                transform: [{ translateY: formAnim }]
+                opacity: animacaoFade,
+                transform: [{ translateY: animacaoFormulario }]
               }
             ]}
           >
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Nome completo</Text>
-              <View style={styles.inputWrapper}>
+            <View style={estilos.grupoInput}>
+              <Text style={estilos.rotuloInput}>Email</Text>
+              <View style={estilos.wrapperInput}>
                 <TextInput
                   style={[
-                    styles.input,
-                    nomeFocused && styles.inputFocused,
-                    nome.trim() && !validarNome(nome) && styles.inputError
-                  ]}
-                  placeholder="Seu nome completo"
-                  placeholderTextColor="rgba(255, 255, 255, 0.5)"
-                  value={nome}
-                  onChangeText={setNome}
-                  onFocus={() => setNomeFocused(true)}
-                  onBlur={() => setNomeFocused(false)}
-                  autoCapitalize="words"
-                  autoCorrect={false}
-                  editable={!carregando}
-                />
-                <MaterialIcons 
-                  name="person" 
-                  size={20} 
-                  color={nomeFocused ? "#00C9FF" : "rgba(255, 255, 255, 0.6)"} 
-                  style={styles.inputIcon}
-                />
-              </View>
-              {nome.trim() && !validarNome(nome) && (
-                <Text style={styles.errorText}>Nome deve ter entre 2 e 100 caracteres</Text>
-              )}
-            </View>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Email</Text>
-              <View style={styles.inputWrapper}>
-                <TextInput
-                  style={[
-                    styles.input,
-                    emailFocused && styles.inputFocused,
-                    email.trim() && !validarEmail(email) && styles.inputError
+                    estilos.input,
+                    emailFocado && estilos.inputFocado,
+                    email.trim() && !validarEmail(email.trim()) && estilos.inputErro
                   ]}
                   placeholder="seu@email.com"
                   placeholderTextColor="rgba(255, 255, 255, 0.5)"
                   value={email}
                   onChangeText={setEmail}
-                  onFocus={() => setEmailFocused(true)}
-                  onBlur={() => setEmailFocused(false)}
+                  onFocus={() => setEmailFocado(true)}
+                  onBlur={() => setEmailFocado(false)}
                   keyboardType="email-address"
                   autoCapitalize="none"
                   autoCorrect={false}
@@ -312,30 +262,30 @@ export default function TelaRegistro({ navigation }) {
                 <MaterialIcons 
                   name="email" 
                   size={20} 
-                  color={emailFocused ? "#00C9FF" : "rgba(255, 255, 255, 0.6)"} 
-                  style={styles.inputIcon}
+                  color={emailFocado ? "#00C9FF" : "rgba(255, 255, 255, 0.6)"} 
+                  style={estilos.iconeInput}
                 />
               </View>
-              {email.trim() && !validarEmail(email) && (
-                <Text style={styles.errorText}>Email deve ter formato válido</Text>
+              {email.trim() && !validarEmail(email.trim()) && (
+                <Text style={estilos.textoErro}>Email deve ter formato válido</Text>
               )}
             </View>
 
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Senha</Text>
-              <View style={styles.inputWrapper}>
+            <View style={estilos.grupoInput}>
+              <Text style={estilos.rotuloInput}>Senha</Text>
+              <View style={estilos.wrapperInput}>
                 <TextInput
                   style={[
-                    styles.input,
-                    senhaFocused && styles.inputFocused,
-                    senha && !validarSenha(senha) && styles.inputError
+                    estilos.input,
+                    senhaFocada && estilos.inputFocado,
+                    senha.trim() && !validarSenha(senha) && estilos.inputErro
                   ]}
                   placeholder="••••••••"
                   placeholderTextColor="rgba(255, 255, 255, 0.5)"
                   value={senha}
                   onChangeText={setSenha}
-                  onFocus={() => setSenhaFocused(true)}
-                  onBlur={() => setSenhaFocused(false)}
+                  onFocus={() => setSenhaFocada(true)}
+                  onBlur={() => setSenhaFocada(false)}
                   secureTextEntry
                   autoCapitalize="none"
                   editable={!carregando}
@@ -343,71 +293,40 @@ export default function TelaRegistro({ navigation }) {
                 <MaterialIcons 
                   name="lock" 
                   size={20} 
-                  color={senhaFocused ? "#00C9FF" : "rgba(255, 255, 255, 0.6)"} 
-                  style={styles.inputIcon}
+                  color={senhaFocada ? "#00C9FF" : "rgba(255, 255, 255, 0.6)"} 
+                  style={estilos.iconeInput}
                 />
               </View>
-              {senha && !validarSenha(senha) && (
-                <Text style={styles.errorText}>Mínimo 6 caracteres, com maiúscula, minúscula e número</Text>
-              )}
-            </View>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Confirmar senha</Text>
-              <View style={styles.inputWrapper}>
-                <TextInput
-                  style={[
-                    styles.input,
-                    confirmarSenhaFocused && styles.inputFocused,
-                    confirmarSenha && senha !== confirmarSenha && styles.inputError
-                  ]}
-                  placeholder="••••••••"
-                  placeholderTextColor="rgba(255, 255, 255, 0.5)"
-                  value={confirmarSenha}
-                  onChangeText={setConfirmarSenha}
-                  onFocus={() => setConfirmarSenhaFocused(true)}
-                  onBlur={() => setConfirmarSenhaFocused(false)}
-                  secureTextEntry
-                  autoCapitalize="none"
-                  editable={!carregando}
-                />
-                <MaterialIcons 
-                  name="lock-outline" 
-                  size={20} 
-                  color={confirmarSenhaFocused ? "#00C9FF" : "rgba(255, 255, 255, 0.6)"} 
-                  style={styles.inputIcon}
-                />
-              </View>
-              {confirmarSenha && senha !== confirmarSenha && (
-                <Text style={styles.errorText}>As senhas não coincidem</Text>
+              {senha.trim() && !validarSenha(senha) && (
+                <Text style={estilos.textoErro}>Mínimo de 6 caracteres</Text>
               )}
             </View>
 
             <Animated.View
               style={{
-                opacity: buttonAnim,
-                transform: [{ scale: buttonAnim }]
+                opacity: animacaoBotao,
+                transform: [{ scale: animacaoBotao }]
               }}
             >
               <TouchableOpacity 
-                onPress={lidarComRegistro} 
+                onPress={lidarComLogin} 
                 style={[
-                  styles.registerButton,
-                  carregando && styles.buttonDisabled
+                  estilos.botaoLogin,
+                  carregando && estilos.botaoDesabilitado
                 ]}
                 disabled={carregando || !conectado}
                 activeOpacity={0.9}
               >
-                <View style={styles.buttonGradient}>
+                <View style={estilos.gradienteBotao}>
                   {carregando ? (
-                    <View style={styles.buttonWithLoading}>
+                    <View style={estilos.botaoComCarregamento}>
                       <ActivityIndicator color="#FFFFFF" size="small" />
-                      <Text style={styles.registerButtonText}>Criando conta...</Text>
+                      <Text style={estilos.textoBotaoLogin}>Entrando...</Text>
                     </View>
                   ) : (
                     <>
-                      <Text style={styles.registerButtonText}>Criar Conta</Text>
-                      <MaterialIcons name="person-add" size={20} color="#FFFFFF" />
+                      <Text style={estilos.textoBotaoLogin}>Entrar</Text>
+                      <MaterialIcons name="arrow-forward" size={20} color="#FFFFFF" />
                     </>
                   )}
                 </View>
@@ -415,21 +334,30 @@ export default function TelaRegistro({ navigation }) {
             </Animated.View>
           </Animated.View>
 
+          {/* Links de navegação */}
           <Animated.View 
             style={[
-              styles.navigationContainer,
+              estilos.containerNavegacao,
               {
-                opacity: fadeAnim,
-                transform: [{ translateY: slideAnim }]
+                opacity: animacaoFade,
+                transform: [{ translateY: animacaoDeslizar }]
               }
             ]}
           >
             <TouchableOpacity 
-              onPress={() => navigation.goBack()}
-              style={styles.navLink}
+              onPress={() => navigation.navigate('Register')}
+              style={estilos.linkNavegacao}
               disabled={carregando}
             >
-              <Text style={styles.navLinkText}>Já tem conta? Fazer login</Text>
+              <Text style={estilos.textoLinkNavegacao}>Não tem conta? Cadastre-se</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              onPress={() => navigation.goBack()}
+              style={estilos.linkNavegacao}
+              disabled={carregando}
+            >
+              <Text style={estilos.textoLinkNavegacao}>Voltar</Text>
             </TouchableOpacity>
           </Animated.View>
         </ScrollView>
@@ -438,13 +366,13 @@ export default function TelaRegistro({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
+const estilos = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#0A0A0A',
   },
 
-  backgroundContainer: {
+  containerBackground: {
     position: 'absolute',
     top: 0,
     left: 0,
@@ -452,7 +380,7 @@ const styles = StyleSheet.create({
     bottom: 0,
   },
 
-  gradientCircle1: {
+  circuloGradiente1: {
     position: 'absolute',
     top: -100,
     right: -100,
@@ -462,7 +390,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 201, 255, 0.1)',
   },
 
-  gradientCircle2: {
+  circuloGradiente2: {
     position: 'absolute',
     bottom: -150,
     left: -150,
@@ -472,7 +400,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 107, 107, 0.08)',
   },
 
-  gradientCircle3: {
+  circuloGradiente3: {
     position: 'absolute',
     top: height * 0.4,
     right: -80,
@@ -482,28 +410,50 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 209, 61, 0.06)',
   },
 
-  keyboardContainer: {
-    flex: 1,
+  elementosFlutuantes: {
+    position: 'absolute',
+    top: height * 0.6,
+    left: 50,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
   },
 
-  scrollContent: {
+  pontoFlutuante: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+  },
+
+  linhaFlutuante: {
+    width: 20,
+    height: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+  },
+
+  containerTeclado: {
+    flex: 1,
+  },
+  
+  conteudoRolagem: {
     flexGrow: 1,
     paddingHorizontal: spacing.lg,
   },
   
-  header: {
+  cabecalho: {
     alignItems: 'center',
     paddingTop: height * 0.08,
     paddingBottom: spacing.xl,
   },
   
-  logoContainer: {
+  containerLogo: {
     alignItems: 'center',
     marginBottom: spacing.lg,
     position: 'relative',
   },
 
-  logoGlow: {
+  brilhoLogo: {
     position: 'absolute',
     width: 120,
     height: 120,
@@ -512,7 +462,7 @@ const styles = StyleSheet.create({
     zIndex: -1,
   },
   
-  logoCircle: {
+  circuloLogo: {
     width: 80,
     height: 80,
     borderRadius: 40,
@@ -525,7 +475,7 @@ const styles = StyleSheet.create({
     ...shadows.lg,
   },
   
-  logoText: {
+  textoLogo: {
     fontSize: typography.fontSize['3xl'],
     fontWeight: typography.fontWeight.black,
     color: '#FFFFFF',
@@ -535,7 +485,7 @@ const styles = StyleSheet.create({
     textShadowRadius: 12,
   },
   
-  welcomeText: {
+  textoBoasVindas: {
     fontSize: typography.fontSize['2xl'],
     fontWeight: typography.fontWeight.bold,
     color: '#FFFFFF',
@@ -546,7 +496,7 @@ const styles = StyleSheet.create({
     textShadowRadius: 8,
   },
   
-  subtitleText: {
+  textoSubtitulo: {
     fontSize: typography.fontSize.base,
     fontWeight: typography.fontWeight.medium,
     color: 'rgba(255, 255, 255, 0.8)',
@@ -558,7 +508,7 @@ const styles = StyleSheet.create({
     textShadowRadius: 4,
   },
   
-  connectionStatus: {
+  statusConexao: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
@@ -570,13 +520,13 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255, 255, 255, 0.1)',
   },
   
-  connectionDot: {
+  pontoConexao: {
     width: 8,
     height: 8,
     borderRadius: 4,
   },
   
-  connectionText: {
+  textoConexao: {
     fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.medium,
     textShadowColor: 'rgba(0, 0, 0, 0.5)',
@@ -584,16 +534,16 @@ const styles = StyleSheet.create({
     textShadowRadius: 3,
   },
   
-  formContainer: {
+  containerFormulario: {
     gap: spacing.lg,
     marginBottom: spacing.xl,
   },
   
-  inputGroup: {
+  grupoInput: {
     gap: spacing.sm,
   },
   
-  inputLabel: {
+  rotuloInput: {
     fontSize: typography.fontSize.base,
     fontWeight: typography.fontWeight.semibold,
     color: '#FFFFFF',
@@ -603,7 +553,7 @@ const styles = StyleSheet.create({
     textShadowRadius: 3,
   },
 
-  inputWrapper: {
+  wrapperInput: {
     position: 'relative',
   },
   
@@ -612,7 +562,7 @@ const styles = StyleSheet.create({
     borderRadius: borders.radius.xl,
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.lg,
-    paddingRight: spacing.xl + 20,
+    paddingRight: spacing.xl + 20, // Espaço para o ícone
     borderWidth: borders.width.thin,
     borderColor: 'rgba(255, 255, 255, 0.2)',
     fontSize: typography.fontSize.base,
@@ -620,27 +570,27 @@ const styles = StyleSheet.create({
     ...shadows.base,
   },
 
-  inputIcon: {
+  iconeInput: {
     position: 'absolute',
     right: spacing.lg,
     top: '50%',
     marginTop: -10,
   },
   
-  inputFocused: {
+  inputFocado: {
     borderColor: '#00C9FF',
     borderWidth: borders.width.base,
     backgroundColor: 'rgba(255, 255, 255, 0.12)',
     ...shadows.lg,
   },
   
-  inputError: {
+  inputErro: {
     borderColor: '#FF6B6B',
     borderWidth: borders.width.base,
     backgroundColor: 'rgba(255, 107, 107, 0.1)',
   },
   
-  errorText: {
+  textoErro: {
     fontSize: typography.fontSize.sm,
     color: '#FF6B6B',
     marginLeft: spacing.sm,
@@ -650,7 +600,7 @@ const styles = StyleSheet.create({
     textShadowRadius: 2,
   },
   
-  registerButton: {
+  botaoLogin: {
     borderRadius: borders.radius.full,
     overflow: 'hidden',
     marginTop: spacing.md,
@@ -658,7 +608,7 @@ const styles = StyleSheet.create({
     elevation: 15,
   },
 
-  buttonGradient: {
+  gradienteBotao: {
     paddingVertical: spacing.lg,
     paddingHorizontal: spacing['2xl'],
     alignItems: 'center',
@@ -668,18 +618,18 @@ const styles = StyleSheet.create({
     backgroundColor: '#00C9FF',
   },
   
-  buttonDisabled: {
+  botaoDesabilitado: {
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
     ...shadows.sm,
   },
   
-  buttonWithLoading: {
+  botaoComCarregamento: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
   },
   
-  registerButtonText: {
+  textoBotaoLogin: {
     fontSize: typography.fontSize.lg,
     fontWeight: typography.fontWeight.bold,
     color: '#FFFFFF',
@@ -689,13 +639,13 @@ const styles = StyleSheet.create({
     textShadowRadius: 4,
   },
   
-  navigationContainer: {
+  containerNavegacao: {
     alignItems: 'center',
     gap: spacing.md,
     paddingBottom: spacing.xl,
   },
   
-  navLink: {
+  linkNavegacao: {
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.lg,
     borderRadius: borders.radius.full,
@@ -704,7 +654,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255, 255, 255, 0.1)',
   },
   
-  navLinkText: {
+  textoLinkNavegacao: {
     fontSize: typography.fontSize.base,
     fontWeight: typography.fontWeight.semibold,
     color: '#00C9FF',
