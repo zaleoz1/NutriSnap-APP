@@ -24,7 +24,7 @@ function calcularCaloriasDiarias({ peso, altura, idade, sexo, nivelAtividade, ob
 }
 
 export default function TelaMeta() {
-  const { token, modoVisitante } = usarAutenticacao();
+  const { token } = usarAutenticacao();
   const [pesoAtual, setPesoAtual] = useState('');
   const [pesoMeta, setPesoMeta] = useState('');
   const [dias, setDias] = useState('');
@@ -55,11 +55,6 @@ export default function TelaMeta() {
   }
 
   async function salvarMeta() {
-    if (modoVisitante) {
-      Alert.alert('Modo Visitante', 'Metas não podem ser salvas no modo visitante. Faça login para salvar.');
-      return;
-    }
-
     try {
       await buscarApi('/api/metas', {
         method: 'POST',
@@ -96,15 +91,6 @@ export default function TelaMeta() {
             <MaterialIcons name="flag" size={40} color={colors.primary[600]} />
           </View>
         </View>
-
-        {/* Aviso do modo visitante */}
-        {modoVisitante && (
-          <View style={styles.alertContainer}>
-            <Text style={styles.alertText}>
-              💡 Modo Visitante - Cálculos funcionam, mas metas não são salvas
-            </Text>
-          </View>
-        )}
 
         {/* Formulário */}
         <View style={styles.formContainer}>
@@ -310,23 +296,13 @@ export default function TelaMeta() {
         {/* Botões de ação */}
         {caloriasDiarias && (
           <View style={styles.actionButtons}>
-            {!modoVisitante && (
-              <TouchableOpacity
-                onPress={salvarMeta}
-                style={styles.saveButton}
-                activeOpacity={0.8}
-              >
-                <Text style={styles.saveButtonText}>Salvar Meta</Text>
-              </TouchableOpacity>
-            )}
-            
-            {modoVisitante && (
-              <View style={styles.visitorAlert}>
-                <Text style={styles.visitorAlertText}>
-                  Faça login para salvar esta meta
-                </Text>
-              </View>
-            )}
+            <TouchableOpacity
+              onPress={salvarMeta}
+              style={styles.saveButton}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.saveButtonText}>Salvar Meta</Text>
+            </TouchableOpacity>
           </View>
         )}
       </ScrollView>

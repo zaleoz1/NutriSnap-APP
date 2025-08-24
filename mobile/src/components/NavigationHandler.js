@@ -1,21 +1,20 @@
 import React, { useEffect } from 'react';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
 import { usarAutenticacao } from '../services/AuthContext';
 import { colors, spacing } from '../styles/globalStyles';
 
 export default function NavigationHandler({ navigation }) {
-  const { token, modoVisitante, carregando } = usarAutenticacao();
+  const { token, carregando } = usarAutenticacao();
 
   useEffect(() => {
     if (!carregando) {
-      if (token || modoVisitante) {
+      if (token) {
         navigation.replace('Principal');
       } else {
         navigation.replace('Welcome');
       }
     }
-  }, [token, modoVisitante, carregando, navigation]);
+  }, [token, carregando, navigation]);
 
   if (carregando) {
     return (

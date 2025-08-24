@@ -7,7 +7,6 @@ const ContextoAutenticacao = createContext(null);
 export function ProvedorAutenticacao({ children }) {
   const [token, setToken] = useState(null);
   const [usuario, setUsuario] = useState(null);
-  const [modoVisitante, setModoVisitante] = useState(false);
   const [carregando, setCarregando] = useState(true);
   const [conectado, setConectado] = useState(false);
 
@@ -76,7 +75,6 @@ export function ProvedorAutenticacao({ children }) {
       // Salvar no estado
       setToken(novoToken);
       setUsuario(novoUsuario);
-      setModoVisitante(false);
 
       // Salvar no AsyncStorage
       await Promise.all([
@@ -105,7 +103,6 @@ export function ProvedorAutenticacao({ children }) {
   const limparDados = async () => {
     setToken(null);
     setUsuario(null);
-    setModoVisitante(false);
     
     try {
       await Promise.all([
@@ -117,28 +114,9 @@ export function ProvedorAutenticacao({ children }) {
     }
   };
 
-  // Entrar no modo visitante
-  const entrarModoVisitante = () => {
-    setModoVisitante(true);
-    setToken(null);
-    setUsuario(null);
-    console.log('👤 Modo visitante ativado');
-  };
-
-  // Sair do modo visitante
-  const sairModoVisitante = () => {
-    setModoVisitante(false);
-    console.log('👤 Modo visitante desativado');
-  };
-
   // Verificar se o usuário está autenticado
   const estaAutenticado = () => {
     return !!(token && usuario);
-  };
-
-  // Verificar se está no modo visitante
-  const estaNoModoVisitante = () => {
-    return modoVisitante;
   };
 
   // Funções de compatibilidade com nomes em português
@@ -150,15 +128,12 @@ export function ProvedorAutenticacao({ children }) {
     // Estados
     token,
     usuario,
-    modoVisitante,
     carregando,
     conectado,
     
     // Funções principais
     fazerLogin,
     fazerLogout,
-    entrarModoVisitante,
-    sairModoVisitante,
     
     // Funções de compatibilidade
     entrar,
@@ -166,7 +141,6 @@ export function ProvedorAutenticacao({ children }) {
     
     // Funções utilitárias
     estaAutenticado,
-    estaNoModoVisitante,
     
     // Funções de gerenciamento
     limparDados,

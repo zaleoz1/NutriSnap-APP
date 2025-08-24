@@ -7,12 +7,12 @@ import { colors, typography, spacing, borders, shadows } from '../styles/globalS
 const { width, height } = Dimensions.get('window');
 
 export default function DashboardScreen({ navigation }) {
-  const { usuario, modoVisitante } = usarAutenticacao();
+  const { usuario } = usarAutenticacao();
   const [currentDate] = useState(new Date());
 
   // Dados simulados para demonstração
   const userData = {
-    name: usuario?.nome || 'Visitante',
+    name: usuario?.nome || 'Usuário',
     dailyCalories: 2290,
     consumedCalories: 0,
     exerciseCalories: 0,

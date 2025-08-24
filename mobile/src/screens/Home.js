@@ -8,19 +8,12 @@ import { colors, typography, spacing, borders, shadows, componentStyles } from '
 const { width } = Dimensions.get('window');
 
 export default function TelaPrincipal({ navigation }) {
-  const { usuario, token, modoVisitante, sair, sairModoVisitante } = usarAutenticacao();
+  const { usuario, token, sair } = usarAutenticacao();
   const [meta, setMeta] = useState(null);
   const [consumido, setConsumido] = useState(0);
   const [modalVisivel, setModalVisivel] = useState(false);
 
   async function carregarDados() {
-    if (modoVisitante) {
-      // Dados simulados para modo visitante
-      setMeta({ calorias_diarias: 2290 });
-      setConsumido(0);
-      return;
-    }
-
     try {
       const m = await buscarApi('/api/metas', { token });
       setMeta(m);
@@ -42,13 +35,8 @@ export default function TelaPrincipal({ navigation }) {
   const percentual = Math.min(100, Math.round((consumido / diario) * 100));
 
   function lidarComSair() {
-    if (modoVisitante) {
-      sairModoVisitante();
-      navigation.replace('Login');
-    } else {
-      sair();
-      navigation.replace('Login');
-    }
+    sair();
+    navigation.replace('Login');
   }
 
   function abrirModal() {
@@ -91,7 +79,7 @@ export default function TelaPrincipal({ navigation }) {
         <View style={styles.header}>
           <View style={styles.profileIcon}>
             <Text style={styles.profileText}>
-              {modoVisitante ? 'V' : (usuario?.nome?.charAt(0) || 'U')}
+              {usuario?.nome?.charAt(0) || 'U'}
             </Text>
           </View>
           
@@ -204,9 +192,7 @@ export default function TelaPrincipal({ navigation }) {
           style={styles.logoutButton}
           activeOpacity={0.8}
         >
-          <Text style={styles.logoutButtonText}>
-            {modoVisitante ? 'Sair do Modo Visitante' : 'Sair da Conta'}
-          </Text>
+          <Text style={styles.logoutButtonText}>Sair da Conta</Text>
         </TouchableOpacity>
       </ScrollView>
 

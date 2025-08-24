@@ -51,7 +51,7 @@ function gerarPlanoTreino(diasPorSemana, objetivo, minutosPorSessao, horarioPref
 }
 
 export default function TelaPlanoTreino() {
-  const { token, modoVisitante } = usarAutenticacao();
+  const { token } = usarAutenticacao();
   const [diasPorSemana, setDiasPorSemana] = useState('3');
   const [objetivo, setObjetivo] = useState('emagrecer');
   const [minutos, setMinutos] = useState('30');
@@ -71,11 +71,6 @@ export default function TelaPlanoTreino() {
   }
 
   async function salvarPlano() {
-    if (modoVisitante) {
-      Alert.alert('Modo Visitante', 'Planos de treino não podem ser salvos no modo visitante. Faça login para salvar.');
-      return;
-    }
-
     try {
       await buscarApi('/api/treinos', { 
         method: 'POST', 
@@ -158,15 +153,6 @@ export default function TelaPlanoTreino() {
             <MaterialIcons name="fitness-center" size={40} color={colors.primary[600]} />
           </View>
         </View>
-
-        {/* Aviso do modo visitante */}
-        {modoVisitante && (
-          <View style={styles.alertContainer}>
-            <Text style={styles.alertText}>
-              💡 Modo Visitante - Planos são gerados mas não salvos
-            </Text>
-          </View>
-        )}
 
         {/* Formulário */}
         <View style={styles.formContainer}>
@@ -282,23 +268,13 @@ export default function TelaPlanoTreino() {
         {/* Botões de ação */}
         {plano.length > 0 && (
           <View style={styles.actionButtons}>
-            {!modoVisitante && (
-              <TouchableOpacity
-                onPress={salvarPlano}
-                style={styles.saveButton}
-                activeOpacity={0.8}
-              >
-                <Text style={styles.saveButtonText}>Salvar Plano</Text>
-              </TouchableOpacity>
-            )}
-            
-            {modoVisitante && (
-              <View style={styles.visitorAlert}>
-                <Text style={styles.visitorAlertText}>
-                  Faça login para salvar este plano de treino
-                </Text>
-              </View>
-            )}
+            <TouchableOpacity
+              onPress={salvarPlano}
+              style={styles.saveButton}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.saveButtonText}>Salvar Plano</Text>
+            </TouchableOpacity>
           </View>
         )}
       </ScrollView>

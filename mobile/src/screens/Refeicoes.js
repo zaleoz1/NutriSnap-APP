@@ -9,7 +9,7 @@ import { colors, typography, spacing, borders, shadows, componentStyles } from '
 const { width } = Dimensions.get('window');
 
 export default function TelaRefeicoes() {
-  const { token, modoVisitante } = usarAutenticacao();
+  const { token } = usarAutenticacao(); 
   const [imagem, setImagem] = useState(null);
   const [itens, setItens] = useState([]);
   const [total, setTotal] = useState(0);
@@ -30,25 +30,12 @@ export default function TelaRefeicoes() {
       const asset = resultado.assets[0];
       setImagem(asset.uri);
       
-      if (modoVisitante) {
-        // Dados simulados para modo visitante
-        const itensSimulados = [
-          { nome: 'Arroz Integral', calorias: 130, proteinas: 2.7, carboidratos: 27, gorduras: 0.9 },
-          { nome: 'Feijão Preto', calorias: 77, proteinas: 4.5, carboidratos: 14, gorduras: 0.5 },
-          { nome: 'Frango Grelhado', calorias: 165, proteinas: 31, carboidratos: 0, gorduras: 3.6 },
-          { nome: 'Salada de Alface', calorias: 15, proteinas: 1.4, carboidratos: 2.9, gorduras: 0.2 }
-        ];
-        setItens(itensSimulados);
-        recalcular(itensSimulados);
-        Alert.alert('Modo Visitante', 'Análise simulada - dados não são reais');
-      } else {
-        try {
-          const dados = await buscarApi('/api/analise', { method:'POST', token, body:{ dadosImagemBase64: asset.base64 } });
-          setItens(dados.itens || []);
-          recalcular(dados.itens || []);
-        } catch (erro) {
-          Alert.alert('Erro', erro.message);
-        }
+      try {
+        const dados = await buscarApi('/api/analise', { method:'POST', token, body:{ dadosImagemBase64: asset.base64 } });
+        setItens(dados.itens || []);
+        recalcular(dados.itens || []);
+      } catch (erro) {
+        Alert.alert('Erro', erro.message);
       }
     }
   }
@@ -59,25 +46,12 @@ export default function TelaRefeicoes() {
       const asset = resultado.assets[0];
       setImagem(asset.uri);
       
-      if (modoVisitante) {
-        // Dados simulados para modo visitante
-        const itensSimulados = [
-          { nome: 'Arroz Integral', calorias: 130, proteinas: 2.7, carboidratos: 27, gorduras: 0.9 },
-          { nome: 'Feijão Preto', calorias: 77, proteinas: 4.5, carboidratos: 14, gorduras: 0.5 },
-          { nome: 'Frango Grelhado', calorias: 165, proteinas: 31, carboidratos: 0, gorduras: 3.6 },
-          { nome: 'Salada de Alface', calorias: 15, proteinas: 1.4, carboidratos: 2.9, gorduras: 0.2 }
-        ];
-        setItens(itensSimulados);
-        recalcular(itensSimulados);
-        Alert.alert('Modo Visitante', 'Análise simulada - dados não são reais');
-      } else {
-        try {
-          const dados = await buscarApi('/api/analise', { method:'POST', token, body:{ dadosImagemBase64: asset.base64 } });
-          setItens(dados.itens || []);
-          recalcular(dados.itens || []);
-        } catch (erro) {
-          Alert.alert('Erro', erro.message);
-        }
+      try {
+        const dados = await buscarApi('/api/analise', { method:'POST', token, body:{ dadosImagemBase64: asset.base64 } });
+        setItens(dados.itens || []);
+        recalcular(dados.itens || []);
+      } catch (erro) {
+        Alert.alert('Erro', erro.message);
       }
     }
   }
@@ -124,11 +98,6 @@ export default function TelaRefeicoes() {
   }
 
   async function salvarRefeicao() {
-    if (modoVisitante) {
-      Alert.alert('Modo Visitante', 'Refeições não podem ser salvas no modo visitante. Faça login para salvar.');
-      return;
-    }
-
     try {
       await buscarApi('/api/refeicoes', { method:'POST', token, body:{ itens, calorias_totais: total, timestamp: new Date() } });
       Alert.alert('Sucesso', 'Refeição salva com sucesso!');
@@ -183,15 +152,6 @@ export default function TelaRefeicoes() {
             <MaterialIcons name="camera-alt" size={40} color={colors.primary[600]} />
           </View>
         </View>
-
-        {/* Aviso do modo visitante */}
-        {modoVisitante && (
-          <View style={styles.alertContainer}>
-            <Text style={styles.alertText}>
-              💡 Modo Visitante - Análise simulada para demonstração
-            </Text>
-          </View>
-        )}
 
         {/* Botões de captura */}
         <View style={styles.captureButtonsContainer}>
@@ -287,23 +247,13 @@ export default function TelaRefeicoes() {
         {/* Botões de ação */}
         {itens.length > 0 && (
           <View style={styles.actionButtons}>
-            {!modoVisitante && (
-              <TouchableOpacity 
-                onPress={salvarRefeicao} 
-                style={styles.saveButton}
-                activeOpacity={0.8}
-              >
-                <Text style={styles.saveButtonText}>Salvar Refeição</Text>
-              </TouchableOpacity>
-            )}
-            
-            {modoVisitante && (
-              <View style={styles.visitorAlert}>
-                <Text style={styles.visitorAlertText}>
-                  Faça login para salvar suas refeições
-                </Text>
-              </View>
-            )}
+            <TouchableOpacity 
+              onPress={salvarRefeicao} 
+              style={styles.saveButton}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.saveButtonText}>Salvar Refeição</Text>
+            </TouchableOpacity>
           </View>
         )}
       </ScrollView>
