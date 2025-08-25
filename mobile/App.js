@@ -33,7 +33,7 @@ export default function App() {
             <Stack.Screen name="IMC" component={BMIScreen} options={{ title: 'IMC' }} />
             <Stack.Screen name="Meta" component={GoalScreen} options={{ title: 'Meta de Peso' }} />
             <Stack.Screen name="PlanoTreino" component={WorkoutPlanScreen} options={{ title: 'Rotina de Treino' }} />
-            <Stack.Screen name="Refeicoes" component={MealsScreen} options={{ title: 'Refeições' }} />
+            <Stack.Screen name="Refeicoes" component={MealsScreen} options={{ headerShown: false }} />
           </Stack.Navigator>
         </NavigationContainer>
       </ProvedorAutenticacao>

@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, FlatList, Alert, Image, StyleSheet, StatusBar, ScrollView, Dimensions, TextInput, Modal } from 'react-native';
-import { MaterialIcons, Ionicons } from '@expo/vector-icons';
+import { View, Text, TouchableOpacity, FlatList, Alert, Image, StyleSheet, StatusBar, ScrollView, Dimensions, TextInput, Modal, Animated } from 'react-native';
+import { MaterialIcons, Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { usarAutenticacao } from '../services/AuthContext';
 import { buscarApi } from '../services/api';
 import { colors, typography, spacing, borders, shadows, componentStyles } from '../styles/globalStyles';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 
 export default function TelaRefeicoes() {
   const { token } = usarAutenticacao(); 
@@ -113,12 +113,12 @@ export default function TelaRefeicoes() {
   function adicionarAlimentoManualmente() {
     if (!alimentoManual.trim()) {
       Alert.alert('Erro', 'Por favor, insira o nome do alimento');
-      return;
+      return false;
     }
 
     if (!caloriasManual.trim()) {
       Alert.alert('Erro', 'Por favor, insira as calorias');
-      return;
+      return false;
     }
 
     const novoAlimento = {
@@ -154,27 +154,45 @@ export default function TelaRefeicoes() {
 
   function renderizarItemAlimento({ item, index }) {
     return (
-      <View style={styles.itemAlimento}>
-        <View style={styles.cabecalhoAlimento}>
-          <Text style={styles.nomeAlimento}>{item.nome}</Text>
-          <Text style={styles.caloriasAlimento}>{Math.round(item.calorias)} kcal</Text>
+      <View style={styles.cardAlimento}>
+        <View style={styles.cabecalhoCardAlimento}>
+          <View style={styles.infoAlimento}>
+            <View style={styles.iconeAlimento}>
+              <FontAwesome5 name="apple-alt" size={16} color={colors.accent.green} />
+            </View>
+            <View style={styles.detalhesAlimento}>
+              <Text style={styles.nomeAlimento}>{item.nome}</Text>
+              <Text style={styles.caloriasAlimento}>{Math.round(item.calorias)} kcal</Text>
+            </View>
+          </View>
+          <View style={styles.badgeCalorias}>
+            <Text style={styles.textoBadgeCalorias}>{Math.round(item.calorias)}</Text>
+          </View>
         </View>
         
-        <View style={styles.informacoesNutricionais}>
-          <View style={styles.itemNutricional}>
-            <MaterialIcons name="fitness-center" size={16} color={colors.accent.blue} />
-            <Text style={styles.rotuloNutricional}>Proteínas</Text>
-            <Text style={styles.valorNutricional}>{Math.round(item.proteinas * 10) / 10}g</Text>
+        <View style={styles.macronutrientes}>
+          <View style={styles.macronutriente}>
+            <View style={[styles.iconeMacro, { backgroundColor: colors.accent.blue + '20' }]}>
+              <MaterialIcons name="fitness-center" size={14} color={colors.accent.blue} />
+            </View>
+            <Text style={styles.valorMacro}>{Math.round(item.proteinas * 10) / 10}g</Text>
+            <Text style={styles.rotuloMacro}>Proteínas</Text>
           </View>
-          <View style={styles.itemNutricional}>
-            <MaterialIcons name="grain" size={16} color={colors.accent.green} />
-            <Text style={styles.rotuloNutricional}>Carboidratos</Text>
-            <Text style={styles.valorNutricional}>{Math.round(item.carboidratos * 10) / 10}g</Text>
+          
+          <View style={styles.macronutriente}>
+            <View style={[styles.iconeMacro, { backgroundColor: colors.accent.green + '20' }]}>
+              <MaterialIcons name="grain" size={14} color={colors.accent.green} />
+            </View>
+            <Text style={styles.valorMacro}>{Math.round(item.carboidratos * 10) / 10}g</Text>
+            <Text style={styles.rotuloMacro}>Carboidratos</Text>
           </View>
-          <View style={styles.itemNutricional}>
-            <MaterialIcons name="opacity" size={16} color={colors.accent.orange} />
-            <Text style={styles.rotuloNutricional}>Gorduras</Text>
-            <Text style={styles.valorNutricional}>{Math.round(item.gorduras * 10) / 10}g</Text>
+          
+          <View style={styles.macronutriente}>
+            <View style={[styles.iconeMacro, { backgroundColor: colors.accent.orange + '20' }]}>
+              <MaterialIcons name="opacity" size={14} color={colors.accent.orange} />
+            </View>
+            <Text style={styles.valorMacro}>{Math.round(item.gorduras * 10) / 10}g</Text>
+            <Text style={styles.rotuloMacro}>Gorduras</Text>
           </View>
         </View>
       </View>
@@ -183,192 +201,219 @@ export default function TelaRefeicoes() {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor={colors.neutral[50]} />
+      <StatusBar barStyle="light-content" backgroundColor={colors.neutral[900]} />
       
       <ScrollView 
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.conteudoScroll}
       >
-        {/* Cabeçalho */}
-        <View style={styles.cabecalho}>
+        {/* Header Elegante */}
+        <View style={styles.header}>
           <View style={styles.containerTitulo}>
-            <Text style={styles.titulo}>Análise de Refeições</Text>
-            <Text style={styles.subtitulo}>Fotografe sua refeição ou adicione manualmente</Text>
+            <Text style={styles.titulo}>Análise Nutricional</Text>
+            <Text style={styles.subtitulo}>Transforme fotos em insights nutricionais</Text>
           </View>
-          <View style={styles.containerIcone}>
-            <MaterialIcons name="camera-alt" size={40} color={colors.primary[600]} />
+          <View style={styles.containerIconeHeader}>
+            <View style={styles.circuloIconeHeader}>
+              <MaterialIcons name="camera-alt" size={32} color={colors.primary[400]} />
+            </View>
           </View>
         </View>
 
-        {/* Botões de captura */}
-        <View style={styles.containerBotoesCaptura}>
+        {/* Cards de Ação */}
+        <View style={styles.containerCardsAcao}>
           <TouchableOpacity 
             onPress={capturarComCamera} 
-            style={styles.botaoCaptura}
-            activeOpacity={0.8}
+            style={[styles.cardAcao, styles.cardCamera]}
+            activeOpacity={0.9}
           >
-            <View style={styles.conteudoBotaoCaptura}>
-              <MaterialIcons name="camera-alt" size={28} color={colors.neutral[50]} />
-              <Text style={styles.textoCaptura}>Câmera</Text>
+            <View style={styles.conteudoCardAcao}>
+              <View style={styles.iconeCardAcao}>
+                <MaterialIcons name="camera-alt" size={28} color={colors.neutral[50]} />
+              </View>
+              <Text style={styles.tituloCardAcao}>Câmera</Text>
+              <Text style={styles.descricaoCardAcao}>Fotografe sua refeição</Text>
             </View>
           </TouchableOpacity>
 
           <TouchableOpacity 
             onPress={selecionarDaGaleria} 
-            style={[styles.botaoCaptura, styles.botaoGaleria]}
-            activeOpacity={0.8}
+            style={[styles.cardAcao, styles.cardGaleria]}
+            activeOpacity={0.9}
           >
-            <View style={styles.conteudoBotaoCaptura}>
-              <MaterialIcons name="photo-library" size={28} color={colors.neutral[50]} />
-              <Text style={styles.textoCaptura}>Galeria</Text>
+            <View style={styles.conteudoCardAcao}>
+              <View style={styles.iconeCardAcao}>
+                <MaterialIcons name="photo-library" size={28} color={colors.neutral[50]} />
+              </View>
+              <Text style={styles.tituloCardAcao}>Galeria</Text>
+              <Text style={styles.descricaoCardAcao}>Selecione uma foto</Text>
             </View>
           </TouchableOpacity>
 
           <TouchableOpacity 
             onPress={abrirModalAdicao} 
-            style={[styles.botaoCaptura, styles.botaoManual]}
-            activeOpacity={0.8}
+            style={[styles.cardAcao, styles.cardManual]}
+            activeOpacity={0.9}
           >
-            <View style={styles.conteudoBotaoCaptura}>
-              <MaterialIcons name="edit" size={28} color={colors.neutral[50]} />
-              <Text style={styles.textoCaptura}>Manual</Text>
+            <View style={styles.conteudoCardAcao}>
+              <View style={styles.iconeCardAcao}>
+                <MaterialIcons name="edit" size={28} color={colors.neutral[50]} />
+              </View>
+              <Text style={styles.tituloCardAcao}>Manual</Text>
+              <Text style={styles.descricaoCardAcao}>Digite os dados</Text>
             </View>
           </TouchableOpacity>
         </View>
 
-        {/* Imagem capturada */}
+        {/* Seção de Imagem */}
         {imagem && (
-          <View style={styles.containerImagem}>
-            <Image source={{ uri: imagem }} style={styles.imagemAlimento} />
-            <View style={styles.sobreposicaoImagem}>
-              <Text style={styles.textoImagem}>Refeição Capturada</Text>
+          <View style={styles.secaoImagem}>
+            <View style={styles.containerImagem}>
+              <Image source={{ uri: imagem }} style={styles.imagemAlimento} />
+              <View style={styles.overlayImagem}>
+                <View style={styles.badgeImagem}>
+                  <MaterialIcons name="check-circle" size={16} color={colors.accent.green} />
+                  <Text style={styles.textoBadgeImagem}>Imagem Capturada</Text>
+                </View>
+              </View>
+            </View>
+            
+            <View style={styles.botoesAcaoImagem}>
+              <TouchableOpacity 
+                onPress={analisarImagem} 
+                style={[styles.botaoAcaoImagem, styles.botaoAnalisar]}
+                disabled={analisando}
+                activeOpacity={0.9}
+              >
+                <View style={styles.conteudoBotaoAcao}>
+                  {analisando ? (
+                    <MaterialIcons name="hourglass-empty" size={18} color={colors.neutral[50]} />
+                  ) : (
+                    <MaterialIcons name="search" size={18} color={colors.neutral[50]} />
+                  )}
+                  <Text style={styles.textoBotaoAcao}>
+                    {analisando ? 'Analisando...' : 'Analisar Imagem'}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+
+              <TouchableOpacity 
+                onPress={removerImagem} 
+                style={[styles.botaoAcaoImagem, styles.botaoRemover]}
+                activeOpacity={0.9}
+              >
+                <View style={styles.conteudoBotaoAcao}>
+                  <MaterialIcons name="delete-outline" size={18} color={colors.neutral[50]} />
+                  <Text style={styles.textoBotaoAcao}>Remover</Text>
+                </View>
+              </TouchableOpacity>
             </View>
           </View>
         )}
 
-        {/* Botões de ação da imagem */}
-        {imagem && (
-          <View style={styles.botoesImagem}>
-            <TouchableOpacity 
-              onPress={analisarImagem} 
-              style={[styles.botaoImagem, styles.botaoAnalisar]}
-              disabled={analisando}
-              activeOpacity={0.8}
-            >
-                              <View style={styles.conteudoBotaoImagem}>
-                  {analisando ? (
-                    <MaterialIcons name="hourglass-empty" size={16} color={colors.neutral[50]} />
-                  ) : (
-                    <MaterialIcons name="search" size={16} color={colors.neutral[50]} />
-                  )}
-                  <Text style={styles.textoBotaoImagem}>
-                    {analisando ? 'Analisando...' : 'Analisar'}
-                  </Text>
-                </View>
-            </TouchableOpacity>
-
-                          <TouchableOpacity 
-                onPress={removerImagem} 
-                style={[styles.botaoImagem, styles.botaoRemover]}
-                activeOpacity={0.8}
-              >
-                <View style={styles.conteudoBotaoImagem}>
-                  <MaterialIcons name="delete" size={16} color={colors.neutral[50]} />
-                  <Text style={styles.textoBotaoImagem}>Limpar</Text>
-                </View>
-              </TouchableOpacity>
-          </View>
-        )}
-
-        {/* Lista de itens */}
+        {/* Lista de Alimentos */}
         {itens.length > 0 && (
-          <View style={styles.containerItens}>
-            <Text style={styles.tituloItens}>Itens Identificados</Text>
+          <View style={styles.secaoAlimentos}>
+            <View style={styles.cabecalhoSecao}>
+              <Text style={styles.tituloSecao}>Alimentos Identificados</Text>
+              <View style={styles.badgeContador}>
+                <Text style={styles.textoBadgeContador}>{itens.length}</Text>
+              </View>
+            </View>
+            
             <FlatList
               data={itens}
               keyExtractor={(item, idx) => idx.toString()}
               renderItem={renderizarItemAlimento}
               scrollEnabled={false}
               showsVerticalScrollIndicator={false}
+              ItemSeparatorComponent={() => <View style={styles.separador} />}
             />
           </View>
         )}
 
-        {/* Total de calorias */}
+        {/* Resumo Nutricional */}
         {itens.length > 0 && (
-          <View style={styles.containerTotal}>
-            <View style={styles.cabecalhoTotal}>
-              <Text style={styles.tituloTotal}>Total da Refeição</Text>
-              <Text style={styles.caloriasTotais}>{Math.round(total)} kcal</Text>
-            </View>
-            
-            <View style={styles.detalhamentoTotal}>
-              <View style={styles.itemTotal}>
-                <MaterialIcons name="fitness-center" size={18} color={colors.accent.blue} />
-                <Text style={styles.rotuloTotal}>Proteínas</Text>
-                <Text style={styles.valorTotal}>
-                  {Math.round(proteinasTotal * 10) / 10}g
-                </Text>
-              </View>
-              <View style={styles.itemTotal}>
-                <MaterialIcons name="grain" size={18} color={colors.accent.green} />
-                <Text style={styles.rotuloTotal}>Carboidratos</Text>
-                <Text style={styles.valorTotal}>
-                  {Math.round(carboidratosTotal * 10) / 10}g
-                </Text>
-              </View>
-              <View style={styles.itemTotal}>
-                <MaterialIcons name="opacity" size={18} color={colors.accent.orange} />
-                <Text style={styles.rotuloTotal}>Gorduras</Text>
-                <Text style={styles.valorTotal}>
-                  {Math.round(gordurasTotal * 10) / 10}g
-                </Text>
+          <View style={styles.secaoResumo}>
+            <View style={styles.cabecalhoResumo}>
+              <Text style={styles.tituloResumo}>Resumo Nutricional</Text>
+              <View style={styles.caloriasPrincipais}>
+                <Text style={styles.numeroCalorias}>{Math.round(total)}</Text>
+                <Text style={styles.unidadeCalorias}>kcal</Text>
               </View>
             </View>
             
-            {/* Resumo nutricional adicional */}
-            <View style={styles.resumoNutricional}>
-              <View style={styles.itemResumo}>
-                <Text style={styles.rotuloResumo}>Calorias por macronutriente:</Text>
+            <View style={styles.macronutrientesResumo}>
+              <View style={styles.macronutrienteResumo}>
+                <View style={[styles.iconeMacroResumo, { backgroundColor: colors.accent.blue + '20' }]}>
+                  <MaterialIcons name="fitness-center" size={20} color={colors.accent.blue} />
+                </View>
+                <View style={styles.infoMacroResumo}>
+                  <Text style={styles.valorMacroResumo}>{Math.round(proteinasTotal * 10) / 10}g</Text>
+                  <Text style={styles.rotuloMacroResumo}>Proteínas</Text>
+                  <Text style={styles.porcentagemMacro}>
+                    {Math.round((proteinasTotal * 4 / total) * 100)}% das calorias
+                  </Text>
+                </View>
               </View>
-              <View style={styles.itemResumo}>
-                <Text style={styles.textoResumo}>
-                  Proteínas: {Math.round((proteinasTotal * 4 / total) * 100)}% • 
-                  Carboidratos: {Math.round((carboidratosTotal * 4 / total) * 100)}% • 
-                  Gorduras: {Math.round((gordurasTotal * 9 / total) * 100)}%
-                </Text>
+              
+              <View style={styles.macronutrienteResumo}>
+                <View style={[styles.iconeMacroResumo, { backgroundColor: colors.accent.green + '20' }]}>
+                  <MaterialIcons name="grain" size={20} color={colors.accent.green} />
+                </View>
+                <View style={styles.infoMacroResumo}>
+                  <Text style={styles.valorMacroResumo}>{Math.round(carboidratosTotal * 10) / 10}g</Text>
+                  <Text style={styles.rotuloMacroResumo}>Carboidratos</Text>
+                  <Text style={styles.porcentagemMacro}>
+                    {Math.round((carboidratosTotal * 4 / total) * 100)}% das calorias
+                  </Text>
+                </View>
+              </View>
+              
+              <View style={styles.macronutrienteResumo}>
+                <View style={[styles.iconeMacroResumo, { backgroundColor: colors.accent.orange + '20' }]}>
+                  <MaterialIcons name="opacity" size={20} color={colors.accent.orange} />
+                </View>
+                <View style={styles.infoMacroResumo}>
+                  <Text style={styles.valorMacroResumo}>{Math.round(gordurasTotal * 10) / 10}g</Text>
+                  <Text style={styles.rotuloMacroResumo}>Gorduras</Text>
+                  <Text style={styles.porcentagemMacro}>
+                    {Math.round((gordurasTotal * 9 / total) * 100)}% das calorias
+                  </Text>
+                </View>
               </View>
             </View>
-          </View>
-        )}
-
-        {/* Botões de ação */}
-        {itens.length > 0 && (
-          <View style={styles.botoesAcao}>
+            
             <TouchableOpacity 
               onPress={salvarRefeicao} 
               style={styles.botaoSalvar}
-              activeOpacity={0.8}
+              activeOpacity={0.9}
             >
-              <Text style={styles.textoBotaoSalvar}>Salvar Refeição</Text>
+              <View style={styles.conteudoBotaoSalvar}>
+                <MaterialIcons name="save" size={20} color={colors.neutral[50]} />
+                <Text style={styles.textoBotaoSalvar}>Salvar Refeição</Text>
+              </View>
             </TouchableOpacity>
           </View>
         )}
       </ScrollView>
 
-      {/* Modal para adicionar alimento manualmente */}
+      {/* Modal Elegante */}
       <Modal
         visible={modalVisivel}
         transparent={true}
-        animationType="slide"
+        animationType="fade"
         onRequestClose={fecharModalAdicao}
       >
-        <View style={styles.sobreposicaoModal}>
+        <View style={styles.overlayModal}>
           <View style={styles.conteudoModal}>
             <View style={styles.cabecalhoModal}>
-              <Text style={styles.tituloModal}>Adicionar Alimento Manualmente</Text>
-              <TouchableOpacity onPress={fecharModalAdicao} style={styles.botaoFechar}>
+              <View style={styles.tituloContainerModal}>
+                <MaterialIcons name="restaurant" size={24} color={colors.primary[400]} />
+                <Text style={styles.tituloModal}>Adicionar Alimento</Text>
+              </View>
+              <TouchableOpacity onPress={fecharModalAdicao} style={styles.botaoFecharModal}>
                 <Ionicons name="close" size={24} color={colors.neutral[400]} />
               </TouchableOpacity>
             </View>
@@ -381,7 +426,7 @@ export default function TelaRefeicoes() {
                   value={alimentoManual}
                   onChangeText={setAlimentoManual}
                   placeholder="Ex: Arroz Integral"
-                  placeholderTextColor={colors.neutral[400]}
+                  placeholderTextColor={colors.neutral[500]}
                 />
               </View>
 
@@ -393,7 +438,7 @@ export default function TelaRefeicoes() {
                     value={caloriasManual}
                     onChangeText={setCaloriasManual}
                     placeholder="Ex: 130"
-                    placeholderTextColor={colors.neutral[400]}
+                    placeholderTextColor={colors.neutral[500]}
                     keyboardType="numeric"
                   />
                 </View>
@@ -405,7 +450,7 @@ export default function TelaRefeicoes() {
                     value={proteinasManual}
                     onChangeText={setProteinasManual}
                     placeholder="Ex: 2.7"
-                    placeholderTextColor={colors.neutral[400]}
+                    placeholderTextColor={colors.neutral[500]}
                     keyboardType="numeric"
                   />
                 </View>
@@ -419,7 +464,7 @@ export default function TelaRefeicoes() {
                     value={carboidratosManual}
                     onChangeText={setCarboidratosManual}
                     placeholder="Ex: 27"
-                    placeholderTextColor={colors.neutral[400]}
+                    placeholderTextColor={colors.neutral[500]}
                     keyboardType="numeric"
                   />
                 </View>
@@ -431,7 +476,7 @@ export default function TelaRefeicoes() {
                     value={gordurasManual}
                     onChangeText={setGordurasManual}
                     placeholder="Ex: 0.9"
-                    placeholderTextColor={colors.neutral[400]}
+                    placeholderTextColor={colors.neutral[500]}
                     keyboardType="numeric"
                   />
                 </View>
@@ -440,9 +485,12 @@ export default function TelaRefeicoes() {
               <TouchableOpacity
                 onPress={adicionarAlimentoManualmente}
                 style={styles.botaoAdicionarManual}
-                activeOpacity={0.8}
+                activeOpacity={0.9}
               >
-                <Text style={styles.textoBotaoAdicionarManual}>Adicionar Alimento</Text>
+                <View style={styles.conteudoBotaoAdicionar}>
+                  <MaterialIcons name="add" size={20} color={colors.neutral[50]} />
+                  <Text style={styles.textoBotaoAdicionar}>Adicionar Alimento</Text>
+                </View>
               </TouchableOpacity>
             </View>
           </View>
@@ -455,7 +503,7 @@ export default function TelaRefeicoes() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.neutral[50],
+    backgroundColor: colors.neutral[900],
   },
   
   scrollView: {
@@ -468,11 +516,13 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.xl,
   },
   
-  cabecalho: {
+  // Header Elegante
+  header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: spacing.xl,
+    paddingTop: spacing.md,
   },
   
   containerTitulo: {
@@ -481,312 +531,397 @@ const styles = StyleSheet.create({
   
   titulo: {
     fontSize: typography.fontSize['3xl'],
-    fontWeight: typography.fontWeight.extrabold,
-    color: colors.neutral[900],
+    fontWeight: typography.fontWeight.black,
+    color: colors.neutral[50],
     marginBottom: spacing.xs,
+    letterSpacing: -0.5,
   },
   
   subtitulo: {
     fontSize: typography.fontSize.base,
     fontWeight: typography.fontWeight.medium,
-    color: colors.neutral[600],
+    color: colors.neutral[400],
     lineHeight: typography.lineHeight.normal,
   },
   
-  containerIcone: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: colors.primary[100],
+  containerIconeHeader: {
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  
+  circuloIconeHeader: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: colors.neutral[800],
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: colors.primary[400] + '30',
     ...shadows.lg,
   },
   
-  icone: {
-    fontSize: 40,
-  },
-  
-  containerAlerta: {
-    backgroundColor: colors.accent.yellow + '15',
-    padding: spacing.md,
-    borderRadius: borders.radius.lg,
-    marginBottom: spacing.lg,
-    borderWidth: borders.width.thin,
-    borderColor: colors.accent.yellow + '30',
-  },
-  
-  textoAlerta: {
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.medium,
-    color: colors.accent.yellow + 'DD',
-    textAlign: 'center',
-    lineHeight: typography.lineHeight.normal,
-  },
-  
-  containerBotoesCaptura: {
+  // Cards de Ação
+  containerCardsAcao: {
     flexDirection: 'row',
     gap: spacing.md,
-    marginBottom: spacing.lg,
+    marginBottom: spacing.xl,
   },
   
-  botaoCaptura: {
+  cardAcao: {
     flex: 1,
-    backgroundColor: colors.primary[600],
     borderRadius: borders.radius.xl,
-    paddingVertical: spacing.lg,
-    paddingHorizontal: spacing.md,
+    padding: spacing.lg,
     alignItems: 'center',
     justifyContent: 'center',
     ...shadows.lg,
     elevation: 8,
+    minHeight: 120,
   },
   
-  botaoGaleria: {
+  cardCamera: {
+    backgroundColor: colors.primary[600],
+  },
+  
+  cardGaleria: {
     backgroundColor: colors.accent.green,
   },
   
-  botaoManual: {
+  cardManual: {
     backgroundColor: colors.accent.purple,
   },
   
-  conteudoBotaoCaptura: {
+  conteudoCardAcao: {
     alignItems: 'center',
-    gap: spacing.xs,
+    gap: spacing.sm,
   },
   
-  iconeCaptura: {
-    fontSize: 28,
+  iconeCardAcao: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.xs,
   },
   
-  textoCaptura: {
-    fontSize: typography.fontSize.sm,
+  tituloCardAcao: {
+    fontSize: typography.fontSize.base,
     fontWeight: typography.fontWeight.bold,
     color: colors.neutral[50],
-    letterSpacing: 0.5,
+    textAlign: 'center',
+  },
+  
+  descricaoCardAcao: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
+    color: 'rgba(255, 255, 255, 0.8)',
+    textAlign: 'center',
+  },
+  
+  // Seção de Imagem
+  secaoImagem: {
+    marginBottom: spacing.xl,
   },
   
   containerImagem: {
-    marginBottom: spacing.lg,
-    borderRadius: borders.radius.lg,
+    borderRadius: borders.radius.xl,
     overflow: 'hidden',
     ...shadows.lg,
+    borderWidth: borders.width.thin,
+    borderColor: colors.neutral[700],
+    marginBottom: spacing.md,
   },
   
   imagemAlimento: {
     width: '100%',
-    height: 250,
+    height: 280,
     resizeMode: 'cover',
   },
   
-  sobreposicaoImagem: {
+  overlayImagem: {
     position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: colors.neutral[900] + '80',
-    padding: spacing.md,
+    top: spacing.md,
+    right: spacing.md,
   },
   
-  textoImagem: {
-    color: colors.neutral[50],
-    fontSize: typography.fontSize.base,
-    fontWeight: typography.fontWeight.semibold,
-    textAlign: 'center',
-  },
-  
-  botoesImagem: {
+  badgeImagem: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginTop: spacing.md,
+    alignItems: 'center',
+    backgroundColor: colors.neutral[900] + 'CC',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: borders.radius.full,
+    gap: spacing.xs,
   },
-
-  botaoImagem: {
+  
+  textoBadgeImagem: {
+    color: colors.neutral[50],
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
+  },
+  
+  botoesAcaoImagem: {
+    flexDirection: 'row',
+    gap: spacing.md,
+  },
+  
+  botaoAcaoImagem: {
     flex: 1,
-    backgroundColor: colors.primary[600],
     borderRadius: borders.radius.lg,
     paddingVertical: spacing.md,
     alignItems: 'center',
     justifyContent: 'center',
-    ...shadows.sm,
+    ...shadows.base,
     elevation: 4,
   },
-
+  
   botaoAnalisar: {
     backgroundColor: colors.accent.blue,
   },
-
+  
   botaoRemover: {
-    backgroundColor: colors.accent.red,
+    backgroundColor: colors.neutral[700],
   },
-
-  conteudoBotaoImagem: {
+  
+  conteudoBotaoAcao: {
+    flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.xs,
+    gap: spacing.sm,
   },
-
-  textoBotaoImagem: {
+  
+  textoBotaoAcao: {
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.neutral[50],
+  },
+  
+  // Seção de Alimentos
+  secaoAlimentos: {
+    marginBottom: spacing.xl,
+  },
+  
+  cabecalhoSecao: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing.lg,
+  },
+  
+  tituloSecao: {
+    fontSize: typography.fontSize.xl,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.neutral[50],
+  },
+  
+  badgeContador: {
+    backgroundColor: colors.primary[600],
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: borders.radius.full,
+  },
+  
+  textoBadgeContador: {
     fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.bold,
     color: colors.neutral[50],
   },
   
-  containerItens: {
-    marginBottom: spacing.lg,
-  },
-  
-  tituloItens: {
-    fontSize: typography.fontSize.xl,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.neutral[800],
-    marginBottom: spacing.md,
-  },
-  
-  itemAlimento: {
-    backgroundColor: colors.neutral[50],
+  cardAlimento: {
+    backgroundColor: colors.neutral[800],
     borderRadius: borders.radius.lg,
     padding: spacing.lg,
-    marginBottom: spacing.md,
     ...shadows.base,
     borderWidth: borders.width.thin,
-    borderColor: colors.neutral[200],
+    borderColor: colors.neutral[700],
   },
   
-  cabecalhoAlimento: {
+  cabecalhoCardAlimento: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: spacing.md,
   },
   
-  nomeAlimento: {
-    fontSize: typography.fontSize.lg,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.neutral[900],
+  infoAlimento: {
+    flexDirection: 'row',
+    alignItems: 'center',
     flex: 1,
   },
   
-  caloriasAlimento: {
-    fontSize: typography.fontSize.lg,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.primary[600],
+  iconeAlimento: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: colors.accent.green + '20',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: spacing.md,
   },
   
-  informacoesNutricionais: {
+  detalhesAlimento: {
+    flex: 1,
+  },
+  
+  nomeAlimento: {
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.neutral[50],
+    marginBottom: spacing.xs,
+  },
+  
+  caloriasAlimento: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.neutral[400],
+  },
+  
+  badgeCalorias: {
+    backgroundColor: colors.primary[600],
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: borders.radius.md,
+  },
+  
+  textoBadgeCalorias: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.neutral[50],
+  },
+  
+  macronutrientes: {
     flexDirection: 'row',
     justifyContent: 'space-around',
   },
   
-  itemNutricional: {
+  macronutriente: {
     alignItems: 'center',
+    gap: spacing.xs,
   },
   
-  rotuloNutricional: {
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.medium,
-    color: colors.neutral[600],
-    marginBottom: spacing.xs,
+  iconeMacro: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   
-  valorNutricional: {
+  valorMacro: {
     fontSize: typography.fontSize.base,
     fontWeight: typography.fontWeight.bold,
-    color: colors.neutral[800],
+    color: colors.neutral[100],
   },
   
-  containerTotal: {
-    backgroundColor: colors.neutral[50],
+  rotuloMacro: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.neutral[400],
+  },
+  
+  separador: {
+    height: spacing.md,
+  },
+  
+  // Seção de Resumo
+  secaoResumo: {
+    backgroundColor: colors.neutral[800],
     borderRadius: borders.radius.xl,
     padding: spacing.xl,
-    marginBottom: spacing.lg,
     ...shadows.lg,
     borderWidth: borders.width.thin,
-    borderColor: colors.neutral[200],
+    borderColor: colors.neutral[700],
   },
   
-  cabecalhoTotal: {
+  cabecalhoResumo: {
     alignItems: 'center',
+    marginBottom: spacing.xl,
+  },
+  
+  tituloResumo: {
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.neutral[300],
     marginBottom: spacing.lg,
   },
   
-  tituloTotal: {
-    fontSize: typography.fontSize.lg,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.neutral[600],
-    marginBottom: spacing.sm,
-  },
-  
-  caloriasTotais: {
-    fontSize: typography.fontSize['4xl'],
-    fontWeight: typography.fontWeight.extrabold,
-    color: colors.primary[600],
-    lineHeight: typography.lineHeight.tight,
-  },
-  
-  detalhamentoTotal: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    borderTopWidth: borders.width.thin,
-    borderTopColor: colors.neutral[200],
-    paddingTop: spacing.lg,
-  },
-  
-  itemTotal: {
+  caloriasPrincipais: {
     alignItems: 'center',
   },
   
-  rotuloTotal: {
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.medium,
-    color: colors.neutral[600],
-    marginBottom: spacing.xs,
+  numeroCalorias: {
+    fontSize: typography.fontSize['5xl'],
+    fontWeight: typography.fontWeight.black,
+    color: colors.primary[400],
+    lineHeight: typography.lineHeight.tight,
+    letterSpacing: -1,
   },
   
-  valorTotal: {
+  unidadeCalorias: {
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.neutral[400],
+    marginTop: spacing.xs,
+  },
+  
+  macronutrientesResumo: {
+    gap: spacing.lg,
+    marginBottom: spacing.xl,
+  },
+  
+  macronutrienteResumo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  
+  iconeMacroResumo: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  
+  infoMacroResumo: {
+    flex: 1,
+  },
+  
+  valorMacroResumo: {
     fontSize: typography.fontSize.lg,
     fontWeight: typography.fontWeight.bold,
-    color: colors.neutral[800],
-  },
-  
-  resumoNutricional: {
-    marginTop: spacing.lg,
-    paddingTop: spacing.lg,
-    borderTopWidth: borders.width.thin,
-    borderTopColor: colors.neutral[200],
-  },
-  
-  itemResumo: {
-    marginBottom: spacing.sm,
-  },
-  
-  rotuloResumo: {
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.neutral[700],
+    color: colors.neutral[100],
     marginBottom: spacing.xs,
   },
   
-  textoResumo: {
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.medium,
-    color: colors.neutral[600],
-    textAlign: 'center',
-    lineHeight: typography.lineHeight.normal,
+  rotuloMacroResumo: {
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.neutral[300],
+    marginBottom: spacing.xs,
   },
   
-  botoesAcao: {
-    gap: spacing.md,
+  porcentagemMacro: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.neutral[500],
   },
   
   botaoSalvar: {
     backgroundColor: colors.accent.blue,
     borderRadius: borders.radius.xl,
     paddingVertical: spacing.lg,
-    paddingHorizontal: spacing.lg,
     alignItems: 'center',
     justifyContent: 'center',
     ...shadows.lg,
     elevation: 8,
+  },
+  
+  conteudoBotaoSalvar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
   },
   
   textoBotaoSalvar: {
@@ -796,149 +931,106 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   
-  alertaVisitante: {
-    backgroundColor: colors.accent.yellow + '15',
-    padding: spacing.md,
-    borderRadius: borders.radius.lg,
-    borderWidth: borders.width.thin,
-    borderColor: colors.accent.yellow + '30',
-  },
-  
-  textoAlertaVisitante: {
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.medium,
-    color: colors.accent.yellow + 'DD',
-    textAlign: 'center',
-    lineHeight: typography.lineHeight.normal,
-  },
-
-  // Estilos dos botões de imagem
-  botoesImagem: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-    marginBottom: spacing.md,
-    paddingHorizontal: spacing.sm,
-  },
-
-  botaoImagem: {
+  // Modal Elegante
+  overlayModal: {
     flex: 1,
-    borderRadius: borders.radius.md,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.xs,
-    alignItems: 'center',
-    justifyContent: 'center',
-    ...shadows.sm,
-    elevation: 2,
-    minHeight: 36,
-  },
-
-  botaoAnalisar: {
-    backgroundColor: colors.accent.blue,
-  },
-
-  botaoRemover: {
-    backgroundColor: colors.accent.red,
-  },
-
-  conteudoBotaoImagem: {
-    alignItems: 'center',
-    gap: spacing.xs,
-  },
-
-  textoBotaoImagem: {
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.neutral[50],
-    letterSpacing: 0.2,
-  },
-
-  // Estilos do modal
-  sobreposicaoModal: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: spacing.lg,
   },
-
+  
   conteudoModal: {
-    backgroundColor: colors.neutral[50],
+    backgroundColor: colors.neutral[800],
     borderRadius: borders.radius.xl,
     padding: spacing.xl,
     width: '100%',
-    maxWidth: 400,
-    maxHeight: '80%',
+    maxWidth: 420,
+    maxHeight: '85%',
     ...shadows.xl,
+    borderWidth: borders.width.thin,
+    borderColor: colors.neutral[700],
   },
-
+  
   cabecalhoModal: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: spacing.lg,
+    marginBottom: spacing.xl,
   },
-
+  
+  tituloContainerModal: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    flex: 1,
+  },
+  
   tituloModal: {
     fontSize: typography.fontSize.xl,
     fontWeight: typography.fontWeight.bold,
-    color: colors.neutral[900],
-    flex: 1,
+    color: colors.neutral[50],
   },
-
-  botaoFechar: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: colors.neutral[200],
+  
+  botaoFecharModal: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: colors.neutral[700],
     alignItems: 'center',
     justifyContent: 'center',
   },
-
+  
   formularioModal: {
     gap: spacing.lg,
   },
-
+  
   grupoInput: {
     gap: spacing.sm,
   },
-
+  
   linhaInput: {
     flexDirection: 'row',
     gap: spacing.md,
   },
-
+  
   rotuloInput: {
     fontSize: typography.fontSize.base,
     fontWeight: typography.fontWeight.semibold,
-    color: colors.neutral[700],
+    color: colors.neutral[300],
     marginLeft: spacing.sm,
   },
-
+  
   campoTexto: {
-    backgroundColor: colors.neutral[50],
+    backgroundColor: colors.neutral[700],
     borderRadius: borders.radius.lg,
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.lg,
     borderWidth: borders.width.thin,
-    borderColor: colors.neutral[300],
+    borderColor: colors.neutral[600],
     fontSize: typography.fontSize.base,
-    color: colors.neutral[900],
+    color: colors.neutral[50],
     ...shadows.sm,
   },
-
+  
   botaoAdicionarManual: {
     backgroundColor: colors.accent.green,
     borderRadius: borders.radius.xl,
     paddingVertical: spacing.lg,
-    paddingHorizontal: spacing.lg,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: spacing.md,
     ...shadows.lg,
     elevation: 8,
   },
-
-  textoBotaoAdicionarManual: {
+  
+  conteudoBotaoAdicionar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  
+  textoBotaoAdicionar: {
     fontSize: typography.fontSize.lg,
     fontWeight: typography.fontWeight.bold,
     color: colors.neutral[50],
