@@ -15,6 +15,9 @@ export default function TelaIMC() {
   const [alturaFocada, setAlturaFocada] = useState(false);
   const [erroPeso, setErroPeso] = useState('');
   const [erroAltura, setErroAltura] = useState('');
+  const [mostrarClassificacao, setMostrarClassificacao] = useState(false);
+  const [imcSalvo, setImcSalvo] = useState(false);
+  const [salvando, setSalvando] = useState(false);
 
   // Função para converter vírgula em ponto (corrige bug do teclado iPhone)
   const converterVirgulaParaPonto = (valor) => {
@@ -109,16 +112,30 @@ export default function TelaIMC() {
     else setCategoria('Obesidade III');
     
     setCalculando(false);
+    setImcSalvo(false); // Reset do status de salvamento
+  }
+
+  async function salvarIMC() {
+    if (!imc || !categoria) {
+      return;
+    }
+
+    setSalvando(true);
     
-    // Mostrar mensagem de sucesso
-    Alert.alert(
-      'IMC Calculado!', 
-      `Seu IMC é ${valor.toFixed(1)} - ${valor < 18.5 ? 'Abaixo do peso' : 
-        valor < 25 ? 'Peso normal' : 
-        valor < 30 ? 'Sobrepeso' : 
-        valor < 35 ? 'Obesidade I' : 
-        valor < 40 ? 'Obesidade II' : 'Obesidade III'}`
-    );
+    try {
+      // Aqui você pode implementar a lógica para salvar no banco de dados
+      // Por enquanto, vamos simular um salvamento bem-sucedido
+      
+      // Simular delay de salvamento
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      setImcSalvo(true);
+      
+    } catch (erro) {
+      console.error('Erro ao salvar IMC:', erro);
+    } finally {
+      setSalvando(false);
+    }
   }
 
   function limparDados() {
@@ -131,6 +148,9 @@ export default function TelaIMC() {
     setErroPeso('');
     setErroAltura('');
     setCalculando(false);
+    setMostrarClassificacao(false);
+    setImcSalvo(false);
+    setSalvando(false);
   }
 
   function obterCorCategoria(categoria) {
@@ -150,37 +170,39 @@ export default function TelaIMC() {
   }
 
   return (
-    <View style={estilos.container}>
-      <StatusBar barStyle="dark-content" backgroundColor={colors.neutral[50]} />
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor={colors.neutral[900]} />
       
       <ScrollView 
-        style={estilos.scrollView}
+        style={styles.scrollView}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={estilos.scrollContent}
+        contentContainerStyle={styles.conteudoScroll}
       >
-        {/* Cabeçalho */}
-        <View style={estilos.cabecalho}>
-          <View style={estilos.containerTitulo}>
-            <Text style={estilos.titulo}>Calculadora de IMC</Text>
-            <Text style={estilos.subtitulo}>Índice de Massa Corporal</Text>
+        {/* Header Elegante */}
+        <View style={styles.header}>
+          <View style={styles.containerTitulo}>
+            <Text style={styles.titulo}>Calculadora de IMC</Text>
+            <Text style={styles.subtitulo}>Índice de Massa Corporal</Text>
           </View>
-          <View style={estilos.containerIcone}>
-            <MaterialIcons name="analytics" size={40} color={colors.primary[600]} />
+          <View style={styles.containerIconeHeader}>
+            <View style={styles.circuloIconeHeader}>
+              <MaterialIcons name="analytics" size={32} color={colors.primary[400]} />
+            </View>
           </View>
         </View>
 
         {/* Formulário */}
-        <View style={estilos.containerFormulario}>
-          <View style={estilos.grupoEntrada}>
-            <Text style={estilos.rotuloEntrada}>Peso (kg)</Text>
-            <Text style={estilos.dicaEntrada}>Use ponto ou vírgula como separador decimal (ex: 70.5)</Text>
+        <View style={styles.secaoFormulario}>
+          <View style={styles.grupoEntrada}>
+            <Text style={styles.rotuloEntrada}>Peso (kg)</Text>
+            <Text style={styles.dicaEntrada}>Use ponto ou vírgula como separador decimal (ex: 70.5)</Text>
             <TextInput
               style={[
-                estilos.entrada,
-                pesoFocado ? estilos.entradaFocada : null
+                styles.entrada,
+                pesoFocado ? styles.entradaFocada : null
               ]}
               placeholder="Ex: 70.5"
-              placeholderTextColor={colors.neutral[400]}
+              placeholderTextColor={colors.neutral[500]}
               value={peso}
               onChangeText={(valor) => {
                 const valorConvertido = converterVirgulaParaPonto(valor);
@@ -192,19 +214,19 @@ export default function TelaIMC() {
               keyboardType="numeric"
               editable={!calculando}
             />
-            {erroPeso && erroPeso.length > 0 ? <Text style={estilos.textoErro}>{erroPeso}</Text> : null}
+            {erroPeso && erroPeso.length > 0 ? <Text style={styles.textoErro}>{erroPeso}</Text> : null}
           </View>
 
-          <View style={estilos.grupoEntrada}>
-            <Text style={estilos.rotuloEntrada}>Altura (m)</Text>
-            <Text style={estilos.dicaEntrada}>Use ponto ou vírgula como separador decimal (ex: 1.75)</Text>
+          <View style={styles.grupoEntrada}>
+            <Text style={styles.rotuloEntrada}>Altura (m)</Text>
+            <Text style={styles.dicaEntrada}>Use ponto ou vírgula como separador decimal (ex: 1.75)</Text>
             <TextInput
               style={[
-                estilos.entrada,
-                alturaFocada ? estilos.entradaFocada : null
+                styles.entrada,
+                alturaFocada ? styles.entradaFocada : null
               ]}
               placeholder="Ex: 1.75"
-              placeholderTextColor={colors.neutral[400]}
+              placeholderTextColor={colors.neutral[500]}
               value={altura}
               onChangeText={(valor) => {
                 const valorConvertido = converterVirgulaParaPonto(valor);
@@ -216,144 +238,173 @@ export default function TelaIMC() {
               keyboardType="numeric"
               editable={!calculando}
             />
-            {erroAltura && erroAltura.length > 0 ? <Text style={estilos.textoErro}>{erroAltura}</Text> : null}
+            {erroAltura && erroAltura.length > 0 ? <Text style={styles.textoErro}>{erroAltura}</Text> : null}
           </View>
 
           <TouchableOpacity
             onPress={calcularIMC}
             style={[
-              estilos.botaoCalcular,
-              (calculando || !!erroPeso || !!erroAltura) ? estilos.botaoDesabilitado : null
+              styles.botaoCalcular,
+              (calculando || !!erroPeso || !!erroAltura) ? styles.botaoDesabilitado : null
             ]}
             disabled={calculando || !!erroPeso || !!erroAltura}
             activeOpacity={0.8}
           >
             {calculando ? (
-              <View style={estilos.botaoComCarregamento}>
+              <View style={styles.botaoComCarregamento}>
                 <ActivityIndicator color={colors.neutral[50]} size="small" />
-                <Text style={estilos.textoBotao}>Calculando...</Text>
+                <Text style={styles.textoBotao}>Calculando...</Text>
               </View>
             ) : (
-              <Text style={estilos.textoBotao}>Calcular IMC</Text>
+              <Text style={styles.textoBotao}>Calcular IMC</Text>
             )}
           </TouchableOpacity>
         </View>
 
         {/* Resultado */}
         {imc && imc !== null && imc !== '' && imc !== undefined ? (
-          <View style={estilos.containerResultado}>
-            <View style={estilos.cabecalhoResultado}>
-              <Text style={estilos.tituloResultado}>Seu IMC</Text>
-              <Text style={estilos.valorResultado}>{imc}</Text>
+          <View style={styles.secaoResultado}>
+            <View style={styles.cabecalhoResultado}>
+              <Text style={styles.tituloResultado}>Seu IMC</Text>
+              <Text style={styles.valorResultado}>{imc}</Text>
             </View>
             
-            <View style={estilos.containerCategoria}>
+            <View style={styles.containerCategoria}>
               <Text style={[
-                estilos.textoCategoria,
+                styles.textoCategoria,
                 { color: obterCorCategoria(categoria) }
               ]}>
                 {categoria || 'Não definido'}
               </Text>
-              <Text style={estilos.subtextoCategoria}>
+              <Text style={styles.subtextoCategoria}>
                 IMC: {imc} kg/m²
               </Text>
             </View>
 
-            {/* Interpretação do resultado */}
-            <View style={estilos.containerInterpretacao}>
-              <Text style={estilos.tituloInterpretacao}>O que isso significa?</Text>
-              <Text style={estilos.textoInterpretacao}>
-                {categoria === 'Abaixo do peso' ? 
-                  'Seu IMC indica que você está abaixo do peso considerado saudável para sua altura. Considere consultar um nutricionista para orientações sobre ganho de peso saudável.' :
-                categoria === 'Peso normal' ? 
-                  'Parabéns! Seu IMC está na faixa considerada saudável. Continue mantendo hábitos alimentares equilibrados e atividade física regular.' :
-                categoria === 'Sobrepeso' ? 
-                  'Seu IMC indica sobrepeso. Considere ajustar sua alimentação e aumentar a atividade física para alcançar um peso mais saudável.' :
-                categoria === 'Obesidade I' ? 
-                  'Seu IMC indica obesidade grau I. É recomendável buscar orientação profissional para um plano de emagrecimento saudável.' :
-                categoria === 'Obesidade II' ? 
-                  'Seu IMC indica obesidade grau II. É importante buscar acompanhamento médico e nutricional para um tratamento adequado.' :
-                categoria === 'Obesidade III' ? 
-                  'Seu IMC indica obesidade grau III (mórbida). É essencial buscar acompanhamento médico especializado para um tratamento personalizado.' :
-                  'IMC calculado com sucesso. Consulte um profissional de saúde para interpretação personalizada.'
-                }
-              </Text>
+            {/* Legenda */}
+            <View style={styles.containerLegenda}>
+              <TouchableOpacity
+                onPress={() => setMostrarClassificacao(!mostrarClassificacao)}
+                style={styles.botaoToggleClassificacao}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.textoBotaoToggle}>
+                  {mostrarClassificacao ? 'Ocultar' : 'Ver'} Classificação IMC
+                </Text>
+                <MaterialIcons 
+                  name={mostrarClassificacao ? "keyboard-arrow-up" : "keyboard-arrow-down"} 
+                  size={24} 
+                  color={colors.primary[400]} 
+                />
+              </TouchableOpacity>
+              
+              {mostrarClassificacao && (
+                <>
+                  <Text style={styles.tituloLegenda}>Classificação IMC</Text>
+                  
+                  <View style={styles.itensLegenda}>
+                    <View style={styles.itemLegenda}>
+                      <View style={[styles.pontoLegenda, { backgroundColor: colors.accent.blue }]} />
+                      <Text style={styles.textoLegenda}>Abaixo do peso: {'<'} 18.5</Text>
+                    </View>
+                    
+                    <View style={styles.itemLegenda}>
+                      <View style={[styles.pontoLegenda, { backgroundColor: colors.success }]} />
+                      <Text style={styles.textoLegenda}>Peso normal: 18.5 - 24.9</Text>
+                    </View>
+                    
+                    <View style={styles.itemLegenda}>
+                      <View style={[styles.pontoLegenda, { backgroundColor: colors.accent.yellow }]} />
+                      <Text style={styles.textoLegenda}>Sobrepeso: 25.0 - 29.9</Text>
+                    </View>
+                    
+                    <View style={styles.itemLegenda}>
+                      <View style={[styles.pontoLegenda, { backgroundColor: colors.accent.orange }]} />
+                      <Text style={styles.textoLegenda}>Obesidade I: 30.0 - 34.9</Text>
+                    </View>
+                    
+                    <View style={styles.itemLegenda}>
+                      <View style={[styles.pontoLegenda, { backgroundColor: colors.accent.red }]} />
+                      <Text style={styles.textoLegenda}>Obesidade II: 35.0 - 39.9</Text>
+                    </View>
+                    
+                    <View style={styles.itemLegenda}>
+                      <View style={[styles.pontoLegenda, { backgroundColor: colors.error }]} />
+                      <Text style={styles.textoLegenda}>Obesidade III: ≥ 40.0</Text>
+                    </View>
+                  </View>
+                </>
+              )}
             </View>
 
-            {/* Legenda */}
-            <View style={estilos.containerLegenda}>
-              <Text style={estilos.tituloLegenda}>Classificação IMC</Text>
-              
-              <View style={estilos.itensLegenda}>
-                <View style={estilos.itemLegenda}>
-                  <View style={[estilos.pontoLegenda, { backgroundColor: colors.accent.blue }]} />
-                  <Text style={estilos.textoLegenda}>Abaixo do peso: {'<'} 18.5</Text>
+            {/* Botão Salvar IMC */}
+            <TouchableOpacity
+              onPress={salvarIMC}
+              style={[
+                styles.botaoSalvar,
+                imcSalvo ? styles.botaoSalvo : null,
+                salvando ? styles.botaoDesabilitado : null
+              ]}
+              disabled={salvando || imcSalvo}
+              activeOpacity={0.8}
+            >
+              {salvando ? (
+                <View style={styles.botaoComCarregamento}>
+                  <ActivityIndicator color={colors.neutral[50]} size="small" />
+                  <Text style={styles.textoBotao}>Salvando...</Text>
                 </View>
-                
-                <View style={estilos.itemLegenda}>
-                  <View style={[estilos.pontoLegenda, { backgroundColor: colors.success }]} />
-                  <Text style={estilos.textoLegenda}>Peso normal: 18.5 - 24.9</Text>
+              ) : imcSalvo ? (
+                <View style={styles.botaoComCarregamento}>
+                  <MaterialIcons name="check-circle" size={20} color={colors.success} />
+                  <Text style={[styles.textoBotao, { color: colors.success }]}>IMC Salvo!</Text>
                 </View>
-                
-                <View style={estilos.itemLegenda}>
-                  <View style={[estilos.pontoLegenda, { backgroundColor: colors.accent.yellow }]} />
-                  <Text style={estilos.textoLegenda}>Sobrepeso: 25.0 - 29.9</Text>
+              ) : (
+                <View style={styles.botaoComCarregamento}>
+                  <MaterialIcons name="save" size={20} color={colors.neutral[50]} />
+                  <Text style={styles.textoBotao}>Salvar IMC</Text>
                 </View>
-                
-                <View style={estilos.itemLegenda}>
-                  <View style={[estilos.pontoLegenda, { backgroundColor: colors.accent.orange }]} />
-                  <Text style={estilos.textoLegenda}>Obesidade I: 30.0 - 34.9</Text>
-                </View>
-                
-                <View style={estilos.itemLegenda}>
-                  <View style={[estilos.pontoLegenda, { backgroundColor: colors.accent.red }]} />
-                  <Text style={estilos.textoLegenda}>Obesidade II: 35.0 - 39.9</Text>
-                </View>
-                
-                <View style={estilos.itemLegenda}>
-                  <View style={[estilos.pontoLegenda, { backgroundColor: colors.error }]} />
-                  <Text style={estilos.textoLegenda}>Obesidade III: ≥ 40.0</Text>
-                </View>
-              </View>
-            </View>
+              )}
+            </TouchableOpacity>
+
+            {/* Botão limpar */}
+            <TouchableOpacity
+              onPress={limparDados}
+              style={[styles.botaoLimpar, calculando ? styles.botaoDesabilitado : null]}
+              disabled={calculando}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.textoBotaoLimpar}>Limpar Dados</Text>
+            </TouchableOpacity>
           </View>
         ) : null}
-
-        {/* Botão limpar */}
-        <TouchableOpacity
-          onPress={limparDados}
-          style={[estilos.botaoLimpar, calculando ? estilos.botaoDesabilitado : null]}
-          disabled={calculando}
-          activeOpacity={0.8}
-        >
-          <Text style={estilos.textoBotaoLimpar}>Limpar Dados</Text>
-        </TouchableOpacity>
       </ScrollView>
     </View>
   );
 }
 
-const estilos = StyleSheet.create({
+const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.neutral[50],
+    backgroundColor: colors.neutral[900],
   },
   
   scrollView: {
     flex: 1,
   },
   
-  scrollContent: {
+  conteudoScroll: {
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.lg,
     paddingBottom: spacing.xl,
   },
   
-  cabecalho: {
+  // Header Elegante
+  header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: spacing.xl,
+    paddingTop: spacing.md,
   },
   
   containerTitulo: {
@@ -362,82 +413,90 @@ const estilos = StyleSheet.create({
   
   titulo: {
     fontSize: typography.fontSize['3xl'],
-    fontWeight: typography.fontWeight.extrabold,
-    color: colors.primary[600],
+    fontWeight: typography.fontWeight.black,
+    color: colors.neutral[50],
     marginBottom: spacing.xs,
+    letterSpacing: -0.5,
   },
   
   subtitulo: {
-    fontSize: typography.fontSize.lg,
+    fontSize: typography.fontSize.base,
     fontWeight: typography.fontWeight.medium,
-    color: colors.neutral[600],
+    color: colors.neutral[400],
     lineHeight: typography.lineHeight.normal,
   },
   
-  containerIcone: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: colors.primary[100],
+  containerIconeHeader: {
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  
+  circuloIconeHeader: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: colors.neutral[800],
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: colors.primary[400] + '30',
     ...shadows.lg,
   },
   
-  icone: {
-    fontSize: 40,
-  },
-  
-  containerFormulario: {
-    gap: spacing.lg,
+  // Seção do Formulário
+  secaoFormulario: {
+    backgroundColor: colors.neutral[800],
+    borderRadius: borders.radius.xl,
+    padding: spacing.xl,
     marginBottom: spacing.xl,
+    ...shadows.lg,
+    borderWidth: borders.width.thin,
+    borderColor: colors.neutral[700],
   },
   
   grupoEntrada: {
-    gap: spacing.sm,
+    marginBottom: spacing.lg,
   },
   
   rotuloEntrada: {
     fontSize: typography.fontSize.base,
     fontWeight: typography.fontWeight.semibold,
-    color: colors.neutral[700],
-    marginLeft: spacing.sm,
+    color: colors.neutral[100],
+    marginBottom: spacing.sm,
   },
   
   dicaEntrada: {
     fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.medium,
     color: colors.neutral[500],
-    marginLeft: spacing.sm,
-    marginBottom: spacing.xs,
+    marginBottom: spacing.sm,
     fontStyle: 'italic',
+  },
+  
+  entrada: {
+    backgroundColor: colors.neutral[700],
+    borderRadius: borders.radius.lg,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    borderWidth: borders.width.thin,
+    borderColor: colors.neutral[600],
+    fontSize: typography.fontSize.base,
+    color: colors.neutral[50],
+    ...shadows.sm,
+  },
+  
+  entradaFocada: {
+    borderColor: colors.primary[400],
+    borderWidth: borders.width.base,
+    ...shadows.base,
   },
   
   textoErro: {
     fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.medium,
     color: colors.error,
-    marginLeft: spacing.sm,
     marginTop: spacing.xs,
     fontStyle: 'italic',
-  },
-  
-  entrada: {
-    backgroundColor: colors.neutral[50],
-    borderRadius: borders.radius.lg,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
-    borderWidth: borders.width.thin,
-    borderColor: colors.neutral[300],
-    fontSize: typography.fontSize.base,
-    color: colors.neutral[900],
-    ...shadows.sm,
-  },
-  
-  entradaFocada: {
-    borderColor: colors.primary[500],
-    borderWidth: borders.width.base,
-    ...shadows.base,
   },
   
   botaoCalcular: {
@@ -453,7 +512,7 @@ const estilos = StyleSheet.create({
   },
   
   botaoDesabilitado: {
-    backgroundColor: colors.neutral[400],
+    backgroundColor: colors.neutral[600],
     ...shadows.sm,
   },
   
@@ -470,14 +529,15 @@ const estilos = StyleSheet.create({
     letterSpacing: 0.5,
   },
   
-  containerResultado: {
-    backgroundColor: colors.neutral[50],
+  // Seção de Resultado
+  secaoResultado: {
+    backgroundColor: colors.neutral[800],
     borderRadius: borders.radius.xl,
     padding: spacing.xl,
     marginBottom: spacing.xl,
     ...shadows.lg,
     borderWidth: borders.width.thin,
-    borderColor: colors.neutral[200],
+    borderColor: colors.neutral[700],
   },
   
   cabecalhoResultado: {
@@ -488,22 +548,23 @@ const estilos = StyleSheet.create({
   tituloResultado: {
     fontSize: typography.fontSize.lg,
     fontWeight: typography.fontWeight.semibold,
-    color: colors.neutral[600],
+    color: colors.neutral[300],
     marginBottom: spacing.sm,
   },
   
   valorResultado: {
     fontSize: typography.fontSize['4xl'],
-    fontWeight: typography.fontWeight.extrabold,
-    color: colors.primary[600],
+    fontWeight: typography.fontWeight.black,
+    color: colors.primary[400],
     lineHeight: typography.lineHeight.tight,
+    letterSpacing: -1,
   },
   
   containerCategoria: {
     alignItems: 'center',
     marginBottom: spacing.lg,
     paddingVertical: spacing.md,
-    backgroundColor: colors.neutral[100],
+    backgroundColor: colors.neutral[700],
     borderRadius: borders.radius.lg,
   },
   
@@ -516,44 +577,20 @@ const estilos = StyleSheet.create({
   subtextoCategoria: {
     fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.medium,
-    color: colors.neutral[600],
+    color: colors.neutral[400],
     marginTop: spacing.xs,
-  },
-  
-  containerInterpretacao: {
-    marginBottom: spacing.lg,
-    paddingVertical: spacing.md,
-    backgroundColor: colors.neutral[100],
-    borderRadius: borders.radius.lg,
-    padding: spacing.md,
-  },
-  
-  tituloInterpretacao: {
-    fontSize: typography.fontSize.lg,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.neutral[800],
-    marginBottom: spacing.sm,
-    textAlign: 'center',
-  },
-  
-  textoInterpretacao: {
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.medium,
-    color: colors.neutral[700],
-    lineHeight: typography.lineHeight.normal,
-    textAlign: 'justify',
   },
   
   containerLegenda: {
     borderTopWidth: borders.width.thin,
-    borderTopColor: colors.neutral[200],
+    borderTopColor: colors.neutral[700],
     paddingTop: spacing.lg,
   },
   
   tituloLegenda: {
     fontSize: typography.fontSize.lg,
     fontWeight: typography.fontWeight.semibold,
-    color: colors.neutral[800],
+    color: colors.neutral[100],
     marginBottom: spacing.md,
     textAlign: 'center',
   },
@@ -577,12 +614,49 @@ const estilos = StyleSheet.create({
   textoLegenda: {
     fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.medium,
-    color: colors.neutral[700],
+    color: colors.neutral[300],
     flex: 1,
   },
   
+  botaoToggleClassificacao: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    backgroundColor: colors.neutral[700],
+    borderRadius: borders.radius.md,
+    ...shadows.sm,
+  },
+  
+  textoBotaoToggle: {
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.neutral[100],
+  },
+  
+  botaoSalvar: {
+    backgroundColor: colors.primary[600],
+    borderRadius: borders.radius.xl,
+    paddingVertical: spacing.lg,
+    paddingHorizontal: spacing.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: spacing.md,
+    marginBottom: spacing.md,
+    ...shadows.lg,
+    elevation: 8,
+  },
+  
+  botaoSalvo: {
+    backgroundColor: colors.success,
+    ...shadows.sm,
+  },
+  
   botaoLimpar: {
-    backgroundColor: colors.neutral[200],
+    backgroundColor: colors.neutral[700],
     borderRadius: borders.radius.lg,
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.lg,
@@ -594,8 +668,6 @@ const estilos = StyleSheet.create({
   textoBotaoLimpar: {
     fontSize: typography.fontSize.base,
     fontWeight: typography.fontWeight.semibold,
-    color: colors.neutral[700],
+    color: colors.neutral[100],
   },
-
-
 });
