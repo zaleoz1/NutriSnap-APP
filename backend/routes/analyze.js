@@ -86,20 +86,30 @@ IMPORTANTE: Sempre inclua todos os campos nutricionais para cada item. Se não c
         gorduras: parseFloat(item.gorduras) || 0
       }));
 
-      // Calcular totais se não fornecidos
-      if (!dados.caloriasTotais) {
-        dados.caloriasTotais = dados.itens.reduce((soma, item) => soma + (item.calorias || 0), 0);
-      }
-      if (!dados.proteinasTotais) {
-        dados.proteinasTotais = dados.itens.reduce((soma, item) => soma + (item.proteinas || 0), 0);
-      }
-      if (!dados.carboidratosTotais) {
-        dados.carboidratosTotais = dados.itens.reduce((soma, item) => soma + (item.carboidratos || 0), 0);
-      }
-      if (!dados.gordurasTotais) {
-        dados.gordurasTotais = dados.itens.reduce((soma, item) => soma + (item.gorduras || 0), 0);
-      }
+      // Calcular totais sempre (mesmo se fornecidos pelo modelo)
+      const caloriasTotais = dados.itens.reduce((soma, item) => soma + (item.calorias || 0), 0);
+      const proteinasTotais = dados.itens.reduce((soma, item) => soma + (item.proteinas || 0), 0);
+      const carboidratosTotais = dados.itens.reduce((soma, item) => soma + (item.carboidratos || 0), 0);
+      const gordurasTotais = dados.itens.reduce((soma, item) => soma + (item.gorduras || 0), 0);
+
+      // Garantir que os totais estejam sempre presentes e corretos
+      dados.caloriasTotais = caloriasTotais;
+      dados.proteinasTotais = proteinasTotais;
+      dados.carboidratosTotais = carboidratosTotais;
+      dados.gordurasTotais = gordurasTotais;
+
+      // Log para debug
+      console.log('🍎 Itens processados:', dados.itens);
+      console.log('📊 Totais calculados:', {
+        calorias: caloriasTotais,
+        proteinas: proteinasTotais,
+        carboidratos: carboidratosTotais,
+        gorduras: gordurasTotais
+      });
     }
+
+    // Log final dos dados enviados
+    console.log('📤 Dados enviados para o frontend:', dados);
 
     res.json(dados);
   } catch (erro) {

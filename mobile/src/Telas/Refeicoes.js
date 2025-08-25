@@ -24,12 +24,15 @@ export default function TelaRefeicoes() {
   const [gordurasManual, setGordurasManual] = useState('');
   const [imagemBase64, setImagemBase64] = useState(null);
   const [analisando, setAnalisando] = useState(false);
+  const [progressoAnalise, setProgressoAnalise] = useState(0);
 
   function recalcularTotal(itens) {
-    const calorias = itens.reduce((soma, item) => soma + (item.calorias||0), 0);
-    const proteinas = itens.reduce((soma, item) => soma + (item.proteinas||0), 0);
-    const carboidratos = itens.reduce((soma, item) => soma + (item.carboidratos||0), 0);
-    const gorduras = itens.reduce((soma, item) => soma + (item.gorduras||0), 0);
+    const calorias = itens.reduce((soma, item) => soma + (parseFloat(item.calorias) || 0), 0);
+    const proteinas = itens.reduce((soma, item) => soma + (parseFloat(item.proteinas) || 0), 0);
+    const carboidratos = itens.reduce((soma, item) => soma + (parseFloat(item.carboidratos) || 0), 0);
+    const gorduras = itens.reduce((soma, item) => soma + (parseFloat(item.gorduras) || 0), 0);
+    
+    console.log('🧮 Recalculando totais:', { calorias, proteinas, carboidratos, gorduras });
     
     setTotal(calorias);
     setProteinasTotal(proteinas);
@@ -74,15 +77,73 @@ export default function TelaRefeicoes() {
     }
 
     setAnalisando(true);
+    setProgressoAnalise(0);
+    
+    // Simular progresso da análise
+    const simularProgresso = () => {
+      let progresso = 0;
+      const intervalo = setInterval(() => {
+        progresso += Math.random() * 15 + 5; // Incremento aleatório entre 5-20%
+        if (progresso >= 90) {
+          progresso = 90; // Para em 90% até a resposta da API
+          clearInterval(intervalo);
+        }
+        setProgressoAnalise(Math.min(progresso, 90));
+      }, 200);
+      return intervalo;
+    };
+
+    const intervaloProgresso = simularProgresso();
+
     try {
       const dados = await buscarApi('/api/analise', { method:'POST', token, body:{ dadosImagemBase64: imagemBase64 } });
-      setItens(dados.itens || []);
-      recalcularTotal(dados.itens || []);
-      Alert.alert('Sucesso', 'Imagem analisada com sucesso!');
+      
+      // Completar o progresso
+      clearInterval(intervaloProgresso);
+      setProgressoAnalise(100);
+      
+      // Log para debug
+      console.log('📊 Dados recebidos da API:', dados);
+      
+      // Pequeno delay para mostrar 100% e depois ocultar imagem
+      setTimeout(() => {
+        const itensProcessados = dados.itens || [];
+        console.log('🍎 Itens processados:', itensProcessados);
+        
+        setItens(itensProcessados);
+        
+        // Usar totais do backend se disponíveis, senão calcular localmente
+        if (dados.caloriasTotais !== undefined && dados.proteinasTotais !== undefined && 
+            dados.carboidratosTotais !== undefined && dados.gordurasTotais !== undefined) {
+          console.log('📊 Usando totais do backend:', {
+            calorias: dados.caloriasTotais,
+            proteinas: dados.proteinasTotais,
+            carboidratos: dados.carboidratosTotais,
+            gorduras: dados.gordurasTotais
+          });
+          
+          setTotal(dados.caloriasTotais);
+          setProteinasTotal(dados.proteinasTotais);
+          setCarboidratosTotal(dados.carboidratosTotais);
+          setGordurasTotal(dados.gordurasTotais);
+        } else {
+          console.log('🧮 Calculando totais localmente');
+          recalcularTotal(itensProcessados);
+        }
+        
+        setAnalisando(false);
+        setProgressoAnalise(0);
+        // Ocultar imagem e botões após análise bem-sucedida
+        setImagem(null);
+        setImagemBase64(null);
+      }, 500);
+      
     } catch (erro) {
-      Alert.alert('Erro', erro.message);
-    } finally {
+      clearInterval(intervaloProgresso);
       setAnalisando(false);
+      setProgressoAnalise(0);
+      console.error('❌ Erro na análise:', erro);
+      Alert.alert('Erro', erro.message);
     }
   }
 
@@ -279,6 +340,30 @@ export default function TelaRefeicoes() {
               </View>
             </View>
             
+            {/* Barra de Progresso da Análise */}
+            {analisando && (
+              <View style={styles.containerProgresso}>
+                <View style={styles.cabecalhoProgresso}>
+                  <View style={styles.infoProgresso}>
+                    <MaterialIcons name="search" size={20} color={colors.accent.blue} />
+                    <Text style={styles.textoProgresso}>Analisando imagem...</Text>
+                  </View>
+                  <Text style={styles.porcentagemProgresso}>{Math.round(progressoAnalise)}%</Text>
+                </View>
+                <View style={styles.barraProgresso}>
+                  <View style={[styles.preenchimentoProgresso, { width: `${progressoAnalise}%` }]} />
+                </View>
+                <View style={styles.detalhesProgresso}>
+                  <Text style={styles.textoDetalhesProgresso}>
+                    {progressoAnalise < 30 ? 'Carregando modelo de IA...' :
+                     progressoAnalise < 60 ? 'Processando imagem...' :
+                     progressoAnalise < 90 ? 'Identificando alimentos...' :
+                     'Finalizando análise...'}
+                  </Text>
+                </View>
+              </View>
+            )}
+            
             <View style={styles.botoesAcaoImagem}>
               <TouchableOpacity 
                 onPress={analisarImagem} 
@@ -312,11 +397,22 @@ export default function TelaRefeicoes() {
           </View>
         )}
 
+        {/* Mensagem quando não há imagem */}
+        {!imagem && itens.length === 0 && (
+          <View style={styles.containerMensagemInicial}>
+            <View style={styles.iconeMensagemInicial}>
+              <MaterialIcons name="restaurant" size={48} color={colors.neutral[600]} />
+            </View>
+            <Text style={styles.tituloMensagemInicial}>Comece sua análise nutricional</Text>
+
+          </View>
+        )}
+
         {/* Lista de Alimentos */}
         {itens.length > 0 && (
           <View style={styles.secaoAlimentos}>
             <View style={styles.cabecalhoSecao}>
-              <Text style={styles.tituloSecao}>Alimentos Identificados</Text>
+              <Text style={styles.tituloSecao}>Análise Nutricional Completa</Text>
               <View style={styles.badgeContador}>
                 <Text style={styles.textoBadgeContador}>{itens.length}</Text>
               </View>
@@ -339,8 +435,15 @@ export default function TelaRefeicoes() {
             <View style={styles.cabecalhoResumo}>
               <Text style={styles.tituloResumo}>Resumo Nutricional</Text>
               <View style={styles.caloriasPrincipais}>
-                <Text style={styles.numeroCalorias}>{Math.round(total)}</Text>
+                <Text style={styles.numeroCalorias}>
+                  {Math.round(total) || 0}
+                </Text>
                 <Text style={styles.unidadeCalorias}>kcal</Text>
+                {total > 0 && (
+                  <Text style={styles.caloriasPorItem}>
+                    {itens.length > 1 ? `(${Math.round(total / itens.length)} kcal/item)` : ''}
+                  </Text>
+                )}
               </View>
             </View>
             
@@ -350,10 +453,12 @@ export default function TelaRefeicoes() {
                   <MaterialIcons name="fitness-center" size={20} color={colors.accent.blue} />
                 </View>
                 <View style={styles.infoMacroResumo}>
-                  <Text style={styles.valorMacroResumo}>{Math.round(proteinasTotal * 10) / 10}g</Text>
+                  <Text style={styles.valorMacroResumo}>
+                    {Math.round((proteinasTotal || 0) * 10) / 10}g
+                  </Text>
                   <Text style={styles.rotuloMacroResumo}>Proteínas</Text>
                   <Text style={styles.porcentagemMacro}>
-                    {Math.round((proteinasTotal * 4 / total) * 100)}% das calorias
+                    {total > 0 ? Math.round(((proteinasTotal || 0) * 4 / total) * 100) : 0}% das calorias
                   </Text>
                 </View>
               </View>
@@ -363,10 +468,12 @@ export default function TelaRefeicoes() {
                   <MaterialIcons name="grain" size={20} color={colors.accent.green} />
                 </View>
                 <View style={styles.infoMacroResumo}>
-                  <Text style={styles.valorMacroResumo}>{Math.round(carboidratosTotal * 10) / 10}g</Text>
+                  <Text style={styles.valorMacroResumo}>
+                    {Math.round((carboidratosTotal || 0) * 10) / 10}g
+                  </Text>
                   <Text style={styles.rotuloMacroResumo}>Carboidratos</Text>
                   <Text style={styles.porcentagemMacro}>
-                    {Math.round((carboidratosTotal * 4 / total) * 100)}% das calorias
+                    {total > 0 ? Math.round(((carboidratosTotal || 0) * 4 / total) * 100) : 0}% das calorias
                   </Text>
                 </View>
               </View>
@@ -376,25 +483,46 @@ export default function TelaRefeicoes() {
                   <MaterialIcons name="opacity" size={20} color={colors.accent.orange} />
                 </View>
                 <View style={styles.infoMacroResumo}>
-                  <Text style={styles.valorMacroResumo}>{Math.round(gordurasTotal * 10) / 10}g</Text>
+                  <Text style={styles.valorMacroResumo}>
+                    {Math.round((gordurasTotal || 0) * 10) / 10}g
+                  </Text>
                   <Text style={styles.rotuloMacroResumo}>Gorduras</Text>
                   <Text style={styles.porcentagemMacro}>
-                    {Math.round((gordurasTotal * 9 / total) * 100)}% das calorias
+                    {total > 0 ? Math.round(((gordurasTotal || 0) * 9 / total) * 100) : 0}% das calorias
                   </Text>
                 </View>
               </View>
             </View>
             
-            <TouchableOpacity 
-              onPress={salvarRefeicao} 
-              style={styles.botaoSalvar}
-              activeOpacity={0.9}
-            >
-              <View style={styles.conteudoBotaoSalvar}>
-                <MaterialIcons name="save" size={20} color={colors.neutral[50]} />
-                <Text style={styles.textoBotaoSalvar}>Salvar Refeição</Text>
-              </View>
-            </TouchableOpacity>
+            <View style={styles.botoesAcaoResumo}>
+              <TouchableOpacity 
+                onPress={salvarRefeicao} 
+                style={styles.botaoSalvar}
+                activeOpacity={0.9}
+              >
+                <View style={styles.conteudoBotaoSalvar}>
+                  <MaterialIcons name="save" size={20} color={colors.neutral[50]} />
+                  <Text style={styles.textoBotaoSalvar}>Salvar Refeição</Text>
+                </View>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                onPress={() => {
+                  setItens([]);
+                  setTotal(0);
+                  setProteinasTotal(0);
+                  setCarboidratosTotal(0);
+                  setGordurasTotal(0);
+                }} 
+                style={styles.botaoNovaAnalise}
+                activeOpacity={0.9}
+              >
+                <View style={styles.conteudoBotaoNovaAnalise}>
+                  <MaterialIcons name="camera-alt" size={20} color={colors.neutral[50]} />
+                  <Text style={styles.textoBotaoNovaAnalise}>Nova Análise</Text>
+                </View>
+              </TouchableOpacity>
+            </View>
           </View>
         )}
       </ScrollView>
@@ -865,6 +993,13 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
   },
   
+  caloriasPorItem: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.neutral[500],
+    marginTop: spacing.xs,
+  },
+  
   macronutrientesResumo: {
     gap: spacing.lg,
     marginBottom: spacing.xl,
@@ -925,6 +1060,34 @@ const styles = StyleSheet.create({
   },
   
   textoBotaoSalvar: {
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.neutral[50],
+    letterSpacing: 0.5,
+  },
+
+  botoesAcaoResumo: {
+    gap: spacing.md,
+    marginTop: spacing.lg,
+  },
+
+  botaoNovaAnalise: {
+    backgroundColor: colors.neutral[700],
+    borderRadius: borders.radius.xl,
+    paddingVertical: spacing.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...shadows.lg,
+    elevation: 8,
+  },
+
+  conteudoBotaoNovaAnalise: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+
+  textoBotaoNovaAnalise: {
     fontSize: typography.fontSize.lg,
     fontWeight: typography.fontWeight.bold,
     color: colors.neutral[50],
@@ -1035,5 +1198,104 @@ const styles = StyleSheet.create({
     fontWeight: typography.fontWeight.bold,
     color: colors.neutral[50],
     letterSpacing: 0.5,
+  },
+
+  // Barra de Progresso da Análise
+  containerProgresso: {
+    marginTop: spacing.md,
+    marginBottom: spacing.md,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    backgroundColor: colors.neutral[800],
+    borderRadius: borders.radius.lg,
+    borderWidth: borders.width.thin,
+    borderColor: colors.neutral[700],
+    ...shadows.base,
+  },
+
+  cabecalhoProgresso: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.sm,
+  },
+
+  infoProgresso: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+
+  textoProgresso: {
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.neutral[300],
+  },
+
+  porcentagemProgresso: {
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.accent.blue,
+  },
+
+  barraProgresso: {
+    height: 10,
+    backgroundColor: colors.neutral[700],
+    borderRadius: borders.radius.full,
+    overflow: 'hidden',
+    marginBottom: spacing.sm,
+  },
+
+  preenchimentoProgresso: {
+    height: '100%',
+    backgroundColor: colors.accent.blue,
+    borderRadius: borders.radius.full,
+    minWidth: 0,
+    transition: 'width 0.3s ease',
+  },
+
+  detalhesProgresso: {
+    alignItems: 'center',
+  },
+
+  textoDetalhesProgresso: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.neutral[400],
+    textAlign: 'center',
+    fontStyle: 'italic',
+  },
+
+  // Mensagem quando não há imagem
+  containerMensagemInicial: {
+    alignItems: 'center',
+    marginTop: spacing.xl,
+    marginBottom: spacing.xl,
+    paddingHorizontal: spacing.lg,
+  },
+
+  iconeMensagemInicial: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: colors.neutral[700],
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.md,
+  },
+
+  tituloMensagemInicial: {
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.neutral[50],
+    marginBottom: spacing.xs,
+  },
+
+  descricaoMensagemInicial: {
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.neutral[400],
+    textAlign: 'center',
+    lineHeight: typography.lineHeight.normal,
   },
 });
