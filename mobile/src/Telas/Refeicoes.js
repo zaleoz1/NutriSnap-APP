@@ -22,6 +22,8 @@ export default function TelaRefeicoes() {
   const [proteinasManual, setProteinasManual] = useState('');
   const [carboidratosManual, setCarboidratosManual] = useState('');
   const [gordurasManual, setGordurasManual] = useState('');
+  const [imagemBase64, setImagemBase64] = useState(null);
+  const [analisando, setAnalisando] = useState(false);
 
   function recalcularTotal(itens) {
     const calorias = itens.reduce((soma, item) => soma + (item.calorias||0), 0);
@@ -40,14 +42,13 @@ export default function TelaRefeicoes() {
     if (!resultado.canceled) {
       const asset = resultado.assets[0];
       setImagem(asset.uri);
-      
-      try {
-        const dados = await buscarApi('/api/analise', { method:'POST', token, body:{ dadosImagemBase64: asset.base64 } });
-        setItens(dados.itens || []);
-        recalcularTotal(dados.itens || []);
-      } catch (erro) {
-        Alert.alert('Erro', erro.message);
-      }
+      setImagemBase64(asset.base64);
+      // Limpar dados anteriores
+      setItens([]);
+      setTotal(0);
+      setProteinasTotal(0);
+      setCarboidratosTotal(0);
+      setGordurasTotal(0);
     }
   }
 
@@ -56,15 +57,43 @@ export default function TelaRefeicoes() {
     if (!resultado.canceled) {
       const asset = resultado.assets[0];
       setImagem(asset.uri);
-      
-      try {
-        const dados = await buscarApi('/api/analise', { method:'POST', token, body:{ dadosImagemBase64: asset.base64 } });
-        setItens(dados.itens || []);
-        recalcularTotal(dados.itens || []);
-      } catch (erro) {
-        Alert.alert('Erro', erro.message);
-      }
+      setImagemBase64(asset.base64);
+      // Limpar dados anteriores
+      setItens([]);
+      setTotal(0);
+      setProteinasTotal(0);
+      setCarboidratosTotal(0);
+      setGordurasTotal(0);
     }
+  }
+
+  async function analisarImagem() {
+    if (!imagemBase64) {
+      Alert.alert('Erro', 'Nenhuma imagem para analisar');
+      return;
+    }
+
+    setAnalisando(true);
+    try {
+      const dados = await buscarApi('/api/analise', { method:'POST', token, body:{ dadosImagemBase64: imagemBase64 } });
+      setItens(dados.itens || []);
+      recalcularTotal(dados.itens || []);
+      Alert.alert('Sucesso', 'Imagem analisada com sucesso!');
+    } catch (erro) {
+      Alert.alert('Erro', erro.message);
+    } finally {
+      setAnalisando(false);
+    }
+  }
+
+  function removerImagem() {
+    setImagem(null);
+    setImagemBase64(null);
+    setItens([]);
+    setTotal(0);
+    setProteinasTotal(0);
+    setCarboidratosTotal(0);
+    setGordurasTotal(0);
   }
 
   function abrirModalAdicao() {
@@ -215,6 +244,40 @@ export default function TelaRefeicoes() {
             <View style={styles.sobreposicaoImagem}>
               <Text style={styles.textoImagem}>Refeição Capturada</Text>
             </View>
+          </View>
+        )}
+
+        {/* Botões de ação da imagem */}
+        {imagem && (
+          <View style={styles.botoesImagem}>
+            <TouchableOpacity 
+              onPress={analisarImagem} 
+              style={[styles.botaoImagem, styles.botaoAnalisar]}
+              disabled={analisando}
+              activeOpacity={0.8}
+            >
+                              <View style={styles.conteudoBotaoImagem}>
+                  {analisando ? (
+                    <MaterialIcons name="hourglass-empty" size={16} color={colors.neutral[50]} />
+                  ) : (
+                    <MaterialIcons name="search" size={16} color={colors.neutral[50]} />
+                  )}
+                  <Text style={styles.textoBotaoImagem}>
+                    {analisando ? 'Analisando...' : 'Analisar'}
+                  </Text>
+                </View>
+            </TouchableOpacity>
+
+                          <TouchableOpacity 
+                onPress={removerImagem} 
+                style={[styles.botaoImagem, styles.botaoRemover]}
+                activeOpacity={0.8}
+              >
+                <View style={styles.conteudoBotaoImagem}>
+                  <MaterialIcons name="delete" size={16} color={colors.neutral[50]} />
+                  <Text style={styles.textoBotaoImagem}>Limpar</Text>
+                </View>
+              </TouchableOpacity>
           </View>
         )}
 
@@ -532,6 +595,42 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   
+  botoesImagem: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginTop: spacing.md,
+  },
+
+  botaoImagem: {
+    flex: 1,
+    backgroundColor: colors.primary[600],
+    borderRadius: borders.radius.lg,
+    paddingVertical: spacing.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...shadows.sm,
+    elevation: 4,
+  },
+
+  botaoAnalisar: {
+    backgroundColor: colors.accent.blue,
+  },
+
+  botaoRemover: {
+    backgroundColor: colors.accent.red,
+  },
+
+  conteudoBotaoImagem: {
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+
+  textoBotaoImagem: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.neutral[50],
+  },
+  
   containerItens: {
     marginBottom: spacing.lg,
   },
@@ -711,6 +810,46 @@ const styles = StyleSheet.create({
     color: colors.accent.yellow + 'DD',
     textAlign: 'center',
     lineHeight: typography.lineHeight.normal,
+  },
+
+  // Estilos dos botões de imagem
+  botoesImagem: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+    paddingHorizontal: spacing.sm,
+  },
+
+  botaoImagem: {
+    flex: 1,
+    borderRadius: borders.radius.md,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.xs,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...shadows.sm,
+    elevation: 2,
+    minHeight: 36,
+  },
+
+  botaoAnalisar: {
+    backgroundColor: colors.accent.blue,
+  },
+
+  botaoRemover: {
+    backgroundColor: colors.accent.red,
+  },
+
+  conteudoBotaoImagem: {
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+
+  textoBotaoImagem: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.neutral[50],
+    letterSpacing: 0.2,
   },
 
   // Estilos do modal
