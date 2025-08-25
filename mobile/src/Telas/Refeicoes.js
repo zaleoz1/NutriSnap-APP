@@ -13,6 +13,9 @@ export default function TelaRefeicoes() {
   const [imagem, setImagem] = useState(null);
   const [itens, setItens] = useState([]);
   const [total, setTotal] = useState(0);
+  const [proteinasTotal, setProteinasTotal] = useState(0);
+  const [carboidratosTotal, setCarboidratosTotal] = useState(0);
+  const [gordurasTotal, setGordurasTotal] = useState(0);
   const [modalVisivel, setModalVisivel] = useState(false);
   const [alimentoManual, setAlimentoManual] = useState('');
   const [caloriasManual, setCaloriasManual] = useState('');
@@ -21,7 +24,15 @@ export default function TelaRefeicoes() {
   const [gordurasManual, setGordurasManual] = useState('');
 
   function recalcularTotal(itens) {
-    setTotal(itens.reduce((soma, item) => soma + (item.calorias||0), 0));
+    const calorias = itens.reduce((soma, item) => soma + (item.calorias||0), 0);
+    const proteinas = itens.reduce((soma, item) => soma + (item.proteinas||0), 0);
+    const carboidratos = itens.reduce((soma, item) => soma + (item.carboidratos||0), 0);
+    const gorduras = itens.reduce((soma, item) => soma + (item.gorduras||0), 0);
+    
+    setTotal(calorias);
+    setProteinasTotal(proteinas);
+    setCarboidratosTotal(carboidratos);
+    setGordurasTotal(gorduras);
   }
 
   async function capturarComCamera() {
@@ -101,7 +112,12 @@ export default function TelaRefeicoes() {
     try {
       await buscarApi('/api/refeicoes', { method:'POST', token, body:{ itens, calorias_totais: total, timestamp: new Date() } });
       Alert.alert('Sucesso', 'Refeição salva com sucesso!');
-      setImagem(null); setItens([]); setTotal(0);
+      setImagem(null); 
+      setItens([]); 
+      setTotal(0);
+      setProteinasTotal(0);
+      setCarboidratosTotal(0);
+      setGordurasTotal(0);
     } catch (erro) {
       Alert.alert('Erro', erro.message);
     }
@@ -117,16 +133,19 @@ export default function TelaRefeicoes() {
         
         <View style={styles.informacoesNutricionais}>
           <View style={styles.itemNutricional}>
+            <MaterialIcons name="fitness-center" size={16} color={colors.accent.blue} />
             <Text style={styles.rotuloNutricional}>Proteínas</Text>
-            <Text style={styles.valorNutricional}>{item.proteinas || 0}g</Text>
+            <Text style={styles.valorNutricional}>{Math.round(item.proteinas * 10) / 10}g</Text>
           </View>
           <View style={styles.itemNutricional}>
+            <MaterialIcons name="grain" size={16} color={colors.accent.green} />
             <Text style={styles.rotuloNutricional}>Carboidratos</Text>
-            <Text style={styles.valorNutricional}>{item.carboidratos || 0}g</Text>
+            <Text style={styles.valorNutricional}>{Math.round(item.carboidratos * 10) / 10}g</Text>
           </View>
           <View style={styles.itemNutricional}>
+            <MaterialIcons name="opacity" size={16} color={colors.accent.orange} />
             <Text style={styles.rotuloNutricional}>Gorduras</Text>
-            <Text style={styles.valorNutricional}>{item.gorduras || 0}g</Text>
+            <Text style={styles.valorNutricional}>{Math.round(item.gorduras * 10) / 10}g</Text>
           </View>
         </View>
       </View>
@@ -223,21 +242,38 @@ export default function TelaRefeicoes() {
             
             <View style={styles.detalhamentoTotal}>
               <View style={styles.itemTotal}>
+                <MaterialIcons name="fitness-center" size={18} color={colors.accent.blue} />
                 <Text style={styles.rotuloTotal}>Proteínas</Text>
                 <Text style={styles.valorTotal}>
-                  {Math.round(itens.reduce((soma, item) => soma + (item.proteinas || 0), 0))}g
+                  {Math.round(proteinasTotal * 10) / 10}g
                 </Text>
               </View>
               <View style={styles.itemTotal}>
+                <MaterialIcons name="grain" size={18} color={colors.accent.green} />
                 <Text style={styles.rotuloTotal}>Carboidratos</Text>
                 <Text style={styles.valorTotal}>
-                  {Math.round(itens.reduce((soma, item) => soma + (item.carboidratos || 0), 0))}g
+                  {Math.round(carboidratosTotal * 10) / 10}g
                 </Text>
               </View>
               <View style={styles.itemTotal}>
+                <MaterialIcons name="opacity" size={18} color={colors.accent.orange} />
                 <Text style={styles.rotuloTotal}>Gorduras</Text>
                 <Text style={styles.valorTotal}>
-                  {Math.round(itens.reduce((soma, item) => soma + (item.gorduras || 0), 0))}g
+                  {Math.round(gordurasTotal * 10) / 10}g
+                </Text>
+              </View>
+            </View>
+            
+            {/* Resumo nutricional adicional */}
+            <View style={styles.resumoNutricional}>
+              <View style={styles.itemResumo}>
+                <Text style={styles.rotuloResumo}>Calorias por macronutriente:</Text>
+              </View>
+              <View style={styles.itemResumo}>
+                <Text style={styles.textoResumo}>
+                  Proteínas: {Math.round((proteinasTotal * 4 / total) * 100)}% • 
+                  Carboidratos: {Math.round((carboidratosTotal * 4 / total) * 100)}% • 
+                  Gorduras: {Math.round((gordurasTotal * 9 / total) * 100)}%
                 </Text>
               </View>
             </View>
@@ -611,6 +647,32 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSize.lg,
     fontWeight: typography.fontWeight.bold,
     color: colors.neutral[800],
+  },
+  
+  resumoNutricional: {
+    marginTop: spacing.lg,
+    paddingTop: spacing.lg,
+    borderTopWidth: borders.width.thin,
+    borderTopColor: colors.neutral[200],
+  },
+  
+  itemResumo: {
+    marginBottom: spacing.sm,
+  },
+  
+  rotuloResumo: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.neutral[700],
+    marginBottom: spacing.xs,
+  },
+  
+  textoResumo: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.neutral[600],
+    textAlign: 'center',
+    lineHeight: typography.lineHeight.normal,
   },
   
   botoesAcao: {

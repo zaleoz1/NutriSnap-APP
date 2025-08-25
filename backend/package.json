@@ -31,8 +31,10 @@
     "backend",
     "api",
     "nutrition",
-    "health"
+    "health",
+    "ai",
+    "image-analysis"
   ],
   "author": "NutriSnap Team",
-  "description": "Backend API para o aplicativo NutriSnap"
+  "description": "Backend API para o aplicativo NutriSnap com análise nutricional por IA"
 }

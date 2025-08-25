@@ -47,6 +47,9 @@ HOST=0.0.0.0
 
 # Configurações de Segurança
 NODE_ENV=development
+
+# Chave da API Gemini (para análise de imagens)
+GEMINI_API_KEY=sua_chave_gemini_aqui
 ```
 
 #### Banco de Dados
@@ -101,8 +104,37 @@ O banco `nutrisnap` contém as seguintes tabelas:
 - `GET /api/treinos` - Listar treinos (requer auth)
 - `POST /api/treinos` - Criar treino (requer auth)
 
-### Análise
+### Análise Nutricional
 - `POST /api/analise` - Analisar imagem de alimento (requer auth)
+
+**📸 Análise de Imagens com IA:**
+A API de análise utiliza o Google Gemini para identificar alimentos e estimar informações nutricionais completas:
+
+**Dados retornados para cada alimento:**
+- `nome`: Nome do alimento identificado
+- `calorias`: Calorias em kcal
+- `proteinas`: Proteínas em gramas
+- `carboidratos`: Carboidratos em gramas
+- `gorduras`: Gorduras em gramas
+
+**Resposta da API:**
+```json
+{
+  "itens": [
+    {
+      "nome": "Arroz Integral",
+      "calorias": 120,
+      "proteinas": 2.5,
+      "carboidratos": 25.0,
+      "gorduras": 0.8
+    }
+  ],
+  "caloriasTotais": 120,
+  "proteinasTotais": 2.5,
+  "carboidratosTotais": 25.0,
+  "gordurasTotais": 0.8
+}
+```
 
 ### Saúde
 - `GET /api/saude` - Status do servidor e banco
@@ -178,6 +210,18 @@ rm -rf node_modules package-lock.json
 npm install
 ```
 
+### Problemas com a API de Análise
+```bash
+# Verifique se a chave Gemini está configurada
+echo $GEMINI_API_KEY
+
+# Teste a API manualmente
+curl -X POST http://localhost:3000/api/analise \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer seu_token" \
+  -d '{"dadosImagemBase64":"dados_base64_aqui"}'
+```
+
 ## 📚 Desenvolvimento
 
 ### Estrutura de Arquivos
@@ -189,6 +233,8 @@ backend/
 ├── server.js        # Servidor principal
 ├── setup.js         # Script de configuração
 ├── schema.sql       # Estrutura do banco
+├── env.example      # Exemplo de variáveis de ambiente
+├── ANALISE_NUTRICIONAL.md  # Documentação da análise nutricional
 └── package.json     # Dependências e scripts
 ```
 
@@ -207,6 +253,14 @@ router.get('/protegida', requerAutenticacao, (req, res) => {
   // req.idUsuario contém o ID do usuário autenticado
   res.json({ mensagem: 'Rota protegida' });
 });
+```
+
+### Testando a API de Análise
+```bash
+# Teste manualmente com uma imagem real
+# 1. Capture uma foto de comida
+# 2. Converta para base64
+# 3. Faça uma requisição POST para /api/analise
 ```
 
 ## 📄 Licença

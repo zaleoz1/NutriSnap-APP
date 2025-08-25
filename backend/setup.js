@@ -114,9 +114,27 @@ async function verificarArquivoEnv() {
       console.log('   DB_NAME=nutrisnap');
       console.log('   JWT_SECRET=sua_chave_secreta');
       console.log('   PORT=3000');
+      console.log('   GEMINI_API_KEY=sua_chave_gemini');
     }
   } else {
     console.log('✅ Arquivo .env encontrado');
+  }
+}
+
+async function verificarChaveGemini() {
+  console.log('🔑 Verificando chave da API Gemini...');
+  
+  const chaveGemini = process.env.GEMINI_API_KEY;
+  
+  if (!chaveGemini || chaveGemini === 'sua_chave_gemini_aqui') {
+    console.log('⚠️ GEMINI_API_KEY não configurada ou usando valor padrão');
+    console.log('💡 Para usar análise de imagens, configure sua chave Gemini:');
+    console.log('   1. Acesse: https://makersuite.google.com/app/apikey');
+    console.log('   2. Crie uma nova chave de API');
+    console.log('   3. Adicione no arquivo .env: GEMINI_API_KEY=sua_chave_aqui');
+    console.log('   4. Reinicie o servidor');
+  } else {
+    console.log('✅ GEMINI_API_KEY configurada');
   }
 }
 
@@ -124,6 +142,7 @@ async function main() {
   try {
     await verificarDependencias();
     await verificarArquivoEnv();
+    await verificarChaveGemini();
     await configurarBanco();
     
     console.log('\n🎉 Configuração concluída com sucesso!');
@@ -137,6 +156,10 @@ async function main() {
       console.log('   Email: teste@nutrisnap.com');
       console.log('   Senha: Teste123');
     }
+    
+    console.log('\n🔑 Para análise de imagens:');
+    console.log('   - Configure GEMINI_API_KEY no arquivo .env');
+    console.log('   - Reinicie o servidor após configurar');
     
   } catch (erro) {
     console.error('\n❌ Configuração falhou:', erro.message);

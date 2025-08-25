@@ -14,7 +14,38 @@ roteador.post('/', requerAutenticacao, async (req, res) => {
     if (!chave) return res.status(500).json({ mensagem: 'GEMINI_API_KEY não configurada' });
 
     const urlApi = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${chave}`;
-    const prompt = "Analise esta imagem de uma refeição. Identifique cada item e estime calorias. Responda apenas com JSON puro, sem explicações, sem blocos de código, sem texto extra. Exemplo: {\"itens\":[{\"nome\":\"Arroz\",\"calorias\":120}],\"caloriasTotais\":120}";
+    
+    // Prompt melhorado para incluir informações nutricionais detalhadas
+    const prompt = `Analise esta imagem de uma refeição. Identifique cada item e forneça informações nutricionais completas.
+
+Para cada alimento identificado, estime:
+- Nome do alimento
+- Calorias (kcal)
+- Proteínas (g)
+- Carboidratos (g) 
+- Gorduras (g)
+
+Responda APENAS com JSON puro, sem explicações, sem blocos de código, sem texto extra.
+
+Formato esperado:
+{
+  "itens": [
+    {
+      "nome": "Arroz Integral",
+      "calorias": 120,
+      "proteinas": 2.5,
+      "carboidratos": 25.0,
+      "gorduras": 0.8
+    }
+  ],
+  "caloriasTotais": 120,
+  "proteinasTotais": 2.5,
+  "carboidratosTotais": 25.0,
+  "gordurasTotais": 0.8
+}
+
+IMPORTANTE: Sempre inclua todos os campos nutricionais para cada item. Se não conseguir estimar algum valor, use 0.`;
+
     const payload = {
       contents: [{ parts: [{ text: prompt }, { inlineData: { mimeType: 'image/jpeg', data: dadosImagemBase64 } }] }],
       generationConfig: { responseMimeType: 'application/json' }
@@ -26,6 +57,7 @@ roteador.post('/', requerAutenticacao, async (req, res) => {
     const texto = json?.candidates?.[0]?.content?.parts?.[0]?.text || "";
     const limpo = texto.replace(/```json|```/g, '').trim();
     let dados;
+    
     try {
       dados = JSON.parse(limpo);
     } catch {
@@ -43,8 +75,35 @@ roteador.post('/', requerAutenticacao, async (req, res) => {
     }
 
     if (!dados) return res.status(500).json({ mensagem: 'Resposta inválida do modelo' });
+
+    // Validar e normalizar dados nutricionais
+    if (dados.itens && Array.isArray(dados.itens)) {
+      dados.itens = dados.itens.map(item => ({
+        nome: item.nome || 'Alimento não identificado',
+        calorias: parseFloat(item.calorias) || 0,
+        proteinas: parseFloat(item.proteinas) || 0,
+        carboidratos: parseFloat(item.carboidratos) || 0,
+        gorduras: parseFloat(item.gorduras) || 0
+      }));
+
+      // Calcular totais se não fornecidos
+      if (!dados.caloriasTotais) {
+        dados.caloriasTotais = dados.itens.reduce((soma, item) => soma + (item.calorias || 0), 0);
+      }
+      if (!dados.proteinasTotais) {
+        dados.proteinasTotais = dados.itens.reduce((soma, item) => soma + (item.proteinas || 0), 0);
+      }
+      if (!dados.carboidratosTotais) {
+        dados.carboidratosTotais = dados.itens.reduce((soma, item) => soma + (item.carboidratos || 0), 0);
+      }
+      if (!dados.gordurasTotais) {
+        dados.gordurasTotais = dados.itens.reduce((soma, item) => soma + (item.gorduras || 0), 0);
+      }
+    }
+
     res.json(dados);
   } catch (erro) {
+    console.error('❌ Erro na análise de imagem:', erro);
     res.status(500).json({ mensagem: erro.message });
   }
 });
