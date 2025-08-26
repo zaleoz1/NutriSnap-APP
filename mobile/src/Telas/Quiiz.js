@@ -1,285 +1,286 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, StatusBar, Dimensions, TextInput, TouchableWithoutFeedback, Keyboard } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, StatusBar, Dimensions, TextInput, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { MaterialIcons } from '@expo/vector-icons';
 import { colors, typography, spacing, borders, shadows } from '../styles/globalStyles';
 
 const { width, height } = Dimensions.get('window');
 
-export default function TelaQuiz({ navigation }) {
-  const [passoAtual, setPassoAtual] = useState(0);
-  const [respostas, setRespostas] = useState({});
-  const [entradasTexto, setEntradasTexto] = useState({});
+export default function Quiz({ navigation }) {
+  const [step, setStep] = useState(0);
+  const [answers, setAnswers] = useState({});
 
-
-
-  const passos = [
+  const questions = [
     {
-      id: 'goals',
-      title: 'Metas',
-      question: 'Selecione até três metas que são mais importantes para você.',
+      id: 'objetivo',
+      title: 'Qual é seu objetivo principal?',
+      type: 'single',
       options: [
-        { id: 'perder_peso', text: 'Perder peso' },
-        { id: 'manter_peso', text: 'Manter o peso' },
-        { id: 'ganhar_peso', text: 'Ganhar peso' },
+        { id: 'emagrecer', text: 'Emagrecer' },
         { id: 'ganhar_massa', text: 'Ganhar massa muscular' },
-        { id: 'modificar_dieta', text: 'Modificar minha dieta' },
-        { id: 'planejar_refeicoes', text: 'Planejar refeições' },
-        { id: 'controlar_estresse', text: 'Controlar o estresse' },
-        { id: 'estilo_ativo', text: 'Ter um estilo de vida ativo' }
-      ],
-      multiSelect: true
+        { id: 'manter_peso', text: 'Manter o peso atual' },
+        { id: 'saude', text: 'Melhorar a saúde geral' }
+      ]
     },
     {
-      id: 'meal_plans',
-      title: 'Planos de Refeição',
-      question: 'Você quer que a gente ajude você a criar planos de refeições semanais?',
+      id: 'objetivo_fitness',
+      title: 'Qual é sua pretensão específica de fitness?',
+      type: 'single',
       options: [
-        { id: 'sim_certeza', text: 'Sim, com certeza' },
-        { id: 'posso_experimentar', text: 'Posso experimentar' },
-        { id: 'nao_agradeco', text: 'Não, agradeço' }
-      ],
-      multiSelect: false
+        { id: 'ganhar_massa_pura', text: 'Ganhar massa muscular pura' },
+        { id: 'definir_corpo', text: 'Definir e tonificar o corpo' },
+        { id: 'forca_resistencia', text: 'Aumentar força e resistência' },
+        { id: 'perda_gordura', text: 'Perder gordura e definir músculos' },
+        { id: 'condicionamento', text: 'Melhorar condicionamento físico' },
+        { id: 'reabilitacao', text: 'Reabilitação e recuperação' }
+      ]
     },
     {
-      id: 'obstacles',
-      title: 'Obstáculos',
-      question: 'Anteriormente, quais obstáculos impediram você de perder peso?',
-      instruction: 'Selecione todas as opções que descrevem sua situação.',
+      id: 'acesso_academia',
+      title: 'Qual é seu acesso a equipamentos de treino?',
+      type: 'single',
+      options: [
+        { id: 'academia_completa', text: 'Academia completa com todos os equipamentos' },
+        { id: 'academia_basica', text: 'Academia básica com equipamentos limitados' },
+        { id: 'casa_equipamentos', text: 'Casa com alguns equipamentos (pesos, esteira)' },
+        { id: 'casa_sem_equipamentos', text: 'Casa sem equipamentos específicos' },
+        { id: 'ar_livre', text: 'Treino ao ar livre/parques' },
+        { id: 'sem_acesso', text: 'Sem acesso a equipamentos' }
+      ]
+    },
+    {
+      id: 'tipo_treino',
+      title: 'Como você prefere treinar?',
+      type: 'multiple',
+      options: [
+        { id: 'treino_academia', text: 'Treino na academia' },
+        { id: 'treino_casa', text: 'Treino em casa' },
+        { id: 'treino_ar_livre', text: 'Treino ao ar livre' },
+        { id: 'treino_funcional', text: 'Treino funcional' },
+        { id: 'treino_corrida', text: 'Corrida/caminhada' },
+        { id: 'treino_yoga', text: 'Yoga/pilates' },
+        { id: 'treino_natacao', text: 'Natação' },
+        { id: 'treino_ciclismo', text: 'Ciclismo' }
+      ]
+    },
+    {
+      id: 'frequencia_treino',
+      title: 'Com que frequência você pretende treinar?',
+      type: 'single',
+      options: [
+        { id: '2_3_vezes', text: '2-3 vezes por semana' },
+        { id: '3_4_vezes', text: '3-4 vezes por semana' },
+        { id: '4_5_vezes', text: '4-5 vezes por semana' },
+        { id: '5_6_vezes', text: '5-6 vezes por semana' },
+        { id: 'diario', text: 'Todos os dias' },
+        { id: 'flexivel', text: 'Flexível, conforme disponibilidade' }
+      ]
+    },
+    {
+      id: 'suplementos',
+      title: 'Você tem acesso a suplementos nutricionais?',
+      type: 'multiple',
+      options: [
+        { id: 'proteina', text: 'Proteína (whey, caseína)' },
+        { id: 'creatina', text: 'Creatina' },
+        { id: 'bcaa', text: 'BCAA' },
+        { id: 'multivitaminico', text: 'Multivitamínico' },
+        { id: 'omega3', text: 'Ômega 3' },
+        { id: 'pre_workout', text: 'Pré-workout' },
+        { id: 'sem_suplementos', text: 'Não uso suplementos' },
+        { id: 'nao_sei', text: 'Não sei o que usar' }
+      ]
+    },
+    {
+      id: 'nivel_atividade',
+      title: 'Como você descreveria seu nível de atividade física?',
+      type: 'single',
+      options: [
+        { id: 'sedentario', text: 'Sedentário - pouco ou nenhum exercício' },
+        { id: 'leve', text: 'Levemente ativo - exercício leve 1-3x por semana' },
+        { id: 'moderado', text: 'Moderadamente ativo - exercício 3-5x por semana' },
+        { id: 'ativo', text: 'Muito ativo - exercício intenso 6-7x por semana' }
+      ]
+    },
+    {
+      id: 'dieta_atual',
+      title: 'Como você descreveria sua dieta atual?',
+      type: 'single',
+      options: [
+        { id: 'nao_controlo', text: 'Não controlo muito o que como' },
+        { id: 'tento_controlar', text: 'Tento controlar, mas é difícil' },
+        { id: 'controlo_parcial', text: 'Controlo parcialmente' },
+        { id: 'controlo_total', text: 'Tenho controle total sobre minha alimentação' }
+      ]
+    },
+    {
+      id: 'obstaculos',
+      title: 'Quais são seus principais obstáculos?',
+      type: 'multiple',
       options: [
         { id: 'falta_tempo', text: 'Falta de tempo' },
-        { id: 'dificil_seguir', text: 'Era muito difícil seguir o plano de emagrecimento' },
-        { id: 'nao_gostava_comida', text: 'Não gostava da comida' },
-        { id: 'dificil_escolhas', text: 'Foi difícil fazer escolhas alimentares' },
-        { id: 'comer_social', text: 'Comer socialmente e eventos' },
-        { id: 'desejo_alimentos', text: 'Desejo de comer certos alimentos' },
-        { id: 'falta_progresso', text: 'Falta de progresso' },
-        { id: 'comida_saudavel', text: 'Comida saudável não tem gosto bom' }
-      ],
-      multiSelect: true
+        { id: 'falta_dinheiro', text: 'Orçamento limitado' },
+        { id: 'falta_conhecimento', text: 'Falta de conhecimento nutricional' },
+        { id: 'falta_motivacao', text: 'Falta de motivação' },
+        { id: 'ansiedade', text: 'Ansiedade/estresse' },
+        { id: 'social', text: 'Compromissos sociais' }
+      ]
     },
     {
-      id: 'activity_level',
-      title: 'Nível de Atividade',
-      question: 'Qual é o seu nível básico de atividade?',
-      instruction: 'Não incluindo treinos — contamos isso separadamente.',
+      id: 'preferencias',
+      title: 'Quais são suas preferências alimentares?',
+      type: 'multiple',
       options: [
-        { id: 'nao_ativo', text: 'Não muito ativo', description: 'Passa a maior parte do dia sentado (ex: caixa de banco, trabalho de escritório)' },
-        { id: 'levemente_ativo', text: 'Levemente ativo', description: 'Passa boa parte do dia de pé (ex: professor, vendedor)' },
-        { id: 'ativo', text: 'Ativo', description: 'Passa boa parte do dia fazendo alguma atividade física (ex: garçom, carteiro)' },
-        { id: 'bastante_ativo', text: 'Bastante ativo', description: 'Passa a maior parte do dia fazendo atividade física pesada (ex: carpinteiro, ciclista entregador)' }
-      ],
-      multiSelect: false
+        { id: 'vegetariano', text: 'Vegetariano' },
+        { id: 'vegano', text: 'Vegano' },
+        { id: 'sem_gluten', text: 'Sem glúten' },
+        { id: 'sem_lactose', text: 'Sem lactose' },
+        { id: 'sem_restricoes', text: 'Sem restrições' },
+        { id: 'low_carb', text: 'Low carb' }
+      ]
     },
     {
-      id: 'personal_info',
-      title: 'Informações Pessoais',
-      question: 'Conte um pouco sobre você',
-      instruction: 'Selecione o sexo e preencha as informações:',
-      options: [
-        { id: 'masculino', text: 'Masculino' },
-        { id: 'feminino', text: 'Feminino' }
-      ],
-      multiSelect: false,
-      additionalFields: ['idade']
-    },
-    {
-      id: 'measurements',
-      title: 'Medidas',
-      question: 'Só mais algumas perguntas',
-      instruction: 'Preencha suas medidas:',
-      additionalFields: ['altura', 'peso_atual', 'peso_meta']
-    },
-    {
-      id: 'weekly_goal',
-      title: 'Meta Semanal',
-      question: 'Qual é a sua meta semanal?',
-      options: [
-        { id: '0.2kg', text: 'Perder 0,2 quilogramas por semana' },
-        { id: '0.5kg', text: 'Perder 0,5 quilogramas por semana', recommended: true },
-        { id: '0.8kg', text: 'Perder 0,8 quilogramas por semana' },
-        { id: '1.0kg', text: 'Perder 1 quilogramas por semana' }
-      ],
-      multiSelect: false
+      id: 'dados_pessoais',
+      title: 'Informações básicas',
+      type: 'form',
+      fields: [
+        { id: 'idade', label: 'Idade', type: 'numeric', placeholder: 'Digite sua idade' },
+        { id: 'altura', label: 'Altura (cm)', type: 'numeric', placeholder: 'Digite sua altura' },
+        { id: 'peso', label: 'Peso atual (kg)', type: 'numeric', placeholder: 'Digite seu peso' }
+      ]
     }
   ];
 
-  const dadosPassoAtual = passos[passoAtual];
+  const currentQuestion = questions[step];
 
-  useEffect(() => {
-    if (dadosPassoAtual.options?.length > 0) {
-      // Se já temos respostas para este passo, não sobrescrever
-      if (!respostas[dadosPassoAtual.id]) {
-        const opcoesIniciais = dadosPassoAtual.options.map(option => ({
-          ...option,
-          selected: false
-        }));
-        setRespostas(prev => ({
-          ...prev,
-          [dadosPassoAtual.id]: opcoesIniciais
-        }));
-      }
-    }
-  }, [passoAtual, dadosPassoAtual.id, dadosPassoAtual.options, respostas]);
-
-  const selecionarOpcao = (optionId) => {
-    const opcoesAtualizadas = dadosPassoAtual.options.map(option => ({
-      ...option,
-      selected: dadosPassoAtual.multiSelect 
-        ? option.id === optionId ? !option.selected : option.selected
-        : option.id === optionId
-    }));
-    
-    setRespostas(prev => {
-      const novasRespostas = {
+  const handleAnswer = (questionId, answerId, value) => {
+    if (currentQuestion.type === 'multiple') {
+      setAnswers(prev => ({
         ...prev,
-        [dadosPassoAtual.id]: opcoesAtualizadas
-      };
-      return novasRespostas;
-    });
+        [questionId]: {
+          ...prev[questionId],
+          [answerId]: !prev[questionId]?.[answerId]
+        }
+      }));
+    } else if (currentQuestion.type === 'single') {
+      setAnswers(prev => ({
+        ...prev,
+        [questionId]: answerId
+      }));
+    } else if (currentQuestion.type === 'form') {
+      setAnswers(prev => ({
+        ...prev,
+        [questionId]: {
+          ...prev[questionId],
+          [answerId]: value
+        }
+      }));
+    }
   };
 
-  const alterarEntradaTexto = (field, value) => {
-    setEntradasTexto(prev => ({ ...prev, [field]: value }));
-  };
-
-  const podeProsseguir = () => {
-    // Se for o último passo, sempre permitir prosseguir
-    if (passoAtual === passos.length - 1) {
-      return true;
-    }
-    
-    if (dadosPassoAtual.options?.length > 0) {
-      const respostasAtuais = respostas[dadosPassoAtual.id];
-      const podeProsseguirResultado = respostasAtuais?.some(option => option.selected);
-      return podeProsseguirResultado;
-    }
-    
-    if (dadosPassoAtual.additionalFields) {
-      const podeProsseguirResultado = dadosPassoAtual.additionalFields.every(field => 
-        entradasTexto[field]?.trim().length > 0
+  const canProceed = () => {
+    if (currentQuestion.type === 'single') {
+      return answers[currentQuestion.id];
+    } else if (currentQuestion.type === 'multiple') {
+      const questionAnswers = answers[currentQuestion.id];
+      return questionAnswers && Object.values(questionAnswers).some(v => v);
+    } else if (currentQuestion.type === 'form') {
+      const questionAnswers = answers[currentQuestion.id];
+      return questionAnswers && currentQuestion.fields.every(field => 
+        questionAnswers[field.id] && questionAnswers[field.id].toString().trim().length > 0
       );
-      return podeProsseguirResultado;
     }
-    
-    return true;
+    return false;
   };
 
-  const proximoPasso = () => {
-    if (passoAtual < passos.length - 1) {
-      setPassoAtual(passoAtual + 1);
+  const nextStep = () => {
+    if (step < questions.length - 1) {
+      setStep(step + 1);
     } else {
-      try {
-        navigation.replace('Principal');
-      } catch (error) {
-        // Fallback para navegação simples
-        navigation.navigate('Principal');
-      }
+      // Finalizar quiz
+      console.log('Respostas do quiz:', answers);
+      navigation.navigate('Dashboard');
     }
   };
 
-  const passoAnterior = () => {
-    if (passoAtual > 0) {
-      setPassoAtual(passoAtual - 1);
+  const prevStep = () => {
+    if (step > 0) {
+      setStep(step - 1);
     } else {
       navigation.goBack();
     }
   };
 
-  const renderizarBarraProgresso = () => (
-    <View style={styles.containerProgresso}>
-      <Text style={styles.tituloProgresso}>{dadosPassoAtual.title}</Text>
-      <View style={styles.barraProgresso}>
-        {passos.map((_, index) => (
+  const renderProgressBar = () => (
+    <View style={styles.progressContainer}>
+      <Text style={styles.progressTitle}>{currentQuestion.title}</Text>
+      <View style={styles.progressBar}>
+        {questions.map((_, index) => (
           <View
             key={index}
             style={[
-              styles.segmentoProgresso,
-              index <= passoAtual && styles.segmentoProgressoAtivo
+              styles.progressSegment,
+              index <= step && styles.progressSegmentActive
             ]}
           />
         ))}
       </View>
+      <Text style={styles.progressText}>{step + 1} de {questions.length}</Text>
     </View>
   );
 
-  const renderizarOpcoes = () => {
-    if (!dadosPassoAtual.options?.length) return null;
+  const renderOptions = () => {
+    if (currentQuestion.type === 'form') return null;
 
-    const respostasAtuais = respostas[dadosPassoAtual.id] || dadosPassoAtual.options;
-    
     return (
-      <View style={styles.containerOpcoes}>
-        {respostasAtuais.map((option) => (
-          <TouchableOpacity
-            key={option.id}
-            style={[
-              styles.botaoOpcao,
-              option.selected && styles.botaoOpcaoSelecionado
-            ]}
-            onPress={() => selecionarOpcao(option.id)}
-            activeOpacity={0.8}
-          >
-            <View style={styles.conteudoOpcao}>
+      <View style={styles.optionsContainer}>
+        {currentQuestion.options.map((option) => {
+          const isSelected = currentQuestion.type === 'single' 
+            ? answers[currentQuestion.id] === option.id
+            : answers[currentQuestion.id]?.[option.id];
+
+          return (
+            <TouchableOpacity
+              key={option.id}
+              style={[
+                styles.optionButton,
+                isSelected && styles.optionButtonSelected
+              ]}
+              onPress={() => handleAnswer(currentQuestion.id, option.id)}
+              activeOpacity={0.8}
+            >
               <Text style={[
-                styles.textoOpcao,
-                option.selected && styles.textoOpcaoSelecionado
+                styles.optionText,
+                isSelected && styles.optionTextSelected
               ]}>
                 {option.text}
               </Text>
-              {option.description && (
-                <Text style={[
-                  styles.descricaoOpcao,
-                  option.selected && styles.descricaoOpcaoSelecionada
-                ]}>
-                  {option.description}
-                </Text>
+              {isSelected && (
+                <View style={styles.checkmark}>
+                  <Text style={styles.checkmarkText}>✓</Text>
+                </View>
               )}
-              {option.recommended && (
-                <Text style={styles.tagRecomendado}>(Recomendado)</Text>
-              )}
-            </View>
-            <View style={[
-              styles.indicadorOpcao,
-              option.selected && styles.indicadorOpcaoSelecionado
-            ]}>
-              {option.selected && <Text style={styles.marcaVerificacao}>✓</Text>}
-            </View>
-          </TouchableOpacity>
-        ))}
+            </TouchableOpacity>
+          );
+        })}
       </View>
     );
   };
 
-  const renderizarEntradasTexto = () => {
-    if (!dadosPassoAtual.additionalFields) return null;
-
-    const rotulosCampos = {
-      idade: 'Idade',
-      altura: 'Altura (cm)',
-      peso_atual: 'Peso Atual (kg)',
-      peso_meta: 'Peso Meta (kg)'
-    };
-
-    const placeholders = {
-      idade: 'idade',
-      altura: 'altura',
-      peso_atual: 'peso atual',
-      peso_meta: 'peso meta'
-    };
+  const renderForm = () => {
+    if (currentQuestion.type !== 'form') return null;
 
     return (
-      <View style={styles.containerEntradasTexto}>
-        {dadosPassoAtual.additionalFields.map((field) => (
-          <View key={field} style={styles.containerEntrada}>
-            <Text style={styles.rotuloEntrada}>{rotulosCampos[field] || field}</Text>
+      <View style={styles.formContainer}>
+        {currentQuestion.fields.map((field) => (
+          <View key={field.id} style={styles.inputContainer}>
+            <Text style={styles.inputLabel}>{field.label}</Text>
             <TextInput
-              style={styles.entradaTexto}
-              value={entradasTexto[field] || ''}
-              onChangeText={(value) => alterarEntradaTexto(field, value)}
-              placeholder={`Digite sua ${placeholders[field] || field}`}
+              style={styles.textInput}
+              value={answers[currentQuestion.id]?.[field.id] || ''}
+              onChangeText={(value) => handleAnswer(currentQuestion.id, field.id, value)}
+              placeholder={field.placeholder}
               placeholderTextColor={colors.neutral[500]}
-              keyboardType={['idade', 'altura', 'peso_atual', 'peso_meta'].includes(field) ? 'numeric' : 'default'}
+              keyboardType={field.type === 'numeric' ? 'numeric' : 'default'}
             />
           </View>
         ))}
@@ -288,277 +289,210 @@ export default function TelaQuiz({ navigation }) {
   };
 
   return (
-    <SafeAreaView style={styles.areaSegura} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <StatusBar barStyle="light-content" backgroundColor={colors.neutral[900]} />
       
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <View style={styles.container}>
-          <View style={styles.containerConteudo}>
-            {renderizarBarraProgresso()}
-            <View style={styles.containerPergunta}>
-              <Text style={styles.textoPergunta}>{dadosPassoAtual.question}</Text>
-              {dadosPassoAtual.instruction && (
-                <Text style={styles.textoInstrucao}>{dadosPassoAtual.instruction}</Text>
-              )}
-            </View>
-            <View style={styles.conteudoPrincipal}>
-              {renderizarOpcoes()}
-              {renderizarEntradasTexto()}
-            </View>
-          </View>
-
-          <View style={styles.containerNavegacao}>
-            <TouchableOpacity
-              onPress={passoAnterior}
-              style={styles.botaoVoltar}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.textoBotaoVoltar}>←</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={proximoPasso}
-              style={[
-                styles.botaoProximo,
-                !podeProsseguir() && styles.botaoProximoDesabilitado
-              ]}
-              disabled={!podeProsseguir()}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.textoBotaoProximo}>
-                {passoAtual === passos.length - 1 ? 'Finalizar' : 'Próximo'}
-              </Text>
-            </TouchableOpacity>
-          </View>
+      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+        {renderProgressBar()}
+        
+        <View style={styles.contentContainer}>
+          {renderOptions()}
+          {renderForm()}
         </View>
-      </TouchableWithoutFeedback>
+      </ScrollView>
+
+      <View style={styles.navigationContainer}>
+        <TouchableOpacity
+          style={styles.navButton}
+          onPress={prevStep}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.navButtonText}>Anterior</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[
+            styles.navButton,
+            styles.nextButton,
+            !canProceed() && styles.nextButtonDisabled
+          ]}
+          onPress={nextStep}
+          disabled={!canProceed()}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.nextButtonText}>
+            {step === questions.length - 1 ? 'Finalizar' : 'Próximo'}
+          </Text>
+        </TouchableOpacity>
+      </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  areaSegura: {
-    flex: 1,
-    backgroundColor: colors.neutral[900],
-  },
-  
   container: {
     flex: 1,
     backgroundColor: colors.neutral[900],
   },
   
-  containerConteudo: {
+  scrollView: {
+    flex: 1,
+  },
+  
+  progressContainer: {
+    alignItems: 'center',
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.xl,
+    paddingBottom: spacing.lg,
+  },
+  
+  progressTitle: {
+    fontSize: typography.fontSize.xl,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.neutral[50],
+    textAlign: 'center',
+    marginBottom: spacing.lg,
+    paddingHorizontal: spacing.md,
+  },
+  
+  progressBar: {
+    flexDirection: 'row',
+    gap: spacing.xs,
+    marginBottom: spacing.sm,
+  },
+  
+  progressSegment: {
+    width: 25,
+    height: 3,
+    backgroundColor: colors.neutral[700],
+    borderRadius: 1.5,
+  },
+  
+  progressSegmentActive: {
+    backgroundColor: colors.primary[500],
+  },
+  
+  progressText: {
+    fontSize: typography.fontSize.sm,
+    color: colors.neutral[400],
+  },
+  
+  contentContainer: {
     flex: 1,
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.md,
     paddingBottom: spacing.xl,
   },
   
-  containerProgresso: {
-    alignItems: 'center',
-    marginBottom: spacing.lg,
-    marginTop: spacing.sm,
-    paddingHorizontal: spacing.sm,
-  },
-  
-  tituloProgresso: {
-    fontSize: Math.min(typography.fontSize.xl, Math.max(18, width * 0.055)),
-    fontWeight: typography.fontWeight.bold,
-    color: colors.neutral[50],
-    marginBottom: spacing.md,
-    textAlign: 'center',
-  },
-  
-  barraProgresso: {
-    flexDirection: 'row',
-    gap: Math.min(spacing.xs, width * 0.02),
-    justifyContent: 'center',
-    flexWrap: 'wrap',
-  },
-  
-  segmentoProgresso: {
-    width: Math.min(40, Math.max(30, width * 0.08)),
-    height: 4,
-    backgroundColor: colors.neutral[700],
-    borderRadius: 2,
-  },
-  
-  segmentoProgressoAtivo: {
-    backgroundColor: colors.success,
-  },
-  
-  containerPergunta: {
-    marginBottom: spacing.lg,
-    paddingHorizontal: spacing.sm,
-  },
-  
-  textoPergunta: {
-    fontSize: Math.min(typography.fontSize['2xl'], Math.max(20, width * 0.06)),
-    fontWeight: typography.fontWeight.bold,
-    color: colors.neutral[50],
-    textAlign: 'center',
-    marginBottom: spacing.md,
-    lineHeight: typography.lineHeight.relaxed,
-  },
-  
-  textoInstrucao: {
-    fontSize: Math.min(typography.fontSize.base, Math.max(16, width * 0.04)),
-    fontWeight: typography.fontWeight.medium,
-    color: colors.neutral[400],
-    textAlign: 'center',
-    lineHeight: typography.lineHeight.normal,
-  },
-  
-  conteudoPrincipal: {
-    flex: 1,
-    justifyContent: 'flex-start',
-  },
-  
-  containerOpcoes: {
+  optionsContainer: {
     gap: spacing.md,
-    paddingHorizontal: spacing.sm,
-    marginBottom: spacing.lg,
   },
   
-  botaoOpcao: {
+  optionButton: {
     backgroundColor: colors.neutral[800],
     borderRadius: borders.radius.lg,
-    padding: Math.min(spacing.lg, width * 0.04),
+    padding: spacing.lg,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     ...shadows.base,
-    minHeight: Math.max(60, height * 0.07),
+    minHeight: 70,
   },
   
-  botaoOpcaoSelecionado: {
+  optionButtonSelected: {
     backgroundColor: colors.primary[600],
   },
   
-  conteudoOpcao: {
+  optionText: {
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.neutral[100],
     flex: 1,
-    paddingRight: spacing.sm,
   },
   
-  textoOpcao: {
-    fontSize: Math.min(typography.fontSize.lg, Math.max(16, width * 0.045)),
+  optionTextSelected: {
+    color: colors.neutral[50],
     fontWeight: typography.fontWeight.semibold,
-    color: colors.neutral[50],
-    marginBottom: spacing.xs,
   },
   
-  textoOpcaoSelecionado: {
-    color: colors.neutral[50],
-  },
-  
-  descricaoOpcao: {
-    fontSize: Math.min(typography.fontSize.sm, Math.max(14, width * 0.035)),
-    fontWeight: typography.fontWeight.medium,
-    color: colors.neutral[400],
-    lineHeight: typography.lineHeight.normal,
-  },
-  
-  descricaoOpcaoSelecionada: {
-    color: colors.neutral[200],
-  },
-  
-  tagRecomendado: {
-    fontSize: Math.min(typography.fontSize.sm, Math.max(14, width * 0.035)),
-    fontWeight: typography.fontWeight.medium,
-    color: colors.accent.blue,
-    marginTop: spacing.xs,
-  },
-  
-  indicadorOpcao: {
-    width: Math.max(24, width * 0.06),
-    height: Math.max(24, width * 0.06),
-    borderRadius: Math.max(12, width * 0.03),
+  checkmark: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: colors.neutral[50],
     alignItems: 'center',
     justifyContent: 'center',
   },
   
-  indicadorOpcaoSelecionado: {
-    backgroundColor: colors.primary[600],
-  },
-  
-  marcaVerificacao: {
-    color: colors.neutral[50],
-    fontSize: Math.max(typography.fontSize.sm, width * 0.035),
+  checkmarkText: {
+    color: colors.primary[600],
+    fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.bold,
   },
   
-  containerEntradasTexto: {
-    gap: spacing.md,
-    paddingHorizontal: spacing.sm,
+  formContainer: {
+    gap: spacing.lg,
+    marginTop: spacing.lg,
   },
-
-  containerEntrada: {
+  
+  inputContainer: {
     backgroundColor: colors.neutral[800],
     borderRadius: borders.radius.md,
-    padding: Math.min(spacing.md, width * 0.035),
+    padding: spacing.md,
     ...shadows.base,
-    minHeight: Math.max(70, height * 0.08),
   },
-
-  rotuloEntrada: {
-    fontSize: Math.min(typography.fontSize.sm, Math.max(14, width * 0.035)),
+  
+  inputLabel: {
+    fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.medium,
     color: colors.neutral[400],
     marginBottom: spacing.xs,
   },
-
-  entradaTexto: {
-    fontSize: Math.min(typography.fontSize.base, Math.max(16, width * 0.04)),
+  
+  textInput: {
+    fontSize: typography.fontSize.base,
     color: colors.neutral[50],
     paddingVertical: spacing.sm,
     paddingHorizontal: 0,
-    minHeight: Math.max(40, height * 0.05),
+    minHeight: 40,
   },
   
-  containerNavegacao: {
+  navigationContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: Math.min(spacing.lg, width * 0.04),
-    paddingVertical: Math.min(spacing.lg, height * 0.02),
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.lg,
     backgroundColor: colors.neutral[900],
+    borderTopWidth: 1,
+    borderTopColor: colors.neutral[800],
   },
   
-  botaoVoltar: {
-    width: Math.max(40, Math.min(width * 0.12, 50)),
-    height: Math.max(40, Math.min(width * 0.12, 50)),
-    borderRadius: Math.max(20, Math.min(width * 0.06, 25)),
+  navButton: {
     backgroundColor: colors.neutral[800],
+    borderRadius: borders.radius.lg,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    minWidth: 100,
     alignItems: 'center',
-    justifyContent: 'center',
     ...shadows.base,
   },
   
-  textoBotaoVoltar: {
-    fontSize: Math.min(typography.fontSize.xl, Math.max(18, width * 0.06)),
-    fontWeight: typography.fontWeight.bold,
-    color: colors.neutral[50],
-  },
-  
-  botaoProximo: {
+  nextButton: {
     backgroundColor: colors.primary[600],
-    borderRadius: borders.radius.xl,
-    paddingVertical: Math.min(spacing.md, height * 0.015),
-    paddingHorizontal: Math.min(spacing.lg, width * 0.04),
-    alignItems: 'center',
-    justifyContent: 'center',
-    minWidth: Math.max(100, Math.min(width * 0.3, 150)),
-    ...shadows.lg,
   },
   
-  botaoProximoDesabilitado: {
+  nextButtonDisabled: {
     backgroundColor: colors.neutral[700],
   },
   
-  textoBotaoProximo: {
-    fontSize: Math.min(typography.fontSize.lg, Math.max(16, width * 0.045)),
-    fontWeight: typography.fontWeight.bold,
+  navButtonText: {
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.neutral[100],
+  },
+  
+  nextButtonText: {
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.semibold,
     color: colors.neutral[50],
-    letterSpacing: 0.5,
   },
 });

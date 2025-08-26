@@ -313,6 +313,12 @@ export default function TelaConfiguracoes({ navigation }) {
           acao: lidarComAjuda
         })}
         {renderizarItemConfiguracao({
+          titulo: 'Fazer Quiz',
+          icone: 'quiz',
+          acao: () => navigation.navigate('Quiiz'),
+          destaque: true
+        })}
+        {renderizarItemConfiguracao({
           titulo: 'Enviar Feedback',
           icone: 'feedback',
           acao: lidarComFeedback
