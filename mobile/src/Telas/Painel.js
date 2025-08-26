@@ -4,8 +4,67 @@ import { Ionicons, MaterialIcons, FontAwesome5, MaterialCommunityIcons } from '@
 import { usarAutenticacao } from '../services/AuthContext';
 import { buscarApi } from '../services/api';
 import { colors, typography, spacing, borders, shadows, componentStyles } from '../styles/globalStyles';
+import { Svg, Circle, G, Text as SvgText } from 'react-native-svg';
 
 const { width } = Dimensions.get('window');
+
+// Componente de gráfico circular de progresso
+const CircularProgressChart = ({ progress, size = 120, strokeWidth = 8, calories, label }) => {
+  const radius = (size - strokeWidth) / 2;
+  const circumference = radius * 2 * Math.PI;
+  const strokeDasharray = circumference;
+  const strokeDashoffset = circumference - (progress / 100) * circumference;
+  
+  return (
+    <View style={{ alignItems: 'center' }}>
+      <Svg width={size} height={size}>
+        <G rotation="-90" origin={`${size / 2}, ${size / 2}`}>
+          {/* Círculo de fundo */}
+          <Circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            stroke={colors.neutral[700]}
+            strokeWidth={strokeWidth}
+            fill="transparent"
+          />
+          {/* Círculo de progresso */}
+          <Circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            stroke={colors.accent.blue}
+            strokeWidth={strokeWidth}
+            fill="transparent"
+            strokeDasharray={strokeDasharray}
+            strokeDashoffset={strokeDashoffset}
+            strokeLinecap="round"
+          />
+        </G>
+        {/* Texto central */}
+        <SvgText
+          x={size / 2}
+          y={size / 2 - 10}
+          fontSize={typography.fontSize['2xl']}
+          fontWeight="bold"
+          fill={colors.neutral[50]}
+          textAnchor="middle"
+        >
+          {calories}
+        </SvgText>
+        <SvgText
+          x={size / 2}
+          y={size / 2 + 15}
+          fontSize={typography.fontSize.sm}
+          fill={colors.neutral[400]}
+          textAnchor="middle"
+        >
+          {label}
+        </SvgText>
+      </Svg>
+    </View>
+  );
+};
 
 export default function TelaPrincipal({ navigation }) {
   const { usuario, token, sair } = usarAutenticacao();
@@ -114,8 +173,13 @@ export default function TelaPrincipal({ navigation }) {
             
             <View style={estilos.calorieDisplay}>
               <View style={estilos.calorieMain}>
-                <Text style={estilos.calorieNumber}>{restantes}</Text>
-                <Text style={estilos.calorieLabel}>Restantes</Text>
+                <CircularProgressChart
+                  progress={percentual}
+                  size={130}
+                  strokeWidth={10}
+                  calories={restantes}
+                  label="Restantes"
+                />
               </View>
               
               <View style={estilos.calorieBreakdown}>
@@ -280,15 +344,7 @@ export default function TelaPrincipal({ navigation }) {
           </View>
         </View>
 
-        {/* Botão de sair */}
-        <TouchableOpacity 
-          onPress={lidarComSair} 
-          style={estilos.logoutButton}
-          activeOpacity={0.8}
-        >
-          <Ionicons name="log-out-outline" size={20} color={colors.neutral[400]} />
-          <Text style={estilos.logoutText}>Sair da Conta</Text>
-        </TouchableOpacity>
+
       </ScrollView>
 
       {/* Navegação inferior moderna */}
@@ -300,7 +356,10 @@ export default function TelaPrincipal({ navigation }) {
           <Text style={estilos.navLabel}>Painel</Text>
         </TouchableOpacity>
         
-        <TouchableOpacity style={estilos.navItem}>
+        <TouchableOpacity 
+          style={estilos.navItem}
+          onPress={() => navigation.navigate('Diario')}
+        >
           <View style={estilos.navIcon}>
             <MaterialIcons name="book" size={24} color={colors.neutral[400]} />
           </View>
@@ -320,7 +379,10 @@ export default function TelaPrincipal({ navigation }) {
           <Text style={estilos.navLabel}>Progresso</Text>
         </TouchableOpacity>
         
-        <TouchableOpacity style={estilos.navItem}>
+        <TouchableOpacity 
+          style={estilos.navItem}
+          onPress={() => navigation.navigate('Configuracoes')}
+        >
           <View style={estilos.navIcon}>
             <MaterialIcons name="more-horiz" size={24} color={colors.neutral[400]} />
           </View>
@@ -569,6 +631,8 @@ const estilos = StyleSheet.create({
   calorieMain: {
     flex: 1,
     alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing.md,
   },
   
   calorieNumber: {
@@ -784,26 +848,7 @@ const estilos = StyleSheet.create({
     textAlign: 'center',
   },
   
-  // Botão de sair
-  logoutButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.neutral[800],
-    borderRadius: borders.radius.lg,
-    paddingVertical: spacing.lg,
-    paddingHorizontal: spacing.xl,
-    gap: spacing.sm,
-    borderWidth: 1,
-    borderColor: colors.neutral[700],
-    ...shadows.base,
-  },
-  
-  logoutText: {
-    fontSize: typography.fontSize.base,
-    fontWeight: typography.fontWeight.medium,
-    color: colors.neutral[400],
-  },
+
   
   // Navegação inferior
   bottomNavigation: {

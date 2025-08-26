@@ -13,6 +13,8 @@ import BMIScreen from './src/Telas/IMC';
 import GoalScreen from './src/Telas/Metas';
 import WorkoutPlanScreen from './src/Telas/PlanodeTreino';
 import MealsScreen from './src/Telas/Refeicoes';
+import DiarioScreen from './src/Telas/Diario';
+import ConfiguracoesScreen from './src/Telas/Configuracoes';
 import { ProvedorAutenticacao } from './src/services/AuthContext';
 
 const Stack = createNativeStackNavigator();
@@ -34,6 +36,8 @@ export default function App() {
             <Stack.Screen name="Meta" component={GoalScreen} options={{ title: 'Meta de Peso' }} />
             <Stack.Screen name="PlanoTreino" component={WorkoutPlanScreen} options={{ title: 'Rotina de Treino' }} />
             <Stack.Screen name="Refeicoes" component={MealsScreen} options={{ headerShown: false }} />
+            <Stack.Screen name="Diario" component={DiarioScreen} options={{ headerShown: false }} />
+            <Stack.Screen name="Configuracoes" component={ConfiguracoesScreen} options={{ headerShown: false }} />
           </Stack.Navigator>
         </NavigationContainer>
       </ProvedorAutenticacao>

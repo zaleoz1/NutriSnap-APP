@@ -245,7 +245,10 @@ export default function TelaPainel({ navegacao }) {
           <Text style={estilos.rotuloNavegacao}>Progresso</Text>
         </TouchableOpacity>
         
-        <TouchableOpacity style={estilos.itemNavegacao}>
+        <TouchableOpacity 
+          style={estilos.itemNavegacao}
+          onPress={() => navegacao.navigate('Configuracoes')}
+        >
           <MaterialIcons name="settings" size={20} color={colors.neutral[400]} />
           <Text style={estilos.rotuloNavegacao}>Mais</Text>
         </TouchableOpacity>
