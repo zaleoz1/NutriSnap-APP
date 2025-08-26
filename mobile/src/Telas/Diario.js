@@ -124,40 +124,30 @@ export default function TelaDiario({ navigation }) {
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor={colors.neutral[900]} />
       
-      {/* Header com status e navegação de data */}
+      {/* Header elegante com gradiente visual */}
       <View style={styles.header}>
-        <View style={styles.statusBar}>
-          <Text style={styles.hora}>14:31</Text>
-          <View style={styles.statusIcons}>
-            <View style={styles.statusIcon}>
-              <Ionicons name="cellular" size={16} color={colors.neutral[50]} />
-            </View>
-            <View style={styles.statusIcon}>
-              <Ionicons name="wifi" size={16} color={colors.neutral[50]} />
-            </View>
-            <View style={styles.statusIcon}>
-              <Ionicons name="battery-half" size={16} color={colors.neutral[50]} />
-              <Text style={styles.bateriaTexto}>24</Text>
-            </View>
+        <View style={styles.headerContent}>
+          <View style={styles.navegacaoData}>
+            <TouchableOpacity 
+              style={styles.botaoNavegacao} 
+              onPress={() => navegarData('anterior')}
+            >
+              <MaterialIcons name="chevron-left" size={24} color={colors.neutral[100]} />
+            </TouchableOpacity>
+            
+            <TouchableOpacity style={styles.selectorData}>
+              <Text style={styles.textoData}>{formatarData(dataAtual)}</Text>
+              <MaterialIcons name="keyboard-arrow-down" size={20} color={colors.neutral[100]} />
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={styles.botaoNavegacao} 
+              onPress={() => navegarData('proximo')}
+            >
+              <MaterialIcons name="chevron-right" size={24} color={colors.neutral[100]} />
+            </TouchableOpacity>
           </View>
         </View>
-        
-        <View style={styles.navegacaoData}>
-          <TouchableOpacity onPress={() => navegarData('anterior')}>
-            <MaterialIcons name="chevron-left" size={24} color={colors.neutral[50]} />
-          </TouchableOpacity>
-          
-          <TouchableOpacity style={styles.selectorData}>
-            <Text style={styles.textoData}>{formatarData(dataAtual)}</Text>
-            <MaterialIcons name="keyboard-arrow-down" size={20} color={colors.neutral[50]} />
-          </TouchableOpacity>
-          
-          <TouchableOpacity onPress={() => navegarData('proximo')}>
-            <MaterialIcons name="chevron-right" size={24} color={colors.neutral[50]} />
-          </TouchableOpacity>
-        </View>
-        
-        
       </View>
 
       <ScrollView 
@@ -165,176 +155,264 @@ export default function TelaDiario({ navigation }) {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.conteudoScroll}
       >
-        {/* Seção de Calorias */}
+        {/* Seção de Calorias com design moderno */}
         <View style={styles.secaoCalorias}>
-          <Text style={styles.tituloCalorias}>Calorias restantes</Text>
+          <View style={styles.cabecalhoCalorias}>
+            <Text style={styles.tituloCalorias}>Resumo Calórico</Text>
+            <View style={styles.badgeCalorias}>
+              <Text style={styles.badgeTexto}>{caloriasRestantes}</Text>
+              <Text style={styles.badgeLabel}>kcal restantes</Text>
+            </View>
+          </View>
           
           <View style={styles.calculoCalorias}>
             <View style={styles.itemCaloria}>
-              <Text style={styles.valorCaloria}>{caloriasMeta}</Text>
+              <View style={styles.circuloCaloria}>
+                <Text style={styles.valorCaloria}>{caloriasMeta}</Text>
+              </View>
               <Text style={styles.labelCaloria}>Meta</Text>
             </View>
             
-            <Text style={styles.operador}>-</Text>
+            <View style={styles.linhaConectora}>
+              <View style={styles.pontoConector} />
+              <View style={styles.linha} />
+              <View style={styles.pontoConector} />
+            </View>
             
             <View style={styles.itemCaloria}>
-              <Text style={styles.valorCaloria}>{caloriasAlimentos}</Text>
+              <View style={styles.circuloCaloria}>
+                <Text style={styles.valorCaloria}>{caloriasAlimentos}</Text>
+              </View>
               <Text style={styles.labelCaloria}>Alimentos</Text>
             </View>
             
-            <Text style={styles.operador}>+</Text>
+            <View style={styles.linhaConectora}>
+              <View style={styles.pontoConector} />
+              <View style={styles.linha} />
+              <View style={styles.pontoConector} />
+            </View>
             
             <View style={styles.itemCaloria}>
-              <Text style={styles.valorCaloria}>{caloriasExercicio}</Text>
+              <View style={styles.circuloCaloria}>
+                <Text style={styles.valorCaloria}>{caloriasExercicio}</Text>
+              </View>
               <Text style={styles.labelCaloria}>Exercício</Text>
             </View>
-            
-            <Text style={styles.operador}>=</Text>
-            
-            <View style={styles.itemCaloria}>
-              <Text style={[styles.valorCaloria, styles.valorRestante]}>{caloriasRestantes}</Text>
-              <Text style={styles.labelCaloria}>Restantes</Text>
+          </View>
+        </View>
+
+        {/* Seção de Refeições com design elegante */}
+        <View style={styles.secaoRefeicoes}>
+          <Text style={styles.tituloSecao}>Refeições do Dia</Text>
+          
+          {/* Café da Manhã */}
+          <View style={styles.cardRefeicao}>
+            <View style={styles.cabecalhoRefeicao}>
+              <View style={styles.infoRefeicao}>
+                <View style={styles.iconeRefeicao}>
+                  <FontAwesome5 name="coffee" size={16} color={colors.primary[400]} />
+                </View>
+                <Text style={styles.tituloRefeicao}>Café da Manhã</Text>
+              </View>
+              <TouchableOpacity style={styles.botaoOpcoes}>
+                <MaterialIcons name="more-horiz" size={20} color={colors.neutral[400]} />
+              </TouchableOpacity>
             </View>
+            <TouchableOpacity style={styles.botaoAdicionar} onPress={() => navigation.navigate('Refeicoes')}>
+              <MaterialIcons name="add" size={20} color={colors.neutral[50]} />
+              <Text style={styles.textoBotaoAdicionar}>Adicionar Alimento</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Almoço */}
+          <View style={styles.cardRefeicao}>
+            <View style={styles.cabecalhoRefeicao}>
+              <View style={styles.infoRefeicao}>
+                <View style={styles.iconeRefeicao}>
+                  <FontAwesome5 name="utensils" size={16} color={colors.primary[400]} />
+                </View>
+                <Text style={styles.tituloRefeicao}>Almoço</Text>
+              </View>
+              <TouchableOpacity style={styles.botaoOpcoes}>
+                <MaterialIcons name="more-horiz" size={20} color={colors.neutral[400]} />
+              </TouchableOpacity>
+            </View>
+            <TouchableOpacity style={styles.botaoAdicionar} onPress={() => navigation.navigate('Refeicoes')}>
+              <MaterialIcons name="add" size={20} color={colors.neutral[50]} />
+              <Text style={styles.textoBotaoAdicionar}>Adicionar Alimento</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Jantar */}
+          <View style={styles.cardRefeicao}>
+            <View style={styles.cabecalhoRefeicao}>
+              <View style={styles.infoRefeicao}>
+                <View style={styles.iconeRefeicao}>
+                  <FontAwesome5 name="moon" size={16} color={colors.primary[400]} />
+                </View>
+                <Text style={styles.tituloRefeicao}>Jantar</Text>
+              </View>
+              <TouchableOpacity style={styles.botaoOpcoes}>
+                <MaterialIcons name="more-horiz" size={20} color={colors.neutral[400]} />
+              </TouchableOpacity>
+            </View>
+            <TouchableOpacity style={styles.botaoAdicionar} onPress={() => navigation.navigate('Refeicoes')}>
+              <MaterialIcons name="add" size={20} color={colors.neutral[50]} />
+              <Text style={styles.textoBotaoAdicionar}>Adicionar Alimento</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Lanches */}
+          <View style={styles.cardRefeicao}>
+            <View style={styles.cabecalhoRefeicao}>
+              <View style={styles.infoRefeicao}>
+                <View style={styles.iconeRefeicao}>
+                  <FontAwesome5 name="cookie-bite" size={16} color={colors.primary[400]} />
+                </View>
+                <Text style={styles.tituloRefeicao}>Lanches</Text>
+              </View>
+              <TouchableOpacity style={styles.botaoOpcoes}>
+                <MaterialIcons name="more-horiz" size={20} color={colors.neutral[400]} />
+              </TouchableOpacity>
+            </View>
+            <TouchableOpacity style={styles.botaoAdicionar} onPress={() => navigation.navigate('Refeicoes')}>
+              <MaterialIcons name="add" size={20} color={colors.neutral[50]} />
+              <Text style={styles.textoBotaoAdicionar}>Adicionar Alimento</Text>
+            </TouchableOpacity>
           </View>
         </View>
 
-
-
-        {/* Seção de Café da Manhã */}
-        <View style={styles.secaoRefeicao}>
-          <View style={styles.cabecalhoRefeicao}>
-            <Text style={styles.tituloRefeicao}>Café da Manhã</Text>
-            <TouchableOpacity style={styles.botaoOpcoes}>
-              <MaterialIcons name="more-horiz" size={20} color={colors.neutral[400]} />
+        {/* Seção de Água com design moderno */}
+        <View style={styles.secaoAgua}>
+          <Text style={styles.tituloSecao}>Hidratação</Text>
+          <View style={styles.cardRefeicao}>
+            <View style={styles.cabecalhoRefeicao}>
+              <View style={styles.infoRefeicao}>
+                <View style={styles.iconeRefeicao}>
+                  <FontAwesome5 name="tint" size={16} color={colors.primary[400]} />
+                </View>
+                <Text style={styles.tituloRefeicao}>Água</Text>
+              </View>
+              <TouchableOpacity style={styles.botaoOpcoes}>
+                <MaterialIcons name="more-horiz" size={20} color={colors.neutral[400]} />
+              </TouchableOpacity>
+            </View>
+            
+            <View style={styles.progressoAgua}>
+              <View style={styles.barraProgresso}>
+                <View 
+                  style={[
+                    styles.progressoPreenchido, 
+                    { width: `${Math.min((aguaConsumida / metaAgua) * 100, 100)}%` }
+                  ]} 
+                />
+              </View>
+              <Text style={styles.textoProgresso}>
+                {aguaConsumida}ml / {metaAgua}ml
+              </Text>
+            </View>
+            
+            <TouchableOpacity style={styles.botaoAdicionar} onPress={adicionarAgua}>
+              <MaterialIcons name="add" size={20} color={colors.neutral[50]} />
+              <Text style={styles.textoBotaoAdicionar}>Adicionar Água</Text>
             </TouchableOpacity>
           </View>
-                     <TouchableOpacity style={styles.botaoAdicionar} onPress={() => navigation.navigate('Refeicoes')}>
-             <Text style={styles.textoBotaoAdicionar}>ADICIONAR ALIMENTO</Text>
-           </TouchableOpacity>
-        </View>
-
-        {/* Seção de Almoço */}
-        <View style={styles.secaoRefeicao}>
-          <View style={styles.cabecalhoRefeicao}>
-            <Text style={styles.tituloRefeicao}>Almoço</Text>
-            <TouchableOpacity style={styles.botaoOpcoes}>
-              <MaterialIcons name="more-horiz" size={20} color={colors.neutral[400]} />
-            </TouchableOpacity>
-          </View>
-                     <TouchableOpacity style={styles.botaoAdicionar} onPress={() => navigation.navigate('Refeicoes')}>
-             <Text style={styles.textoBotaoAdicionar}>ADICIONAR ALIMENTO</Text>
-           </TouchableOpacity>
-        </View>
-
-        {/* Seção de Jantar */}
-        <View style={styles.secaoRefeicao}>
-          <View style={styles.cabecalhoRefeicao}>
-            <Text style={styles.tituloRefeicao}>Jantar</Text>
-            <TouchableOpacity style={styles.botaoOpcoes}>
-              <MaterialIcons name="more-horiz" size={20} color={colors.neutral[400]} />
-            </TouchableOpacity>
-          </View>
-                     <TouchableOpacity style={styles.botaoAdicionar} onPress={() => navigation.navigate('Refeicoes')}>
-             <Text style={styles.textoBotaoAdicionar}>ADICIONAR ALIMENTO</Text>
-           </TouchableOpacity>
-        </View>
-
-        {/* Seção de Lanches */}
-        <View style={styles.secaoRefeicao}>
-          <View style={styles.cabecalhoRefeicao}>
-            <Text style={styles.tituloRefeicao}>Lanches</Text>
-            <TouchableOpacity style={styles.botaoOpcoes}>
-              <MaterialIcons name="more-horiz" size={20} color={colors.neutral[400]} />
-            </TouchableOpacity>
-          </View>
-                     <TouchableOpacity style={styles.botaoAdicionar} onPress={() => navigation.navigate('Refeicoes')}>
-             <Text style={styles.textoBotaoAdicionar}>ADICIONAR ALIMENTO</Text>
-           </TouchableOpacity>
-        </View>
-
-        {/* Seção de Água */}
-        <View style={styles.secaoRefeicao}>
-          <View style={styles.cabecalhoRefeicao}>
-            <Text style={styles.tituloRefeicao}>Água</Text>
-            <TouchableOpacity style={styles.botaoOpcoes}>
-              <MaterialIcons name="more-horiz" size={20} color={colors.neutral[400]} />
-            </TouchableOpacity>
-          </View>
-          <TouchableOpacity style={styles.botaoAdicionar} onPress={adicionarAgua}>
-            <Text style={styles.textoBotaoAdicionar}>ADICIONAR ÁGUA</Text>
-          </TouchableOpacity>
         </View>
 
         {/* Seção de Exercícios */}
-        <View style={styles.secaoRefeicao}>
-          <View style={styles.cabecalhoRefeicao}>
-            <Text style={styles.tituloRefeicao}>Exercício</Text>
-            <TouchableOpacity style={styles.botaoOpcoes}>
-              <MaterialIcons name="more-horiz" size={20} color={colors.neutral[400]} />
+        <View style={styles.secaoExercicios}>
+          <Text style={styles.tituloSecao}>Atividade Física</Text>
+          <View style={styles.cardRefeicao}>
+            <View style={styles.cabecalhoRefeicao}>
+              <View style={styles.infoRefeicao}>
+                <View style={styles.iconeRefeicao}>
+                  <FontAwesome5 name="dumbbell" size={16} color={colors.primary[400]} />
+                </View>
+                <Text style={styles.tituloRefeicao}>Exercício</Text>
+              </View>
+              <TouchableOpacity style={styles.botaoOpcoes}>
+                <MaterialIcons name="more-horiz" size={20} color={colors.neutral[400]} />
+              </TouchableOpacity>
+            </View>
+            <TouchableOpacity style={styles.botaoAdicionar} onPress={adicionarExercicio}>
+              <MaterialIcons name="add" size={20} color={colors.neutral[50]} />
+              <Text style={styles.textoBotaoAdicionar}>Adicionar Exercício</Text>
             </TouchableOpacity>
           </View>
-          <TouchableOpacity style={styles.botaoAdicionar} onPress={adicionarExercicio}>
-            <Text style={styles.textoBotaoAdicionar}>ADICIONAR EXERCÍCIO</Text>
-          </TouchableOpacity>
         </View>
 
-        
-
-        {/* Botões de Ação */}
-        <View style={styles.botoesAcao}>
-          <TouchableOpacity style={styles.botaoAcao} onPress={navegarParaNutricao}>
-            <Text style={styles.textoBotaoAcao}>NUTRIÇÃO</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity style={styles.botaoAcao} onPress={navegarParaObservacoes}>
-            <Text style={styles.textoBotaoAcao}>OBSERVAÇÕES</Text>
-          </TouchableOpacity>
-                 </View>
-       </ScrollView>
-
-       {/* Modal de Adicionar Água */}
-       <Modal
-         visible={modalAguaVisivel}
-         transparent={true}
-         animationType="slide"
-         onRequestClose={cancelarAgua}
-       >
-         <View style={styles.modalOverlay}>
-           <View style={styles.modalContainer}>
-             <Text style={styles.modalTitulo}>Controle de Água</Text>
-             
-                           <View style={styles.inputContainer}>
-                <Text style={styles.inputLabel}>Quantidade (ml):</Text>
-                <TextInput
-                  style={styles.input}
-                  value={quantidadeAgua}
-                  onChangeText={setQuantidadeAgua}
-                  placeholder="Ex: 250"
-                  placeholderTextColor={colors.neutral[400]}
-                  keyboardType="numeric"
-                />
+        {/* Botões de Ação com design moderno */}
+        <View style={styles.secaoBotoes}>
+          <Text style={styles.tituloSecao}>Ferramentas</Text>
+          <View style={styles.botoesAcao}>
+            <TouchableOpacity style={styles.botaoAcao} onPress={navegarParaNutricao}>
+              <View style={styles.iconeBotaoAcao}>
+                <FontAwesome5 name="chart-pie" size={20} color={colors.primary[400]} />
               </View>
+              <Text style={styles.textoBotaoAcao}>Nutrição</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity style={styles.botaoAcao} onPress={navegarParaObservacoes}>
+              <View style={styles.iconeBotaoAcao}>
+                <FontAwesome5 name="sticky-note" size={20} color={colors.primary[400]} />
+              </View>
+              <Text style={styles.textoBotaoAcao}>Observações</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </ScrollView>
+
+      {/* Modal de Adicionar Água redesenhado */}
+      <Modal
+        visible={modalAguaVisivel}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={cancelarAgua}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitulo}>Controle de Água</Text>
+              <TouchableOpacity onPress={cancelarAgua} style={styles.botaoFechar}>
+                <MaterialIcons name="close" size={24} color={colors.neutral[400]} />
+              </TouchableOpacity>
+            </View>
+            
+            <View style={styles.inputContainer}>
+              <Text style={styles.inputLabel}>Quantidade (ml)</Text>
+              <TextInput
+                style={styles.input}
+                value={quantidadeAgua}
+                onChangeText={setQuantidadeAgua}
+                placeholder="Ex: 250"
+                placeholderTextColor={colors.neutral[400]}
+                keyboardType="numeric"
+              />
+            </View>
+            
+            <View style={styles.metaContainer}>
+              <View style={styles.metaInfo}>
+                <FontAwesome5 name="tint" size={16} color={colors.primary[400]} />
+                <Text style={styles.metaTexto}>Meta diária: {metaAgua}ml</Text>
+              </View>
+              <Text style={styles.metaDescricao}>Quantidade recomendada de água por dia</Text>
+            </View>
+            
+            <View style={styles.modalBotoes}>
+              <TouchableOpacity style={styles.botaoCancelar} onPress={cancelarAgua}>
+                <Text style={styles.textoBotaoCancelar}>Cancelar</Text>
+              </TouchableOpacity>
               
-              <View style={styles.inputContainer}>
-                <Text style={styles.inputLabel}>Meta diária: {metaAgua}ml</Text>
-                <Text style={styles.metaInfo}>Meta fixa de água por dia</Text>
-              </View>
-             
-             <View style={styles.modalBotoes}>
-               <TouchableOpacity style={styles.botaoCancelar} onPress={cancelarAgua}>
-                 <Text style={styles.textoBotaoCancelar}>Cancelar</Text>
-               </TouchableOpacity>
-               
-               <TouchableOpacity style={styles.botaoSalvar} onPress={salvarAgua}>
-                 <Text style={styles.textoBotaoSalvar}>Salvar</Text>
-               </TouchableOpacity>
-             </View>
-           </View>
-         </View>
-       </Modal>
-     </View>
-   );
- }
+              <TouchableOpacity style={styles.botaoSalvar} onPress={salvarAgua}>
+                <Text style={styles.textoBotaoSalvar}>Salvar</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+    </View>
+  );
+}
 
 const styles = StyleSheet.create({
   container: {
@@ -343,78 +421,50 @@ const styles = StyleSheet.create({
   },
 
   header: {
+    backgroundColor: colors.neutral[800],
     paddingTop: 50,
-    paddingHorizontal: spacing.lg,
     paddingBottom: spacing.lg,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.neutral[800],
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+    ...shadows.lg,
   },
 
-  statusBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: spacing.md,
-  },
-
-  hora: {
-    fontSize: typography.fontSize.sm,
-    color: colors.neutral[50],
-    fontWeight: typography.fontWeight.medium,
-  },
-
-  statusIcons: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-  },
-
-  statusIcon: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 2,
-  },
-
-  bateriaTexto: {
-    fontSize: typography.fontSize.xs,
-    color: colors.neutral[50],
-    marginLeft: 2,
+  headerContent: {
+    paddingHorizontal: spacing.lg,
   },
 
   navegacaoData: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: spacing.md,
+  },
+
+  botaoNavegacao: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.neutral[700],
+    justifyContent: 'center',
+    alignItems: 'center',
+    ...shadows.sm,
   },
 
   selectorData: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    backgroundColor: colors.neutral[700],
+    borderRadius: borders.radius.full,
+    ...shadows.sm,
   },
 
   textoData: {
     fontSize: typography.fontSize.lg,
     color: colors.neutral[50],
     fontWeight: typography.fontWeight.semibold,
-  },
-
-  indicadoresRapidos: {
-    flexDirection: 'row',
-    gap: spacing.lg,
-  },
-
-  indicador: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-  },
-
-  indicadorTexto: {
-    fontSize: typography.fontSize.sm,
-    color: colors.neutral[50],
-    fontWeight: typography.fontWeight.medium,
+    textTransform: 'capitalize',
   },
 
   scrollView: {
@@ -426,64 +476,138 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.xl,
   },
 
+  // Seção de Calorias
   secaoCalorias: {
-    marginTop: spacing.lg,
+    marginTop: spacing.xl,
     marginBottom: spacing.xl,
+  },
+
+  cabecalhoCalorias: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.lg,
   },
 
   tituloCalorias: {
     fontSize: typography.fontSize.xl,
     fontWeight: typography.fontWeight.bold,
     color: colors.neutral[50],
-    marginBottom: spacing.lg,
-    textAlign: 'center',
+  },
+
+  badgeCalorias: {
+    backgroundColor: colors.primary[600],
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    borderRadius: borders.radius.full,
+    alignItems: 'center',
+    ...shadows.sm,
+  },
+
+  badgeTexto: {
+    fontSize: typography.fontSize['2xl'],
+    fontWeight: typography.fontWeight.bold,
+    color: colors.neutral[50],
+  },
+
+  badgeLabel: {
+    fontSize: typography.fontSize.xs,
+    color: colors.neutral[100],
+    fontWeight: typography.fontWeight.medium,
   },
 
   calculoCalorias: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    flexWrap: 'wrap',
+    backgroundColor: colors.neutral[800],
+    borderRadius: borders.radius.xl,
+    padding: spacing.lg,
+    ...shadows.base,
   },
 
   itemCaloria: {
     alignItems: 'center',
     flex: 1,
-    minWidth: 60,
+  },
+
+  circuloCaloria: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: colors.primary[600],
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: spacing.sm,
+    ...shadows.sm,
   },
 
   valorCaloria: {
-    fontSize: typography.fontSize['2xl'],
+    fontSize: typography.fontSize.lg,
     fontWeight: typography.fontWeight.bold,
     color: colors.neutral[50],
-    marginBottom: spacing.xs,
-  },
-
-  valorRestante: {
-    color: colors.primary[400],
   },
 
   labelCaloria: {
     fontSize: typography.fontSize.sm,
-    color: colors.neutral[50],
+    color: colors.neutral[300],
     textAlign: 'center',
+    fontWeight: typography.fontWeight.medium,
   },
 
-  operador: {
-    fontSize: typography.fontSize.xl,
-    color: colors.neutral[50],
+  linhaConectora: {
+    alignItems: 'center',
+    flex: 1,
+  },
+
+  pontoConector: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: colors.neutral[600],
+    marginVertical: spacing.xs,
+  },
+
+  linha: {
+    width: 2,
+    height: 20,
+    backgroundColor: colors.neutral[600],
+  },
+
+  // Seções de conteúdo
+  tituloSecao: {
+    fontSize: typography.fontSize.lg,
     fontWeight: typography.fontWeight.bold,
-    marginHorizontal: spacing.sm,
+    color: colors.neutral[50],
+    marginBottom: spacing.md,
+    marginTop: spacing.xl,
   },
 
+  secaoRefeicoes: {
+    marginBottom: spacing.lg,
+  },
 
+  secaoAgua: {
+    marginBottom: spacing.lg,
+  },
 
-  secaoRefeicao: {
+  secaoExercicios: {
+    marginBottom: spacing.lg,
+  },
+
+  secaoBotoes: {
+    marginBottom: spacing.xl,
+  },
+
+  // Cards de refeição
+  cardRefeicao: {
     backgroundColor: colors.neutral[800],
     borderRadius: borders.radius.lg,
     padding: spacing.lg,
-    marginBottom: spacing.lg,
+    marginBottom: spacing.md,
     ...shadows.base,
+    borderLeftWidth: 4,
+    borderLeftColor: colors.primary[600],
   },
 
   cabecalhoRefeicao: {
@@ -493,9 +617,24 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
 
+  infoRefeicao: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+
+  iconeRefeicao: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: colors.primary[600],
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
   tituloRefeicao: {
     fontSize: typography.fontSize.lg,
-    fontWeight: typography.fontWeight.bold,
+    fontWeight: typography.fontWeight.semibold,
     color: colors.neutral[50],
   },
 
@@ -503,13 +642,43 @@ const styles = StyleSheet.create({
     padding: spacing.xs,
   },
 
+  // Progresso de água
+  progressoAgua: {
+    marginBottom: spacing.md,
+  },
+
+  barraProgresso: {
+    height: 8,
+    backgroundColor: colors.neutral[700],
+    borderRadius: borders.radius.full,
+    overflow: 'hidden',
+    marginBottom: spacing.sm,
+  },
+
+  progressoPreenchido: {
+    height: '100%',
+    backgroundColor: colors.primary[400],
+    borderRadius: borders.radius.full,
+  },
+
+  textoProgresso: {
+    fontSize: typography.fontSize.sm,
+    color: colors.neutral[300],
+    textAlign: 'center',
+    fontWeight: typography.fontWeight.medium,
+  },
+
+  // Botões
   botaoAdicionar: {
     backgroundColor: colors.primary[600],
     borderRadius: borders.radius.md,
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.lg,
+    flexDirection: 'row',
     alignItems: 'center',
-    minHeight: 50,
+    justifyContent: 'center',
+    gap: spacing.sm,
+    ...shadows.sm,
   },
 
   textoBotaoAdicionar: {
@@ -518,190 +687,142 @@ const styles = StyleSheet.create({
     color: colors.neutral[50],
   },
 
-  secaoJejum: {
+  botoesAcao: {
+    flexDirection: 'row',
+    gap: spacing.md,
+  },
+
+  botaoAcao: {
+    flex: 1,
     backgroundColor: colors.neutral[800],
     borderRadius: borders.radius.lg,
-    padding: spacing.lg,
-    marginBottom: spacing.lg,
-    ...shadows.base,
-  },
-
-  cabecalhoJejum: {
-    marginBottom: spacing.md,
-  },
-
-  tagNovo: {
-    backgroundColor: colors.primary[600],
-    alignSelf: 'flex-start',
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: borders.radius.full,
-    marginBottom: spacing.sm,
-  },
-
-  textoTagNovo: {
-    fontSize: typography.fontSize.xs,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.neutral[50],
-  },
-
-  tituloJejum: {
-    fontSize: typography.fontSize.lg,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.neutral[50],
-    marginBottom: spacing.sm,
-  },
-
-  descricaoJejum: {
-    fontSize: typography.fontSize.base,
-    color: colors.neutral[50],
-    lineHeight: typography.lineHeight.normal,
-    marginBottom: spacing.lg,
-  },
-
-  rodapeJejum: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-
-  botaoJejum: {
-    backgroundColor: colors.primary[600],
-    borderRadius: borders.radius.lg,
-    paddingVertical: spacing.md,
+    paddingVertical: spacing.lg,
     paddingHorizontal: spacing.lg,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.neutral[700],
+    ...shadows.sm,
   },
 
-  textoBotaoJejum: {
+  iconeBotaoAcao: {
+    marginBottom: spacing.sm,
+  },
+
+  textoBotaoAcao: {
     fontSize: typography.fontSize.base,
     fontWeight: typography.fontWeight.semibold,
     color: colors.neutral[50],
   },
 
-  ilustracaoJejum: {
+  // Modal
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  modalContainer: {
+    backgroundColor: colors.neutral[800],
+    borderRadius: borders.radius.xl,
+    padding: spacing.xl,
+    width: '90%',
+    maxWidth: 400,
+    ...shadows.lg,
+  },
+
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.lg,
+  },
+
+  modalTitulo: {
+    fontSize: typography.fontSize.xl,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.neutral[50],
+  },
+
+  botaoFechar: {
+    padding: spacing.xs,
+  },
+
+  inputContainer: {
+    marginBottom: spacing.lg,
+  },
+
+  inputLabel: {
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.neutral[50],
+    marginBottom: spacing.sm,
+  },
+
+  input: {
+    backgroundColor: colors.neutral[700],
+    borderRadius: borders.radius.md,
+    padding: spacing.md,
+    fontSize: typography.fontSize.base,
+    color: colors.neutral[50],
+    borderWidth: 1,
+    borderColor: colors.neutral[600],
+  },
+
+  metaContainer: {
+    marginBottom: spacing.lg,
+  },
+
+  metaInfo: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.md,
+    gap: spacing.sm,
+    marginBottom: spacing.xs,
   },
 
-  ampulheta: {
-    width: 30,
-    height: 40,
-    backgroundColor: colors.primary[400],
-    borderRadius: borders.radius.sm,
+  metaTexto: {
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.neutral[50],
   },
 
-  maca: {
-    width: 25,
-    height: 25,
-    backgroundColor: colors.error,
-    borderRadius: borders.radius.full,
+  metaDescricao: {
+    fontSize: typography.fontSize.sm,
+    color: colors.neutral[400],
+    fontStyle: 'italic',
+    marginLeft: 28,
   },
 
-  botoesAcao: {
+  modalBotoes: {
     flexDirection: 'row',
     gap: spacing.md,
-    marginTop: spacing.lg,
   },
 
-  botaoAcao: {
+  botaoCancelar: {
     flex: 1,
-    borderWidth: 1,
-    borderColor: colors.primary[600],
-    borderRadius: borders.radius.lg,
+    backgroundColor: colors.neutral[600],
+    borderRadius: borders.radius.md,
     paddingVertical: spacing.md,
     alignItems: 'center',
   },
 
-     textoBotaoAcao: {
-     fontSize: typography.fontSize.base,
-     fontWeight: typography.fontWeight.semibold,
-     color: colors.neutral[50],
-   },
+  textoBotaoCancelar: {
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.neutral[50],
+  },
 
-   // Estilos do Modal de Água
-   modalOverlay: {
-     flex: 1,
-     backgroundColor: 'rgba(0, 0, 0, 0.5)',
-     justifyContent: 'center',
-     alignItems: 'center',
-   },
+  botaoSalvar: {
+    flex: 1,
+    backgroundColor: colors.primary[600],
+    borderRadius: borders.radius.md,
+    paddingVertical: spacing.md,
+    alignItems: 'center',
+  },
 
-   modalContainer: {
-     backgroundColor: colors.neutral[800],
-     borderRadius: borders.radius.lg,
-     padding: spacing.xl,
-     width: '85%',
-     maxWidth: 400,
-     ...shadows.lg,
-   },
-
-   modalTitulo: {
-     fontSize: typography.fontSize.xl,
-     fontWeight: typography.fontWeight.bold,
-     color: colors.neutral[50],
-     textAlign: 'center',
-     marginBottom: spacing.lg,
-   },
-
-   inputContainer: {
-     marginBottom: spacing.lg,
-   },
-
-   inputLabel: {
-     fontSize: typography.fontSize.base,
-     fontWeight: typography.fontWeight.medium,
-     color: colors.neutral[50],
-     marginBottom: spacing.sm,
-   },
-
-   metaInfo: {
-     fontSize: typography.fontSize.sm,
-     color: colors.neutral[400],
-     fontStyle: 'italic',
-   },
-
-   input: {
-     backgroundColor: colors.neutral[700],
-     borderRadius: borders.radius.md,
-     padding: spacing.md,
-     fontSize: typography.fontSize.base,
-     color: colors.neutral[50],
-     borderWidth: 1,
-     borderColor: colors.neutral[600],
-   },
-
-   modalBotoes: {
-     flexDirection: 'row',
-     gap: spacing.md,
-     marginTop: spacing.lg,
-   },
-
-   botaoCancelar: {
-     flex: 1,
-     backgroundColor: colors.neutral[600],
-     borderRadius: borders.radius.md,
-     paddingVertical: spacing.md,
-     alignItems: 'center',
-   },
-
-   textoBotaoCancelar: {
-     fontSize: typography.fontSize.base,
-     fontWeight: typography.fontWeight.semibold,
-     color: colors.neutral[50],
-   },
-
-   botaoSalvar: {
-     flex: 1,
-     backgroundColor: colors.primary[600],
-     borderRadius: borders.radius.md,
-     paddingVertical: spacing.md,
-     alignItems: 'center',
-   },
-
-   textoBotaoSalvar: {
-     fontSize: typography.fontSize.base,
-     fontWeight: typography.fontWeight.semibold,
-     color: colors.neutral[50],
-   },
- });
+  textoBotaoSalvar: {
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.neutral[50],
+  },
+});
