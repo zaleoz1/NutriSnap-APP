@@ -1,288 +1,358 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet, Alert, StatusBar, ScrollView, Dimensions } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
+import React, { useState, useEffect } from 'react';
+import { 
+  View, 
+  Text, 
+  TextInput,
+  TouchableOpacity, 
+  StyleSheet, 
+  StatusBar, 
+  ScrollView, 
+  Dimensions,
+  Alert,
+  ActivityIndicator,
+  Modal,
+  FlatList,
+  RefreshControl
+} from 'react-native';
+import { MaterialIcons, Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import { usarAutenticacao } from '../services/AuthContext';
 import { buscarApi } from '../services/api';
-import { colors, typography, spacing, borders, shadows, componentStyles } from '../styles/globalStyles';
+import { colors, typography, spacing, borders, shadows } from '../styles/globalStyles';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 
-function gerarPlanoTreino(diasPorSemana, objetivo, minutosPorSessao, horarioPreferido) {
-  const catalogo = {
-    emagrecer: [
-      { nome: 'Cardio Intensivo', descricao: 'Corrida ou ciclismo em alta intensidade', duracao: '30-40 min', intensidade: 'Alta' },
-      { nome: 'HIIT', descricao: 'Treino intervalado de alta intensidade', duracao: '20 min', intensidade: 'Máxima' },
-      { nome: 'Musculação Leve', descricao: 'Full body com pesos moderados', duracao: '45 min', intensidade: 'Média' },
-      { nome: 'Ciclismo', descricao: 'Pedalada em ritmo constante', duracao: '40 min', intensidade: 'Média' },
-      { nome: 'Caminhada Rápida', descricao: 'Caminhada em ritmo acelerado', duracao: '45 min', intensidade: 'Baixa' }
-    ],
-    ganhar: [
-      { nome: 'Força - Peito/Tríceps', descricao: 'Supino, flexões, tríceps na polia', duracao: '60 min', intensidade: 'Alta' },
-      { nome: 'Força - Costas/Bíceps', descricao: 'Puxadas, remadas, roscas', duracao: '60 min', intensidade: 'Alta' },
-      { nome: 'Força - Pernas/Ombros', descricao: 'Agachamentos, leg press, desenvolvimento', duracao: '60 min', intensidade: 'Alta' },
-      { nome: 'Core + Estabilidade', descricao: 'Planks, abdominais, exercícios de equilíbrio', duracao: '45 min', intensidade: 'Média' },
-      { nome: 'Cardio Leve', descricao: 'Caminhada ou natação suave', duracao: '20 min', intensidade: 'Baixa' }
-    ],
-    manter: [
-      { nome: 'Musculação Moderada', descricao: 'Treino equilibrado de força', duracao: '45 min', intensidade: 'Média' },
-      { nome: 'Cardio Moderado', descricao: 'Corrida ou ciclismo em ritmo confortável', duracao: '30 min', intensidade: 'Média' },
-      { nome: 'Yoga/Alongamento', descricao: 'Flexibilidade e relaxamento', duracao: '30 min', intensidade: 'Baixa' },
-      { nome: 'Treino Funcional', descricao: 'Exercícios com peso corporal', duracao: '30 min', intensidade: 'Média' }
-    ]
-  };
+export default function TelaPlanoTreino({ navigation }) {
+  const { token, usuario } = usarAutenticacao();
   
-  const base = catalogo[objetivo] || catalogo.manter;
-  const plano = [];
-  
-  for (let i = 0; i < diasPorSemana; i++) {
-    const treino = base[i % base.length];
-    plano.push({
-      dia: `Dia ${i + 1}`,
-      treino: treino.nome,
-      descricao: treino.descricao,
-      duracao: treino.duracao,
-      intensidade: treino.intensidade,
-      horario: horarioPreferido || 'manhã',
-      minutos: minutosPorSessao || 30
-    });
-  }
-  
-  return plano;
-}
+  // Estados principais
+  const [planoAtual, setPlanoAtual] = useState(null);
+  const [carregando, setCarregando] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
-export default function TelaPlanoTreino() {
-  const { token } = usarAutenticacao();
-  const [diasPorSemana, setDiasPorSemana] = useState('3');
-  const [objetivo, setObjetivo] = useState('emagrecer');
-  const [minutos, setMinutos] = useState('30');
-  const [horarioPreferido, setHorarioPreferido] = useState('manhã');
-  const [plano, setPlano] = useState([]);
-  
-  // Estados para foco dos inputs
-  const [focusedInputs, setFocusedInputs] = useState({});
+  useEffect(() => {
+    carregarPlanoAtual();
+  }, []);
 
-  const setInputFocus = (inputName, isFocused) => {
-    setFocusedInputs(prev => ({ ...prev, [inputName]: isFocused }));
-  };
-
-  function lidarComGerar() {
-    const p = gerarPlanoTreino(parseInt(diasPorSemana || '3'), objetivo, parseInt(minutos || '30'), horarioPreferido);
-    setPlano(p);
-  }
-
-  async function salvarPlano() {
+  // Carregar plano atual do usuário
+  const carregarPlanoAtual = async () => {
+    setCarregando(true);
     try {
-      await buscarApi('/api/treinos', { 
-        method: 'POST', 
-        token, 
-        body: { plano } 
-      });
-      Alert.alert('Sucesso', 'Plano de treino salvo com sucesso!');
-    } catch (e) {
-      Alert.alert('Erro', e.message);
+      const resposta = await buscarApi('/api/treinos/atual', { token });
+      if (resposta && resposta.plano) {
+        setPlanoAtual(resposta.plano);
+      }
+    } catch (erro) {
+      console.log('Nenhum plano encontrado ou erro ao carregar');
+    } finally {
+      setCarregando(false);
     }
-  }
+  };
 
-  function renderizarTreino({ item, index }) {
-    const getIntensidadeColor = (intensidade) => {
-      switch (intensidade) {
-        case 'Baixa': return colors.success;
-        case 'Média': return colors.accent.yellow;
-        case 'Alta': return colors.accent.orange;
-        case 'Máxima': return colors.error;
+  // Atualizar plano (pull to refresh)
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await carregarPlanoAtual();
+    setRefreshing(false);
+  };
+
+
+
+  // Salvar plano atual
+  const salvarPlano = async () => {
+    if (!planoAtual) return;
+    
+    try {
+      await buscarApi('/api/treinos/salvar', {
+        method: 'POST',
+        token,
+        body: { plano: planoAtual }
+      });
+      Alert.alert('Sucesso', 'Plano salvo com sucesso!');
+    } catch (erro) {
+      Alert.alert('Erro', 'Não foi possível salvar o plano');
+    }
+  };
+
+  // Marcar treino como concluído
+  const marcarTreinoConcluido = async (diaIndex) => {
+    if (!planoAtual) return;
+    
+    const novoPlano = { ...planoAtual };
+    if (novoPlano.treinos && novoPlano.treinos[diaIndex]) {
+      novoPlano.treinos[diaIndex].concluido = !novoPlano.treinos[diaIndex].concluido;
+      setPlanoAtual(novoPlano);
+      
+      try {
+        await buscarApi('/api/treinos/atualizar', {
+          method: 'PUT',
+          token,
+          body: { plano: novoPlano }
+        });
+      } catch (erro) {
+        console.error('Erro ao atualizar treino:', erro);
+      }
+    }
+  };
+
+  // Renderizar card de treino individual
+  const renderizarTreino = ({ item, index }) => {
+    const getCorIntensidade = (intensidade) => {
+      switch (intensidade?.toLowerCase()) {
+        case 'baixa': return colors.success;
+        case 'média': return colors.accent.yellow;
+        case 'alta': return colors.accent.orange;
+        case 'máxima': return colors.error;
         default: return colors.neutral[500];
       }
     };
 
+    const getIconeTipo = (tipo) => {
+      switch (tipo?.toLowerCase()) {
+        case 'cardio': return 'directions-run';
+        case 'força': return 'fitness-center';
+        case 'flexibilidade': return 'accessibility';
+        case 'funcional': return 'sports-soccer';
+        default: return 'fitness-center';
+      }
+    };
+
     return (
-      <View style={styles.workoutCard}>
-        <View style={styles.workoutHeader}>
-          <View style={styles.workoutDay}>
-            <Text style={styles.workoutDayText}>{item.dia}</Text>
-            <Text style={styles.workoutTime}>{item.horario}</Text>
+      <TouchableOpacity 
+        style={[
+          estilos.cardTreino,
+          item.concluido && estilos.cardTreinoConcluido
+        ]}
+        onPress={() => marcarTreinoConcluido(index)}
+        activeOpacity={0.8}
+      >
+        <View style={estilos.cabecalhoTreino}>
+          <View style={estilos.infoTreino}>
+            <View style={[
+              estilos.iconeTipo,
+              { backgroundColor: getCorIntensidade(item.intensidade) + '20' }
+            ]}>
+              <MaterialIcons 
+                name={getIconeTipo(item.tipo)} 
+                size={20} 
+                color={getCorIntensidade(item.intensidade)} 
+              />
+            </View>
+            <View style={estilos.detalhesTreino}>
+              <Text style={estilos.nomeTreino}>{item.nome}</Text>
+              <Text style={estilos.descricaoTreino}>{item.descricao}</Text>
+            </View>
           </View>
-          <View style={styles.workoutDuration}>
-            <Text style={styles.workoutDurationText}>{item.duracao}</Text>
+          
+          <View style={estilos.statusTreino}>
+            {item.concluido ? (
+              <View style={estilos.badgeConcluido}>
+                <MaterialIcons name="check-circle" size={16} color={colors.success} />
+                <Text style={estilos.textoBadgeConcluido}>Concluído</Text>
+              </View>
+            ) : (
+              <View style={estilos.badgePendente}>
+                <MaterialIcons name="schedule" size={16} color={colors.neutral[400]} />
+                <Text style={estilos.textoBadgePendente}>Pendente</Text>
+              </View>
+            )}
+          </View>
+        </View>
+
+        <View style={estilos.detalhesAdicionais}>
+          <View style={estilos.detalheItem}>
+            <MaterialIcons name="timer" size={16} color={colors.neutral[400]} />
+            <Text style={estilos.textoDetalhe}>{item.duracao}</Text>
+          </View>
+          
+          <View style={estilos.detalheItem}>
+            <View style={[
+              estilos.pontoIntensidade,
+              { backgroundColor: getCorIntensidade(item.intensidade) }
+            ]} />
+            <Text style={[
+              estilos.textoDetalhe,
+              { color: getCorIntensidade(item.intensidade) }
+            ]}>
+              {item.intensidade}
+            </Text>
+          </View>
+          
+          <View style={estilos.detalheItem}>
+            <MaterialIcons name="schedule" size={16} color={colors.neutral[400]} />
+            <Text style={estilos.textoDetalhe}>{item.horario}</Text>
+          </View>
+        </View>
+
+        {item.exercicios && (
+          <View style={estilos.listaExercicios}>
+            <Text style={estilos.tituloExercicios}>Exercícios:</Text>
+            {item.exercicios.slice(0, 3).map((exercicio, idx) => (
+              <Text key={idx} style={estilos.exercicio}>
+                • {exercicio.nome} - {exercicio.series}x{exercicio.repeticoes}
+              </Text>
+            ))}
+            {item.exercicios.length > 3 && (
+              <Text style={estilos.maisExercicios}>
+                +{item.exercicios.length - 3} exercícios
+              </Text>
+            )}
+          </View>
+        )}
+      </TouchableOpacity>
+    );
+  };
+
+  // Renderizar estatísticas do plano
+  const renderizarEstatisticas = () => {
+    if (!planoAtual?.treinos) return null;
+    
+    const totalTreinos = planoAtual.treinos.length;
+    const treinosConcluidos = planoAtual.treinos.filter(t => t.concluido).length;
+    const percentualConcluido = Math.round((treinosConcluidos / totalTreinos) * 100);
+    
+    return (
+      <View style={estilos.secaoEstatisticas}>
+        <Text style={estilos.tituloSecao}>Progresso da Semana</Text>
+        
+        <View style={estilos.cardsEstatisticas}>
+          <View style={estilos.cardEstatistica}>
+            <View style={estilos.iconeEstatistica}>
+              <MaterialIcons name="fitness-center" size={24} color={colors.primary[600]} />
+            </View>
+            <Text style={estilos.valorEstatistica}>{totalTreinos}</Text>
+            <Text style={estilos.labelEstatistica}>Treinos</Text>
+          </View>
+          
+          <View style={estilos.cardEstatistica}>
+            <View style={estilos.iconeEstatistica}>
+              <MaterialIcons name="check-circle" size={24} color={colors.success} />
+            </View>
+            <Text style={estilos.valorEstatistica}>{treinosConcluidos}</Text>
+            <Text style={estilos.labelEstatistica}>Concluídos</Text>
+          </View>
+          
+          <View style={estilos.cardEstatistica}>
+            <View style={estilos.iconeEstatistica}>
+              <MaterialIcons name="trending-up" size={24} color={colors.accent.blue} />
+            </View>
+            <Text style={estilos.valorEstatistica}>{percentualConcluido}%</Text>
+            <Text style={estilos.labelEstatistica}>Progresso</Text>
           </View>
         </View>
         
-        <Text style={styles.workoutName}>{item.treino}</Text>
-        <Text style={styles.workoutDescription}>{item.descricao}</Text>
-        
-        <View style={styles.workoutDetails}>
-          <View style={styles.workoutDetail}>
-            <Text style={styles.workoutDetailLabel}>Duração</Text>
-            <Text style={styles.workoutDetailValue}>{item.minutos} min</Text>
-          </View>
-          <View style={styles.workoutDetail}>
-            <Text style={styles.workoutDetailLabel}>Intensidade</Text>
-            <View style={styles.intensidadeContainer}>
-              <View style={[
-                styles.intensidadeDot, 
-                { backgroundColor: getIntensidadeColor(item.intensidade) }
-              ]} />
-              <Text style={[
-                styles.workoutDetailValue,
-                { color: getIntensidadeColor(item.intensidade) }
-              ]}>
-                {item.intensidade}
-              </Text>
-            </View>
-          </View>
+        <View style={estilos.barraProgresso}>
+          <View style={[estilos.progressoPreenchido, { width: `${percentualConcluido}%` }]} />
         </View>
       </View>
     );
-  }
+  };
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor={colors.neutral[50]} />
+    <View style={estilos.container}>
+      <StatusBar barStyle="light-content" backgroundColor={colors.neutral[900]} />
       
-      <ScrollView 
-        style={styles.scrollView}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-      >
-        {/* Header */}
-        <View style={styles.header}>
-          <View style={styles.titleContainer}>
-            <Text style={styles.title}>Plano de Treino</Text>
-            <Text style={styles.subtitle}>Crie sua rotina personalizada de exercícios</Text>
-          </View>
-          <View style={styles.iconContainer}>
-            <MaterialIcons name="fitness-center" size={40} color={colors.primary[600]} />
-          </View>
-        </View>
-
-        {/* Formulário */}
-        <View style={styles.formContainer}>
-          <View style={styles.formSection}>
-            <Text style={styles.sectionTitle}>Configurações do Plano</Text>
-            
-            <View style={styles.inputRow}>
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Dias por Semana</Text>
-                <TextInput
-                  style={[
-                    styles.input,
-                    focusedInputs.diasPorSemana && styles.inputFocused
-                  ]}
-                  placeholder="Ex: 3"
-                  placeholderTextColor={colors.neutral[400]}
-                  value={diasPorSemana}
-                  onChangeText={setDiasPorSemana}
-                  onFocus={() => setInputFocus('diasPorSemana', true)}
-                  onBlur={() => setInputFocus('diasPorSemana', false)}
-                  keyboardType="numeric"
-                />
-              </View>
-              
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Minutos por Sessão</Text>
-                <TextInput
-                  style={[
-                    styles.input,
-                    focusedInputs.minutos && styles.inputFocused
-                  ]}
-                  placeholder="Ex: 30"
-                  placeholderTextColor={colors.neutral[400]}
-                  value={minutos}
-                  onChangeText={setMinutos}
-                  onFocus={() => setInputFocus('minutos', true)}
-                  onBlur={() => setInputFocus('minutos', false)}
-                  keyboardType="numeric"
-                />
-              </View>
-            </View>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Objetivo</Text>
-              <View style={styles.objectiveSelector}>
-                {['emagrecer', 'manter', 'ganhar'].map((obj) => (
-                  <TouchableOpacity
-                    key={obj}
-                    style={[
-                      styles.objectiveOption,
-                      objetivo === obj && styles.objectiveOptionSelected
-                    ]}
-                    onPress={() => setObjetivo(obj)}
-                  >
-                    <Text style={[
-                      styles.objectiveOptionText,
-                      objetivo === obj && styles.objectiveOptionTextSelected
-                    ]}>
-                      {obj.charAt(0).toUpperCase() + obj.slice(1)}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Horário Preferido</Text>
-              <View style={styles.timeSelector}>
-                {['manhã', 'tarde', 'noite'].map((horario) => (
-                  <TouchableOpacity
-                    key={horario}
-                    style={[
-                      styles.timeOption,
-                      horarioPreferido === horario && styles.timeOptionSelected
-                    ]}
-                    onPress={() => setHorarioPreferido(horario)}
-                  >
-                    <Text style={[
-                      styles.timeOptionText,
-                      horarioPreferido === horario && styles.timeOptionTextSelected
-                    ]}>
-                      {horario.charAt(0).toUpperCase() + horario.slice(1)}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-          </View>
-
-          <TouchableOpacity
-            onPress={lidarComGerar}
-            style={styles.generateButton}
+      {/* Header com gradiente */}
+      <View style={estilos.header}>
+        <View style={estilos.cabecalhoHeader}>
+          <TouchableOpacity 
+            style={estilos.botaoVoltar}
+            onPress={() => navigation.goBack()}
             activeOpacity={0.8}
           >
-            <Text style={styles.generateButtonText}>Gerar Plano de Treino</Text>
+            <MaterialIcons name="arrow-back" size={24} color={colors.neutral[50]} />
+          </TouchableOpacity>
+          
+          <Text style={estilos.tituloHeader}>Plano de Treino</Text>
+          
+          <TouchableOpacity 
+            style={estilos.botaoConfigurar}
+            onPress={() => {}}
+            activeOpacity={0.8}
+          >
+            <MaterialIcons name="add" size={24} color={colors.neutral[50]} />
           </TouchableOpacity>
         </View>
+        
+        <Text style={estilos.subtituloHeader}>
+          Treinos personalizados por IA baseados no seu perfil
+        </Text>
+      </View>
 
-        {/* Lista de treinos */}
-        {plano.length > 0 && (
-          <View style={styles.workoutsContainer}>
-            <Text style={styles.workoutsTitle}>Seu Plano de Treino</Text>
-            <FlatList
-              data={plano}
-              keyExtractor={(item, idx) => idx.toString()}
-              renderItem={renderizarTreino}
-              scrollEnabled={false}
-              showsVerticalScrollIndicator={false}
-            />
+      <ScrollView 
+        style={estilos.scrollView}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={estilos.conteudoScroll}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[colors.primary[600]]}
+            tintColor={colors.primary[600]}
+          />
+        }
+      >
+        {carregando ? (
+          <View style={estilos.containerCarregamento}>
+            <ActivityIndicator size="large" color={colors.primary[600]} />
+            <Text style={estilos.textoCarregamento}>Carregando seu plano...</Text>
           </View>
-        )}
+        ) : planoAtual ? (
+          <>
+            {renderizarEstatisticas()}
+            
+            <View style={estilos.secaoTreinos}>
+              <Text style={estilos.tituloSecao}>Treinos da Semana</Text>
+              
+              <FlatList
+                data={planoAtual.treinos || []}
+                keyExtractor={(item, index) => index.toString()}
+                renderItem={renderizarTreino}
+                scrollEnabled={false}
+                showsVerticalScrollIndicator={false}
+              />
+            </View>
+            
+            <View style={estilos.botoesAcao}>
+              <TouchableOpacity 
+                style={estilos.botaoSalvar}
+                onPress={salvarPlano}
+                activeOpacity={0.8}
+              >
+                <MaterialIcons name="save" size={20} color={colors.neutral[50]} />
+                <Text style={estilos.textoBotaoSalvar}>Salvar Progresso</Text>
+              </TouchableOpacity>
+              
 
-        {/* Botões de ação */}
-        {plano.length > 0 && (
-          <View style={styles.actionButtons}>
-            <TouchableOpacity
-              onPress={salvarPlano}
-              style={styles.saveButton}
+            </View>
+          </>
+        ) : (
+          <View style={estilos.containerSemPlano}>
+            <View style={estilos.iconeSemPlano}>
+              <MaterialIcons name="fitness-center" size={64} color={colors.neutral[400]} />
+            </View>
+            <Text style={estilos.tituloSemPlano}>Nenhum plano encontrado</Text>
+            <Text style={estilos.subtituloSemPlano}>
+              Configure suas preferências e gere seu primeiro plano de treino personalizado
+            </Text>
+            
+            <TouchableOpacity 
+              style={estilos.botaoGerarPrimeiro}
+              onPress={() => {}}
               activeOpacity={0.8}
             >
-              <Text style={styles.saveButtonText}>Salvar Plano</Text>
+              <MaterialIcons name="add" size={20} color={colors.neutral[50]} />
+              <Text style={estilos.textoBotaoGerarPrimeiro}>Gerar Primeiro Plano</Text>
             </TouchableOpacity>
           </View>
         )}
       </ScrollView>
+
+
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const estilos = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.neutral[50],
@@ -292,49 +362,54 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   
-  scrollContent: {
+  conteudoScroll: {
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.lg,
     paddingBottom: spacing.xl,
   },
   
   header: {
+    backgroundColor: colors.primary[600],
+    paddingTop: spacing.xl,
+    paddingBottom: spacing.md,
+    paddingHorizontal: spacing.lg,
+    borderBottomLeftRadius: spacing.lg,
+    borderBottomRightRadius: spacing.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.md,
+  },
+  
+  cabecalhoHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: spacing.xl,
+    width: '100%',
   },
   
-  titleContainer: {
+  botaoVoltar: {
+    padding: spacing.sm,
+  },
+  
+  tituloHeader: {
+    fontSize: typography.fontSize['3xl'],
+    fontWeight: typography.fontWeight.extrabold,
+    color: colors.neutral[50],
+    textAlign: 'center',
     flex: 1,
   },
   
-  title: {
-    fontSize: typography.fontSize['3xl'],
-    fontWeight: typography.fontWeight.extrabold,
-    color: colors.neutral[900],
-    marginBottom: spacing.xs,
+  botaoConfigurar: {
+    padding: spacing.sm,
   },
   
-  subtitle: {
+  subtituloHeader: {
     fontSize: typography.fontSize.base,
     fontWeight: typography.fontWeight.medium,
-    color: colors.neutral[600],
-    lineHeight: typography.lineHeight.normal,
-  },
-  
-  iconContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: colors.primary[100],
-    alignItems: 'center',
-    justifyContent: 'center',
-    ...shadows.lg,
-  },
-  
-  icon: {
-    fontSize: 40,
+    color: colors.neutral[200],
+    textAlign: 'center',
+    marginTop: spacing.xs,
+    marginBottom: spacing.lg,
   },
   
   alertContainer: {
@@ -634,5 +709,253 @@ const styles = StyleSheet.create({
     color: colors.accent.yellow + 'DD',
     textAlign: 'center',
     lineHeight: typography.lineHeight.normal,
+  },
+
+  // Novos estilos para a nova interface
+  containerCarregamento: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: colors.neutral[50],
+  },
+  textoCarregamento: {
+    marginTop: spacing.md,
+    fontSize: typography.fontSize.base,
+    color: colors.neutral[600],
+  },
+  containerSemPlano: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: spacing.lg,
+    backgroundColor: colors.neutral[50],
+  },
+  iconeSemPlano: {
+    marginBottom: spacing.md,
+  },
+  tituloSemPlano: {
+    fontSize: typography.fontSize['2xl'],
+    fontWeight: typography.fontWeight.bold,
+    color: colors.neutral[800],
+    marginBottom: spacing.xs,
+  },
+  subtituloSemPlano: {
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.neutral[600],
+    textAlign: 'center',
+    marginBottom: spacing.lg,
+  },
+  botaoGerarPrimeiro: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.primary[600],
+    borderRadius: borders.radius.xl,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    ...shadows.lg,
+    elevation: 8,
+  },
+  textoBotaoGerarPrimeiro: {
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.neutral[50],
+    marginLeft: spacing.sm,
+  },
+
+  secaoEstatisticas: {
+    marginBottom: spacing.lg,
+  },
+  cardsEstatisticas: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginBottom: spacing.md,
+  },
+  cardEstatistica: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  iconeEstatistica: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: colors.primary[100],
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.xs,
+  },
+  valorEstatistica: {
+    fontSize: typography.fontSize['2xl'],
+    fontWeight: typography.fontWeight.bold,
+    color: colors.neutral[900],
+    marginBottom: spacing.xs,
+  },
+  labelEstatistica: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.neutral[600],
+  },
+  barraProgresso: {
+    height: 8,
+    backgroundColor: colors.neutral[200],
+    borderRadius: 4,
+    overflow: 'hidden',
+    marginTop: spacing.sm,
+  },
+  progressoPreenchido: {
+    height: '100%',
+    borderRadius: 4,
+    backgroundColor: colors.primary[600],
+  },
+  secaoTreinos: {
+    marginBottom: spacing.lg,
+  },
+  botoesAcao: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginTop: spacing.md,
+  },
+  botaoSalvar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.accent.blue,
+    borderRadius: borders.radius.lg,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    ...shadows.sm,
+    elevation: 6,
+  },
+  textoBotaoSalvar: {
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.neutral[50],
+    marginLeft: spacing.sm,
+  },
+
+  cardTreino: {
+    backgroundColor: colors.neutral[50],
+    borderRadius: borders.radius.lg,
+    padding: spacing.lg,
+    marginBottom: spacing.md,
+    ...shadows.base,
+    borderWidth: borders.width.thin,
+    borderColor: colors.neutral[200],
+  },
+  cardTreinoConcluido: {
+    opacity: 0.7,
+    borderColor: colors.success + '30',
+    borderWidth: borders.width.thin,
+  },
+  cabecalhoTreino: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.md,
+  },
+  infoTreino: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  iconeTipo: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: spacing.md,
+  },
+  detalhesTreino: {
+    flex: 1,
+  },
+  nomeTreino: {
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.neutral[900],
+    marginBottom: spacing.xs,
+  },
+  descricaoTreino: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.neutral[600],
+    lineHeight: typography.lineHeight.normal,
+  },
+  statusTreino: {
+    alignItems: 'center',
+  },
+  badgeConcluido: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.success + '15',
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    borderRadius: borders.radius.md,
+    borderWidth: borders.width.thin,
+    borderColor: colors.success + '30',
+  },
+  textoBadgeConcluido: {
+    fontSize: typography.fontSize.xs,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.success,
+    marginLeft: spacing.xs,
+  },
+  badgePendente: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.neutral[200] + '20',
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    borderRadius: borders.radius.md,
+    borderWidth: borders.width.thin,
+    borderColor: colors.neutral[300] + '30',
+  },
+  textoBadgePendente: {
+    fontSize: typography.fontSize.xs,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.neutral[400],
+    marginLeft: spacing.xs,
+  },
+  detalhesAdicionais: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: spacing.md,
+  },
+  detalheItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  textoDetalhe: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.neutral[600],
+    marginLeft: spacing.xs,
+  },
+  pontoIntensidade: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  listaExercicios: {
+    marginTop: spacing.md,
+    paddingTop: spacing.md,
+    borderTopWidth: borders.width.thin,
+    borderTopColor: colors.neutral[200],
+  },
+  tituloExercicios: {
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.neutral[700],
+    marginBottom: spacing.xs,
+  },
+  exercicio: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.neutral[600],
+    marginBottom: spacing.xs,
+  },
+  maisExercicios: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.neutral[600],
+    marginTop: spacing.xs,
   },
 });

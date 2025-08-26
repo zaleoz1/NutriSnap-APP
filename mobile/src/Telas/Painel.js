@@ -126,6 +126,9 @@ export default function TelaPrincipal({ navigation }) {
       case 'treinos':
         navigation.navigate('PlanoTreino');
         break;
+      case 'dados':
+        navigation.navigate('MeusDados');
+        break;
     }
   }
 
@@ -351,6 +354,21 @@ export default function TelaPrincipal({ navigation }) {
             
             <TouchableOpacity 
               style={estilos.actionCard}
+              onPress={() => navegarPara('dados')}
+              activeOpacity={0.8}
+            >
+              <View style={[estilos.actionIcon, { backgroundColor: colors.accent.purple + '15' }]}>
+                <MaterialIcons name="person" size={26} color={colors.accent.purple} />
+              </View>
+              <Text style={estilos.actionTitle}>Meus Dados</Text>
+              <Text style={estilos.actionDesc}>Visualize perfil</Text>
+              <View style={estilos.actionArrow}>
+                <MaterialIcons name="arrow-forward-ios" size={16} color={colors.neutral[500]} />
+              </View>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={estilos.actionCard}
               onPress={() => navegarPara('treinos')}
               activeOpacity={0.8}
             >
@@ -459,6 +477,21 @@ export default function TelaPrincipal({ navigation }) {
                 <View style={estilos.modalOptionContent}>
                   <Text style={estilos.modalOptionTitle}>Calcular IMC</Text>
                   <Text style={estilos.modalOptionDesc}>Avalie seu índice de massa corporal</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={20} color={colors.neutral[400]} />
+              </TouchableOpacity>
+
+              <TouchableOpacity 
+                style={estilos.modalOption} 
+                onPress={() => navegarPara('dados')}
+                activeOpacity={0.8}
+              >
+                <View style={[estilos.modalOptionIcon, { backgroundColor: colors.accent.purple + '15' }]}>
+                  <MaterialIcons name="person" size={28} color={colors.accent.purple} />
+                </View>
+                <View style={estilos.modalOptionContent}>
+                  <Text style={estilos.modalOptionTitle}>Meus Dados</Text>
+                  <Text style={estilos.modalOptionDesc}>Visualize e edite seu perfil</Text>
                 </View>
                 <Ionicons name="chevron-forward" size={20} color={colors.neutral[400]} />
               </TouchableOpacity>
