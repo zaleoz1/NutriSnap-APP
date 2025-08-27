@@ -8,7 +8,7 @@ import { typography, spacing, borders, shadows } from '../styles/globalStyles';
 const { height } = Dimensions.get('window');
 
 export default function TelaRegistro({ navigation }) {
-  const { conectado } = usarAutenticacao();
+  const { conectado, entrar } = usarAutenticacao();
   const [nome, setNome] = useState('');
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
@@ -149,22 +149,73 @@ export default function TelaRegistro({ navigation }) {
         } 
       });
       
-      Alert.alert(
-        'Conta criada!', 
-        'Sua conta foi criada com sucesso! Faça login para continuar.',
-        [
-          { 
-            text: 'Fazer Login', 
-            onPress: () => {
-              setNome('');
-              setEmail('');
-              setSenha('');
-              setConfirmarSenha('');
-              navigation.goBack();
+      // Fazer login automático após o cadastro
+      console.log('🔍 Fazendo login automático após cadastro...');
+      
+      try {
+        // Aguardar um pouco para o servidor processar o cadastro
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        const dadosLogin = await buscarApi('/api/autenticacao/entrar', { 
+          method: 'POST', 
+          body: { 
+            email: email.trim().toLowerCase(), 
+            senha 
+          } 
+        });
+
+        // Fazer login no contexto de autenticação
+        await entrar(dadosLogin.token, dadosLogin.usuario);
+        console.log('✅ Login automático bem-sucedido');
+        
+        Alert.alert(
+          'Conta criada!', 
+          'Sua conta foi criada com sucesso! Agora vamos configurar seu perfil para personalizar sua experiência.',
+          [
+            { 
+              text: 'Configurar Perfil', 
+              onPress: () => {
+                setNome('');
+                setEmail('');
+                setSenha('');
+                setConfirmarSenha('');
+                // Navegar para o Quiz com parâmetro indicando que veio do cadastro
+                // Agora o usuário tem token válido
+                navigation.navigate('Quiiz', { fromRegistration: true });
+              }
             }
-          }
-        ]
-      );
+          ]
+        );
+        
+      } catch (erroLogin) {
+        console.log('⚠️ Login automático falhou:', erroLogin.message);
+        
+        // Se o login automático falhar, oferecer opção de ir para login
+        Alert.alert(
+          'Conta criada!', 
+          'Sua conta foi criada com sucesso! Porém, houve um problema no login automático. Você pode fazer login manualmente.',
+          [
+            { 
+              text: 'Fazer Login', 
+              onPress: () => {
+                setNome('');
+                setEmail('');
+                setSenha('');
+                setConfirmarSenha('');
+                // Navegar para a tela de login
+                navigation.navigate('Login');
+              }
+            },
+            { 
+              text: 'Tentar Novamente', 
+              onPress: () => {
+                // Tentar novamente o processo completo
+                lidarComRegistro();
+              }
+            }
+          ]
+        );
+      }
       
     } catch (erro) {
       let mensagem = 'Erro ao criar conta. Tente novamente.';

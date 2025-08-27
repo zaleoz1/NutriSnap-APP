@@ -36,3 +36,32 @@ CREATE TABLE IF NOT EXISTS treinos (
   criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (id_usuario) REFERENCES usuarios(id) ON DELETE CASCADE
 );
+
+CREATE TABLE IF NOT EXISTS quiz_respostas (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  id_usuario INT NOT NULL,
+  idade INT,
+  sexo VARCHAR(20),
+  altura FLOAT,
+  peso_atual FLOAT,
+  peso_meta FLOAT,
+  objetivo VARCHAR(50),
+  nivel_atividade VARCHAR(50),
+  frequencia_treino VARCHAR(50),
+  acesso_academia VARCHAR(50),
+  dieta_atual VARCHAR(50),
+  preferencias JSON,
+  habitos_alimentares JSON,
+  restricoes_medicas JSON,
+  historico_exercicios VARCHAR(50),
+  tipo_treino_preferido JSON,
+  horario_preferido VARCHAR(50),
+  duracao_treino VARCHAR(50),
+  metas_especificas JSON,
+  motivacao VARCHAR(50),
+  obstaculos JSON,
+  criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (id_usuario) REFERENCES usuarios(id) ON DELETE CASCADE,
+  UNIQUE KEY unique_usuario_quiz (id_usuario)
+);

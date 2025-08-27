@@ -24,8 +24,26 @@ async function configurarBanco() {
     const schemaPath = path.join(process.cwd(), 'schema.sql');
     const schema = fs.readFileSync(schemaPath, 'utf8');
 
-    // Executar schema
-    await conexao.query(schema);
+    // Dividir o schema em instruções individuais
+    const statements = schema
+      .split(';')
+      .map(stmt => stmt.trim())
+      .filter(stmt => stmt.length > 0 && !stmt.startsWith('--'));
+
+    // Executar cada instrução separadamente
+    for (const statement of statements) {
+      if (statement.trim()) {
+        try {
+          await conexao.query(statement);
+        } catch (err) {
+          // Ignorar erro se o banco já existe
+          if (!err.message.includes('database exists')) {
+            throw err;
+          }
+        }
+      }
+    }
+    
     console.log('✅ Banco de dados "nutrisnap" criado/atualizado');
 
     // Verificar tabelas

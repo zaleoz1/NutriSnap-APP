@@ -35,6 +35,30 @@ export default function TelaMeusDados({ navigation }) {
     objetivo: 'manter',
     metaCalorias: 0
   });
+
+  // Estados para os dados do quiz
+  const [dadosQuiz, setDadosQuiz] = useState({
+    idade: '',
+    sexo: '',
+    altura: '',
+    peso_atual: '',
+    peso_meta: '',
+    objetivo: '',
+    nivel_atividade: '',
+    frequencia_treino: '',
+    acesso_academia: '',
+    dieta_atual: '',
+    preferencias: {},
+    habitos_alimentares: {},
+    restricoes_medicas: {},
+    historico_exercicios: '',
+    tipo_treino_preferido: {},
+    horario_preferido: '',
+    duracao_treino: '',
+    metas_especificas: {},
+    motivacao: '',
+    obstaculos: {}
+  });
   
   // Estados para edição
   const [editando, setEditando] = useState(false);
@@ -43,6 +67,7 @@ export default function TelaMeusDados({ navigation }) {
   const [modalEditar, setModalEditar] = useState(false);
   const [campoEditando, setCampoEditando] = useState(null);
   const [valorEditando, setValorEditando] = useState('');
+  const [tipoCampo, setTipoCampo] = useState('texto'); // texto, numero, selecao
 
   // Carregar dados do usuário
   useEffect(() => {
@@ -61,6 +86,23 @@ export default function TelaMeusDados({ navigation }) {
         }));
       }
 
+      // Buscar dados do quiz
+      const quizData = await buscarApi('/api/quiz', { token });
+      if (quizData) {
+        setDadosQuiz(quizData);
+        
+        // Atualizar dados do usuário com informações do quiz
+        setDadosUsuario(prev => ({
+          ...prev,
+          idade: quizData.idade || prev.idade,
+          peso: quizData.peso_atual || prev.peso,
+          altura: quizData.altura || prev.altura,
+          sexo: quizData.sexo || prev.sexo,
+          nivelAtividade: quizData.nivel_atividade || prev.nivelAtividade,
+          objetivo: quizData.objetivo || prev.objetivo
+        }));
+      }
+
       // Buscar meta de calorias
       const meta = await buscarApi('/api/metas', { token });
       if (meta?.calorias_diarias) {
@@ -71,8 +113,8 @@ export default function TelaMeusDados({ navigation }) {
       }
 
       // Calcular IMC se peso e altura estiverem disponíveis
-      if (dadosPessoais?.peso && dadosPessoais?.altura) {
-        const imcCalculado = calcularIMC(dadosPessoais.peso, dadosPessoais.altura);
+      if (quizData?.peso_atual && quizData?.altura) {
+        const imcCalculado = calcularIMC(quizData.peso_atual, quizData.altura);
         setDadosUsuario(prev => ({
           ...prev,
           imc: imcCalculado
@@ -113,9 +155,111 @@ export default function TelaMeusDados({ navigation }) {
     return colors.error;
   };
 
-  const abrirModalEditar = (campo, valor) => {
+  const formatarValor = (valor, campo) => {
+    if (!valor || !campo) return 'Não informado';
+    
+    switch (campo) {
+      case 'sexo':
+        return valor === 'M' ? 'Masculino' : valor === 'F' ? 'Feminino' : valor;
+      case 'objetivo':
+        return valor.charAt(0).toUpperCase() + valor.slice(1);
+      case 'nivel_atividade':
+        return valor.charAt(0).toUpperCase() + valor.slice(1);
+      case 'frequencia_treino':
+        return valor.charAt(0).toUpperCase() + valor.slice(1);
+      case 'acesso_academia':
+        return valor.charAt(0).toUpperCase() + valor.slice(1);
+      case 'dieta_atual':
+        return valor.charAt(0).toUpperCase() + valor.slice(1);
+      case 'historico_exercicios':
+        return valor.charAt(0).toUpperCase() + valor.slice(1);
+      case 'motivacao':
+        return valor.charAt(0).toUpperCase() + valor.slice(1);
+      case 'preferencias':
+      case 'habitos_alimentares':
+      case 'restricoes_medicas':
+      case 'tipo_treino_preferido':
+      case 'metas_especificas':
+      case 'obstaculos':
+        if (typeof valor === 'object' && valor !== null) {
+          const chaves = Object.keys(valor);
+          if (chaves.length === 0) return 'Não informado';
+          return chaves.join(', ');
+        }
+        return valor;
+      default:
+        return valor;
+    }
+  };
+
+  const obterUnidade = (campo) => {
+    if (!campo) return '';
+    
+    switch (campo) {
+      case 'idade': return 'anos';
+      case 'altura': return 'm';
+      case 'peso_atual':
+      case 'peso_meta': return 'kg';
+      case 'duracao_treino': return 'min';
+      default: return '';
+    }
+  };
+
+  const obterIcone = (campo) => {
+    if (!campo) return 'info';
+    
+    switch (campo) {
+      case 'idade': return 'cake';
+      case 'sexo': return 'wc';
+      case 'altura': return 'height';
+      case 'peso_atual':
+      case 'peso_meta': return 'monitor-weight';
+      case 'objetivo': return 'flag';
+      case 'nivel_atividade': return 'directions-run';
+      case 'frequencia_treino': return 'schedule';
+      case 'acesso_academia': return 'fitness-center';
+      case 'dieta_atual': return 'restaurant';
+      case 'preferencias': return 'favorite';
+      case 'habitos_alimentares': return 'local-dining';
+      case 'restricoes_medicas': return 'medical-services';
+      case 'historico_exercicios': return 'history';
+      case 'tipo_treino_preferido': return 'sports';
+      case 'horario_preferido': return 'access-time';
+      case 'duracao_treino': return 'timer';
+      case 'metas_especificas': return 'target';
+      case 'motivacao': return 'psychology';
+      case 'obstaculos': return 'warning';
+      default: return 'info';
+    }
+  };
+
+  const obterCor = (campo) => {
+    if (!campo) return colors.neutral[500];
+    
+    const cores = [
+      colors.primary[600],
+      colors.accent.blue,
+      colors.accent.purple,
+      colors.accent.pink,
+      colors.accent.green,
+      colors.accent.cyan,
+      colors.accent.orange,
+      colors.accent.yellow,
+      colors.success,
+      colors.warning,
+      colors.error
+    ];
+    
+    const index = campo.length % cores.length;
+    return cores[index];
+  };
+
+  const abrirModalEditar = (campo, valor, tipo = 'texto') => {
+    if (!campo) return;
+    
     setCampoEditando(campo);
     setValorEditando(valor || '');
+    setTipoCampo(tipo);
     setModalEditar(true);
   };
 
@@ -123,10 +267,11 @@ export default function TelaMeusDados({ navigation }) {
     setModalEditar(false);
     setCampoEditando(null);
     setValorEditando('');
+    setTipoCampo('texto');
   };
 
   const salvarEdicao = async () => {
-    if (!valorEditando.trim()) {
+    if (!campoEditando || !valorEditando.trim()) {
       Alert.alert('Erro', 'O campo não pode estar vazio');
       return;
     }
@@ -135,28 +280,49 @@ export default function TelaMeusDados({ navigation }) {
     try {
       const dadosAtualizados = { [campoEditando]: valorEditando };
       
-      // Atualizar no backend
-      await buscarApi('/api/usuarios/perfil', {
-        method: 'PUT',
+      // Atualizar no backend - quiz
+      await buscarApi('/api/quiz', {
+        method: 'POST',
         token,
         body: dadosAtualizados
       });
 
       // Atualizar estado local
-      setDadosUsuario(prev => ({
+      setDadosQuiz(prev => ({
         ...prev,
         ...dadosAtualizados
       }));
 
+      // Atualizar dados do usuário se for um campo relevante
+      if (campoEditando && ['idade', 'peso_atual', 'altura', 'sexo', 'nivel_atividade', 'objetivo'].includes(campoEditando)) {
+        setDadosUsuario(prev => ({
+          ...prev,
+          idade: campoEditando === 'idade' ? valorEditando : prev.idade,
+          peso: campoEditando === 'peso_atual' ? valorEditando : prev.peso,
+          altura: campoEditando === 'altura' ? valorEditando : prev.altura,
+          sexo: campoEditando === 'sexo' ? valorEditando : prev.sexo,
+          nivelAtividade: campoEditando === 'nivel_atividade' ? valorEditando : prev.nivelAtividade,
+          objetivo: campoEditando === 'objetivo' ? valorEditando : prev.objetivo
+        }));
+      }
+
       // Recalcular IMC se peso ou altura foram alterados
-      if (campoEditando === 'peso' || campoEditando === 'altura') {
-        const novoPeso = campoEditando === 'peso' ? valorEditando : dadosUsuario.peso;
-        const novaAltura = campoEditando === 'altura' ? valorEditando : dadosUsuario.altura;
+      if (campoEditando && (campoEditando === 'peso_atual' || campoEditando === 'altura')) {
+        const novoPeso = campoEditando === 'peso_atual' ? valorEditando : dadosQuiz.peso_atual;
+        const novaAltura = campoEditando === 'altura' ? valorEditando : dadosQuiz.altura;
         const novoIMC = calcularIMC(novoPeso, novaAltura);
         setDadosUsuario(prev => ({
           ...prev,
           imc: novoIMC
         }));
+        
+        // Atualizar também o peso no estado do usuário
+        if (campoEditando === 'peso_atual') {
+          setDadosUsuario(prev => ({
+            ...prev,
+            peso: valorEditando
+          }));
+        }
       }
 
       fecharModalEditar();
@@ -168,37 +334,40 @@ export default function TelaMeusDados({ navigation }) {
     }
   };
 
-  const renderizarCardDados = ({ titulo, valor, icone, cor, editavel = true, unidade = '', onPress = null }) => (
-    <TouchableOpacity 
-      style={[
-        estilos.cardDado,
-        editavel && estilos.cardEditavel
-      ]}
-      onPress={editavel ? onPress : undefined}
-      activeOpacity={editavel ? 0.7 : 1}
-    >
-      <View style={estilos.cabecalhoCard}>
-        <View style={[estilos.iconeCard, { backgroundColor: cor + '15' }]}>
-          <MaterialIcons name={icone} size={24} color={cor} />
+  const renderizarCardDados = ({ titulo, valor, icone, cor, editavel = true, unidade = '', onPress = null }) => {
+    if (!titulo) return null;
+    
+    return (
+      <TouchableOpacity 
+        style={[
+          estilos.cardDado,
+          editavel && estilos.cardEditavel
+        ]}
+        onPress={editavel ? onPress : undefined}
+        activeOpacity={editavel ? 0.7 : 1}
+      >
+        <View style={estilos.cabecalhoCard}>
+          <View style={[estilos.iconeCard, { backgroundColor: cor + '15' }]}>
+            <MaterialIcons name={icone} size={24} color={cor} />
+          </View>
+          <View style={estilos.informacoesCard}>
+            <Text style={estilos.tituloCard}>{titulo}</Text>
+            <Text style={estilos.valorCard}>
+              {valor || 'Não informado'}
+              {unidade && valor && valor !== 'Não informado' && ` ${unidade}`}
+            </Text>
+          </View>
+          {editavel && (
+            <TouchableOpacity style={estilos.botaoEditar}>
+              <MaterialIcons name="edit" size={20} color={colors.neutral[400]} />
+            </TouchableOpacity>
+          )}
         </View>
-        <View style={estilos.informacoesCard}>
-          <Text style={estilos.tituloCard}>{titulo}</Text>
-          <Text style={estilos.valorCard}>
-            {valor || 'Não informado'}
-            {unidade && valor && ` ${unidade}`}
-          </Text>
-        </View>
-        {editavel && (
-          <TouchableOpacity style={estilos.botaoEditar}>
-            <MaterialIcons name="edit" size={20} color={colors.neutral[400]} />
-          </TouchableOpacity>
-        )}
-      </View>
-    </TouchableOpacity>
-  );
+      </TouchableOpacity>
+    );
+  };
 
   const renderizarCardIMC = () => {
-    const classificacao = obterClassificacaoIMC(dadosUsuario.imc);
     const corIMC = obterCorIMC(dadosUsuario.imc);
     
     return (
@@ -213,48 +382,37 @@ export default function TelaMeusDados({ navigation }) {
               {dadosUsuario.imc || 'Não calculado'}
               {dadosUsuario.imc && ' kg/m²'}
             </Text>
-            {dadosUsuario.imc && (
-              <Text style={[estilos.classificacaoIMC, { color: corIMC }]}>
-                {classificacao}
-              </Text>
-            )}
           </View>
         </View>
-        
-        {dadosUsuario.imc && (
-          <View style={estilos.legendaIMC}>
-            <Text style={estilos.tituloLegenda}>Classificação IMC:</Text>
-            <View style={estilos.itensLegenda}>
-              <View style={estilos.itemLegenda}>
-                <View style={[estilos.pontoLegenda, { backgroundColor: colors.accent.blue }]} />
-                <Text style={estilos.textoLegenda}>Abaixo do peso: {'<'} 18.5</Text>
-              </View>
-              <View style={estilos.itemLegenda}>
-                <View style={[estilos.pontoLegenda, { backgroundColor: colors.success }]} />
-                <Text style={estilos.textoLegenda}>Normal: 18.5 - 24.9</Text>
-              </View>
-              <View style={estilos.itemLegenda}>
-                <View style={[estilos.pontoLegenda, { backgroundColor: colors.accent.yellow }]} />
-                <Text style={estilos.textoLegenda}>Sobrepeso: 25.0 - 29.9</Text>
-              </View>
-              <View style={estilos.itemLegenda}>
-                <View style={[estilos.pontoLegenda, { backgroundColor: colors.accent.orange }]} />
-                <Text style={estilos.textoLegenda}>Obesidade I: 30.0 - 34.9</Text>
-              </View>
-              <View style={estilos.itemLegenda}>
-                <View style={[estilos.pontoLegenda, { backgroundColor: colors.accent.red }]} />
-                <Text style={estilos.textoLegenda}>Obesidade II: 35.0 - 39.9</Text>
-              </View>
-              <View style={estilos.itemLegenda}>
-                <View style={[estilos.pontoLegenda, { backgroundColor: colors.error }]} />
-                <Text style={estilos.textoLegenda}>Obesidade III: ≥ 40.0</Text>
-              </View>
-            </View>
-          </View>
-        )}
       </View>
     );
   };
+
+  const renderizarSecaoQuiz = (titulo, campos) => (
+    <View style={estilos.secao}>
+      <Text style={estilos.tituloSecao}>{titulo}</Text>
+      
+      {campos.map((campo) => {
+        if (!campo) return null;
+        
+        const tipoCampo = ['idade', 'altura', 'peso_atual', 'peso_meta', 'duracao_treino'].includes(campo) ? 'numero' : 'texto';
+        
+        return (
+          <View key={campo}>
+            {renderizarCardDados({
+              titulo: campo.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+              valor: formatarValor(dadosQuiz[campo], campo),
+              icone: obterIcone(campo),
+              cor: obterCor(campo),
+              editavel: true,
+              unidade: obterUnidade(campo),
+              onPress: () => abrirModalEditar(campo, dadosQuiz[campo], tipoCampo)
+            })}
+          </View>
+        );
+      })}
+    </View>
+  );
 
   return (
     <View style={estilos.container}>
@@ -325,19 +483,19 @@ export default function TelaMeusDados({ navigation }) {
               
               {renderizarCardDados({
                 titulo: 'Idade',
-                valor: dadosUsuario.idade,
+                valor: dadosQuiz.idade,
                 icone: 'cake',
                 cor: colors.accent.purple,
                 unidade: 'anos',
-                onPress: () => abrirModalEditar('idade', dadosUsuario.idade)
+                onPress: () => abrirModalEditar('idade', dadosQuiz.idade, 'numero')
               })}
               
               {renderizarCardDados({
                 titulo: 'Sexo',
-                valor: dadosUsuario.sexo === 'M' ? 'Masculino' : 'Feminino',
+                valor: formatarValor(dadosQuiz.sexo, 'sexo'),
                 icone: 'wc',
                 cor: colors.accent.pink,
-                editavel: false
+                onPress: () => abrirModalEditar('sexo', dadosQuiz.sexo, 'selecao')
               })}
             </View>
 
@@ -346,45 +504,69 @@ export default function TelaMeusDados({ navigation }) {
               <Text style={estilos.tituloSecao}>Medidas Físicas</Text>
               
               {renderizarCardDados({
-                titulo: 'Peso',
-                valor: dadosUsuario.peso,
+                titulo: 'Peso Atual',
+                valor: dadosQuiz.peso_atual,
                 icone: 'monitor-weight',
                 cor: colors.accent.green,
                 unidade: 'kg',
-                onPress: () => abrirModalEditar('peso', dadosUsuario.peso)
+                onPress: () => abrirModalEditar('peso_atual', dadosQuiz.peso_atual, 'numero')
+              })}
+              
+              {renderizarCardDados({
+                titulo: 'Peso Meta',
+                valor: dadosQuiz.peso_meta,
+                icone: 'flag',
+                cor: colors.accent.yellow,
+                unidade: 'kg',
+                onPress: () => abrirModalEditar('peso_meta', dadosQuiz.peso_meta, 'numero')
               })}
               
               {renderizarCardDados({
                 titulo: 'Altura',
-                valor: dadosUsuario.altura,
+                valor: dadosQuiz.altura,
                 icone: 'height',
                 cor: colors.accent.cyan,
                 unidade: 'm',
-                onPress: () => abrirModalEditar('altura', dadosUsuario.altura)
+                onPress: () => abrirModalEditar('altura', dadosQuiz.altura, 'numero')
               })}
               
               {renderizarCardIMC()}
             </View>
 
+            {/* Objetivos e preferências */}
+            {renderizarSecaoQuiz('Objetivos e Preferências', [
+              'objetivo',
+              'nivel_atividade',
+              'frequencia_treino',
+              'acesso_academia',
+              'dieta_atual'
+            ])}
+
+            {/* Treinos */}
+            {renderizarSecaoQuiz('Preferências de Treino', [
+              'historico_exercicios',
+              'tipo_treino_preferido',
+              'horario_preferido',
+              'duracao_treino'
+            ])}
+
+            {/* Hábitos e restrições */}
+            {renderizarSecaoQuiz('Hábitos e Restrições', [
+              'preferencias',
+              'habitos_alimentares',
+              'restricoes_medicas'
+            ])}
+
+            {/* Metas e motivação */}
+            {renderizarSecaoQuiz('Metas e Motivação', [
+              'metas_especificas',
+              'motivacao',
+              'obstaculos'
+            ])}
+
             {/* Preferências e objetivos */}
             <View style={estilos.secao}>
               <Text style={estilos.tituloSecao}>Preferências e Objetivos</Text>
-              
-              {renderizarCardDados({
-                titulo: 'Nível de Atividade',
-                valor: dadosUsuario.nivelAtividade?.charAt(0).toUpperCase() + dadosUsuario.nivelAtividade?.slice(1),
-                icone: 'directions-run',
-                cor: colors.accent.orange,
-                editavel: false
-              })}
-              
-              {renderizarCardDados({
-                titulo: 'Objetivo',
-                valor: dadosUsuario.objetivo?.charAt(0).toUpperCase() + dadosUsuario.objetivo?.slice(1),
-                icone: 'flag',
-                cor: colors.accent.yellow,
-                editavel: false
-              })}
               
               {renderizarCardDados({
                 titulo: 'Meta de Calorias',
@@ -431,9 +613,7 @@ export default function TelaMeusDados({ navigation }) {
           <View style={estilos.modalContainer}>
             <View style={estilos.modalHeader}>
               <Text style={estilos.modalTitulo}>
-                Editar {campoEditando === 'idade' ? 'Idade' : 
-                        campoEditando === 'peso' ? 'Peso' : 
-                        campoEditando === 'altura' ? 'Altura' : 'Campo'}
+                Editar {campoEditando?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
               </Text>
               <TouchableOpacity onPress={fecharModalEditar} style={estilos.botaoFechar}>
                 <MaterialIcons name="close" size={24} color={colors.neutral[400]} />
@@ -442,23 +622,49 @@ export default function TelaMeusDados({ navigation }) {
             
             <View style={estilos.inputContainer}>
               <Text style={estilos.inputLabel}>
-                {campoEditando === 'idade' ? 'Idade (anos)' : 
-                 campoEditando === 'peso' ? 'Peso (kg)' : 
-                 campoEditando === 'altura' ? 'Altura (metros)' : 'Valor'}
+                {campoEditando?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                {obterUnidade(campoEditando) && ` (${obterUnidade(campoEditando)})`}
               </Text>
-              <TextInput
-                style={estilos.input}
-                value={valorEditando}
-                onChangeText={setValorEditando}
-                placeholder={
-                  campoEditando === 'idade' ? 'Ex: 25' : 
-                  campoEditando === 'peso' ? 'Ex: 70.5' : 
-                  campoEditando === 'altura' ? 'Ex: 1.75' : 'Digite o valor'
-                }
-                placeholderTextColor={colors.neutral[400]}
-                keyboardType="numeric"
-                autoFocus={true}
-              />
+              
+              {tipoCampo === 'selecao' && campoEditando === 'sexo' ? (
+                <View style={estilos.selecaoContainer}>
+                  <TouchableOpacity 
+                    style={[
+                      estilos.opcaoSelecao,
+                      valorEditando === 'M' && estilos.opcaoSelecionada
+                    ]}
+                    onPress={() => setValorEditando('M')}
+                  >
+                    <Text style={[
+                      estilos.textoOpcao,
+                      valorEditando === 'M' && estilos.textoOpcaoSelecionada
+                    ]}>Masculino</Text>
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity 
+                    style={[
+                      estilos.opcaoSelecao,
+                      valorEditando === 'F' && estilos.opcaoSelecionada
+                    ]}
+                    onPress={() => setValorEditando('F')}
+                  >
+                    <Text style={[
+                      estilos.textoOpcao,
+                      valorEditando === 'F' && estilos.textoOpcaoSelecionada
+                    ]}>Feminino</Text>
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <TextInput
+                  style={estilos.input}
+                  value={valorEditando}
+                  onChangeText={setValorEditando}
+                  placeholder={`Digite ${campoEditando?.replace(/_/g, ' ').toLowerCase()}`}
+                  placeholderTextColor={colors.neutral[400]}
+                  keyboardType={tipoCampo === 'numero' ? 'numeric' : 'default'}
+                  autoFocus={true}
+                />
+              )}
             </View>
             
             <View style={estilos.modalBotoes}>
@@ -642,51 +848,6 @@ const estilos = StyleSheet.create({
     borderColor: colors.neutral[700],
   },
   
-  classificacaoIMC: {
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.medium,
-    marginTop: spacing.xs,
-    fontStyle: 'italic',
-  },
-  
-  legendaIMC: {
-    marginTop: spacing.lg,
-    paddingTop: spacing.lg,
-    borderTopWidth: borders.width.thin,
-    borderTopColor: colors.neutral[700],
-  },
-  
-  tituloLegenda: {
-    fontSize: typography.fontSize.base,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.neutral[100],
-    marginBottom: spacing.md,
-    textAlign: 'center',
-  },
-  
-  itensLegenda: {
-    gap: spacing.sm,
-  },
-  
-  itemLegenda: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  
-  pontoLegenda: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-  },
-  
-  textoLegenda: {
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.medium,
-    color: colors.neutral[300],
-    flex: 1,
-  },
-  
   // Botões de ação
   botoesAcao: {
     flexDirection: 'row',
@@ -831,4 +992,40 @@ const estilos = StyleSheet.create({
     fontWeight: typography.fontWeight.semibold,
     color: colors.neutral[50],
   },
-});
+
+  // Seleção de opções
+  selecaoContainer: {
+    flexDirection: 'row',
+    backgroundColor: colors.neutral[700],
+    borderRadius: borders.radius.lg,
+    padding: spacing.sm,
+    marginTop: spacing.sm,
+    borderWidth: 1,
+    borderColor: colors.neutral[600],
+  },
+
+  opcaoSelecao: {
+    flex: 1,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: borders.radius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  opcaoSelecionada: {
+    backgroundColor: colors.primary[600],
+    borderWidth: 1,
+    borderColor: colors.primary[600],
+  },
+
+  textoOpcao: {
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.neutral[50],
+  },
+
+  textoOpcaoSelecionada: {
+    color: colors.neutral[50],
+  },
+}); 

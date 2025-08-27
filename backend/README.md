@@ -104,6 +104,11 @@ O banco `nutrisnap` contém as seguintes tabelas:
 - `GET /api/treinos` - Listar treinos (requer auth)
 - `POST /api/treinos` - Criar treino (requer auth)
 
+### Quiz de Perfil
+- `GET /api/quiz` - Buscar respostas do quiz (requer auth)
+- `POST /api/quiz` - Salvar/atualizar respostas do quiz (requer auth)
+- `DELETE /api/quiz` - Deletar respostas do quiz (requer auth)
+
 ### Análise Nutricional
 - `POST /api/analise` - Analisar imagem de alimento (requer auth)
 
@@ -220,9 +225,7 @@ curl -X POST http://localhost:3000/api/analise \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer seu_token" \
   -d '{"dadosImagemBase64":"dados_base64_aqui"}'
-```
-
-## 📚 Desenvolvimento
+```## 📚 Desenvolvimento
 
 ### Estrutura de Arquivos
 ```
@@ -253,9 +256,7 @@ router.get('/protegida', requerAutenticacao, (req, res) => {
   // req.idUsuario contém o ID do usuário autenticado
   res.json({ mensagem: 'Rota protegida' });
 });
-```
-
-### Testando a API de Análise
+```### Testando a API de Análise
 ```bash
 # Teste manualmente com uma imagem real
 # 1. Capture uma foto de comida
@@ -278,3 +279,6 @@ MIT License - veja o arquivo LICENSE para detalhes.
 ## 📞 Suporte
 
 Para suporte, abra uma issue no repositório ou entre em contato com a equipe.
+
+
+

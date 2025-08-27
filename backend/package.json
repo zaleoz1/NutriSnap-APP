@@ -9,7 +9,8 @@
     "start": "NODE_ENV=production node server.js",
     "setup": "node setup.js",
     "setup:test": "node setup.js --create-test-user",
-    "test": "echo \"No tests specified\" && exit 0"
+    "test": "echo \"No tests specified\" && exit 0",
+    "test:auth": "node test-auth.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

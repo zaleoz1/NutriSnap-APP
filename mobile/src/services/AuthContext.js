@@ -72,6 +72,11 @@ export function ProvedorAutenticacao({ children }) {
         throw new Error('Token e usuário são obrigatórios');
       }
 
+      console.log('🔍 Fazendo login:', { 
+        tokenLength: novoToken.length,
+        usuario: novoUsuario.email 
+      });
+
       // Salvar no estado
       setToken(novoToken);
       setUsuario(novoUsuario);
@@ -83,6 +88,10 @@ export function ProvedorAutenticacao({ children }) {
       ]);
 
       console.log('✅ Login realizado com sucesso:', novoUsuario.email);
+      console.log('🔍 Token salvo no estado:', { 
+        tokenLength: novoToken.length,
+        tokenInicio: novoToken.substring(0, 20) + '...'
+      });
     } catch (erro) {
       console.error('❌ Erro ao fazer login:', erro);
       throw erro;

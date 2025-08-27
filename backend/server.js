@@ -8,6 +8,8 @@ import rotasRefeicoes from './routes/meals.js';
 import rotasMetas from './routes/goals.js';
 import rotasTreinos from './routes/workouts.js';
 import rotasAnalise from './routes/analyze.js';
+import rotasQuiz from './routes/quiz.js';
+import rotasUsuarios from './routes/usuarios.js';
 import bancoDados from './config/db.js';
 
 const aplicacao = express();
@@ -49,7 +51,13 @@ aplicacao.use('/api/', limitador);
 // Middleware de logging
 aplicacao.use((req, res, next) => {
   const timestamp = new Date().toISOString();
+  const authorization = req.headers.authorization ? 
+    `${req.headers.authorization.substring(0, 20)}...` : 'Nenhum';
+  
   console.log(`[${timestamp}] ${req.method} ${req.path} - ${req.ip}`);
+  console.log(`🔑 Authorization: ${authorization}`);
+  console.log(`👤 User ID: ${req.idUsuario || 'N/A'}`);
+  
   next();
 });
 
@@ -67,7 +75,9 @@ aplicacao.get('/', (req, res) => {
       refeicoes: '/api/refeicoes',
       metas: '/api/metas',
       treinos: '/api/treinos',
-      analise: '/api/analise'
+      analise: '/api/analise',
+      quiz: '/api/quiz',
+      usuarios: '/api/usuarios'
     }
   });
 });
@@ -98,10 +108,12 @@ aplicacao.get('/api/saude', async (req, res) => {
 
 // Rotas da API
 aplicacao.use('/api/autenticacao', rotasAutenticacao);
+aplicacao.use('/api/usuarios', rotasUsuarios);
 aplicacao.use('/api/refeicoes', rotasRefeicoes);
 aplicacao.use('/api/metas', rotasMetas);
 aplicacao.use('/api/treinos', rotasTreinos);
 aplicacao.use('/api/analise', rotasAnalise);
+aplicacao.use('/api/quiz', rotasQuiz);
 
 // Middleware de tratamento de erros 404
 aplicacao.use('*', (req, res) => {
