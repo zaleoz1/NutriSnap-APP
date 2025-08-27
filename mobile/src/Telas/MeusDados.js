@@ -633,17 +633,7 @@ export default function TelaMeusDados({ navigation }) {
           
           <Text style={estilos.tituloHeader}>Meus Dados</Text>
           
-          <TouchableOpacity 
-            style={estilos.botaoEditarPerfil}
-            onPress={() => setEditando(!editando)}
-            activeOpacity={0.8}
-          >
-            <MaterialIcons 
-              name={editando ? "check" : "edit"} 
-              size={24} 
-              color={colors.neutral[50]} 
-            />
-          </TouchableOpacity>
+
         </View>
         
         <Text style={estilos.subtituloHeader}>

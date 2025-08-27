@@ -412,11 +412,14 @@ export default function TelaPrincipal({ navigation }) {
           <View style={estilos.centralButtonGlow} />
         </TouchableOpacity>
         
-        <TouchableOpacity style={estilos.navItem}>
+        <TouchableOpacity 
+          style={estilos.navItem}
+          onPress={() => navigation.navigate('Metas')}
+        >
           <View style={estilos.navIcon}>
-            <MaterialIcons name="trending-up" size={24} color={colors.neutral[400]} />
+            <MaterialIcons name="flag" size={24} color={colors.neutral[400]} />
           </View>
-          <Text style={estilos.navLabel}>Progresso</Text>
+          <Text style={estilos.navLabel}>Metas</Text>
         </TouchableOpacity>
         
         <TouchableOpacity 
