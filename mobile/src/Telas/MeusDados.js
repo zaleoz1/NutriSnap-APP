@@ -257,9 +257,22 @@ export default function TelaMeusDados({ navigation }) {
   const abrirModalEditar = (campo, valor, tipo = 'texto') => {
     if (!campo) return;
     
+    // Detectar automaticamente o tipo de campo baseado no nome
+    let tipoCampoDetectado = tipo;
+    
+    if (['objetivo', 'nivel_atividade', 'frequencia_treino', 'acesso_academia', 
+         'dieta_atual', 'historico_exercicios', 'horario_preferido', 'duracao_treino', 
+         'motivacao', 'sexo'].includes(campo)) {
+      tipoCampoDetectado = 'selecao';
+    } else if (['idade', 'altura', 'peso_atual', 'peso_meta', 'duracao_treino'].includes(campo)) {
+      tipoCampoDetectado = 'numero';
+    } else {
+      tipoCampoDetectado = 'texto';
+    }
+    
     setCampoEditando(campo);
     setValorEditando(valor || '');
-    setTipoCampo(tipo);
+    setTipoCampo(tipoCampoDetectado);
     setModalEditar(true);
   };
 
@@ -358,7 +371,11 @@ export default function TelaMeusDados({ navigation }) {
             </Text>
           </View>
           {editavel && (
-            <TouchableOpacity style={estilos.botaoEditar}>
+            <TouchableOpacity 
+              style={estilos.botaoEditar}
+              onPress={onPress}
+              activeOpacity={0.7}
+            >
               <MaterialIcons name="edit" size={20} color={colors.neutral[400]} />
             </TouchableOpacity>
           )}
@@ -653,6 +670,206 @@ export default function TelaMeusDados({ navigation }) {
                       valorEditando === 'F' && estilos.textoOpcaoSelecionada
                     ]}>Feminino</Text>
                   </TouchableOpacity>
+                </View>
+              ) : tipoCampo === 'selecao' && campoEditando === 'objetivo' ? (
+                <View style={estilos.selecaoContainer}>
+                  {['emagrecer', 'manter', 'ganhar_massa'].map((opcao) => (
+                    <TouchableOpacity 
+                      key={opcao}
+                      style={[
+                        estilos.opcaoSelecao,
+                        valorEditando === opcao && estilos.opcaoSelecionada
+                      ]}
+                      onPress={() => setValorEditando(opcao)}
+                    >
+                      <Text style={[
+                        estilos.textoOpcao,
+                        valorEditando === opcao && estilos.textoOpcaoSelecionada
+                      ]}>
+                        {opcao === 'emagrecer' ? 'Emagrecer' : 
+                         opcao === 'manter' ? 'Manter Peso' : 'Ganhar Massa'}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              ) : tipoCampo === 'selecao' && campoEditando === 'nivel_atividade' ? (
+                <View style={estilos.selecaoContainer}>
+                  {['sedentario', 'leve', 'moderado', 'ativo', 'muito_ativo'].map((opcao) => (
+                    <TouchableOpacity 
+                      key={opcao}
+                      style={[
+                        estilos.opcaoSelecao,
+                        valorEditando === opcao && estilos.opcaoSelecionada
+                      ]}
+                      onPress={() => setValorEditando(opcao)}
+                    >
+                      <Text style={[
+                        estilos.textoOpcao,
+                        valorEditando === opcao && estilos.textoOpcaoSelecionada
+                      ]}>
+                        {opcao === 'sedentario' ? 'Sedentário' : 
+                         opcao === 'leve' ? 'Leve' : 
+                         opcao === 'moderado' ? 'Moderado' : 
+                         opcao === 'ativo' ? 'Ativo' : 'Muito Ativo'}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              ) : tipoCampo === 'selecao' && campoEditando === 'frequencia_treino' ? (
+                <View style={estilos.selecaoContainer}>
+                  {['1_2_vezes', '3_4_vezes', '5_6_vezes', 'diario'].map((opcao) => (
+                    <TouchableOpacity 
+                      key={opcao}
+                      style={[
+                        estilos.opcaoSelecao,
+                        valorEditando === opcao && estilos.opcaoSelecionada
+                      ]}
+                      onPress={() => setValorEditando(opcao)}
+                    >
+                      <Text style={[
+                        estilos.textoOpcao,
+                        valorEditando === opcao && estilos.textoOpcaoSelecionada
+                      ]}>
+                        {opcao === '1_2_vezes' ? '1-2 vezes/semana' : 
+                         opcao === '3_4_vezes' ? '3-4 vezes/semana' : 
+                         opcao === '5_6_vezes' ? '5-6 vezes/semana' : 'Diário'}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              ) : tipoCampo === 'selecao' && campoEditando === 'acesso_academia' ? (
+                <View style={estilos.selecaoContainer}>
+                  {['academia_completa', 'academia_basica', 'casa', 'ar_livre'].map((opcao) => (
+                    <TouchableOpacity 
+                      key={opcao}
+                      style={[
+                        estilos.opcaoSelecao,
+                        valorEditando === opcao && estilos.opcaoSelecionada
+                      ]}
+                      onPress={() => setValorEditando(opcao)}
+                    >
+                      <Text style={[
+                        estilos.textoOpcao,
+                        valorEditando === opcao && estilos.textoOpcaoSelecionada
+                      ]}>
+                        {opcao === 'academia_completa' ? 'Academia Completa' : 
+                         opcao === 'academia_basica' ? 'Academia Básica' : 
+                         opcao === 'casa' ? 'Casa' : 'Ar Livre'}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              ) : tipoCampo === 'selecao' && campoEditando === 'dieta_atual' ? (
+                <View style={estilos.selecaoContainer}>
+                  {['nao_controlo', 'controlo_parcial', 'controlo_total', 'dieta_especifica'].map((opcao) => (
+                    <TouchableOpacity 
+                      key={opcao}
+                      style={[
+                        estilos.opcaoSelecao,
+                        valorEditando === opcao && estilos.opcaoSelecionada
+                      ]}
+                      onPress={() => setValorEditando(opcao)}
+                    >
+                      <Text style={[
+                        estilos.textoOpcao,
+                        valorEditando === opcao && estilos.textoOpcaoSelecionada
+                      ]}>
+                        {opcao === 'nao_controlo' ? 'Não Controlo' : 
+                         opcao === 'controlo_parcial' ? 'Controlo Parcial' : 
+                         opcao === 'controlo_total' ? 'Controlo Total' : 'Dieta Específica'}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              ) : tipoCampo === 'selecao' && campoEditando === 'historico_exercicios' ? (
+                <View style={estilos.selecaoContainer}>
+                  {['iniciante', 'intermediario', 'avancado', 'atleta'].map((opcao) => (
+                    <TouchableOpacity 
+                      key={opcao}
+                      style={[
+                        estilos.opcaoSelecao,
+                        valorEditando === opcao && estilos.opcaoSelecionada
+                      ]}
+                      onPress={() => setValorEditando(opcao)}
+                    >
+                      <Text style={[
+                        estilos.textoOpcao,
+                        valorEditando === opcao && estilos.textoOpcaoSelecionada
+                      ]}>
+                        {opcao === 'iniciante' ? 'Iniciante' : 
+                         opcao === 'intermediario' ? 'Intermediário' : 
+                         opcao === 'avancado' ? 'Avançado' : 'Atleta'}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              ) : tipoCampo === 'selecao' && campoEditando === 'horario_preferido' ? (
+                <View style={estilos.selecaoContainer}>
+                  {['manha', 'tarde', 'noite', 'flexivel'].map((opcao) => (
+                    <TouchableOpacity 
+                      key={opcao}
+                      style={[
+                        estilos.opcaoSelecao,
+                        valorEditando === opcao && estilos.opcaoSelecionada
+                      ]}
+                      onPress={() => setValorEditando(opcao)}
+                    >
+                      <Text style={[
+                        estilos.textoOpcao,
+                        valorEditando === opcao && estilos.textoOpcaoSelecionada
+                      ]}>
+                        {opcao === 'manha' ? 'Manhã' : 
+                         opcao === 'tarde' ? 'Tarde' : 
+                         opcao === 'noite' ? 'Noite' : 'Flexível'}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              ) : tipoCampo === 'selecao' && campoEditando === 'duracao_treino' ? (
+                <View style={estilos.selecaoContainer}>
+                  {['30_min', '45_min', '60_min', '90_min', '120_min'].map((opcao) => (
+                    <TouchableOpacity 
+                      key={opcao}
+                      style={[
+                        estilos.opcaoSelecao,
+                        valorEditando === opcao && estilos.opcaoSelecionada
+                      ]}
+                      onPress={() => setValorEditando(opcao)}
+                    >
+                      <Text style={[
+                        estilos.textoOpcao,
+                        valorEditando === opcao && estilos.textoOpcaoSelecionada
+                      ]}>
+                        {opcao === '30_min' ? '30 minutos' : 
+                         opcao === '45_min' ? '45 minutos' : 
+                         opcao === '60_min' ? '60 minutos' : 
+                         opcao === '90_min' ? '90 minutos' : '120 minutos'}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              ) : tipoCampo === 'selecao' && campoEditando === 'motivacao' ? (
+                <View style={estilos.selecaoContainer}>
+                  {['saude', 'estetica', 'desempenho', 'competicao', 'bem_estar'].map((opcao) => (
+                    <TouchableOpacity 
+                      key={opcao}
+                      style={[
+                        estilos.opcaoSelecao,
+                        valorEditando === opcao && estilos.opcaoSelecionada
+                      ]}
+                      onPress={() => setValorEditando(opcao)}
+                    >
+                      <Text style={[
+                        estilos.textoOpcao,
+                        valorEditando === opcao && estilos.textoOpcaoSelecionada
+                      ]}>
+                        {opcao === 'saude' ? 'Saúde' : 
+                         opcao === 'estetica' ? 'Estética' : 
+                         opcao === 'desempenho' ? 'Desempenho' : 
+                         opcao === 'competicao' ? 'Competição' : 'Bem-estar'}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
                 </View>
               ) : (
                 <TextInput
