@@ -58,7 +58,36 @@ roteador.post('/', requerAutenticacao, async (req, res) => {
       [req.idUsuario]
     );
 
+    console.log(`🔍 Verificando quiz para usuário ${req.idUsuario}: ${existentes.length > 0 ? 'EXISTE' : 'NÃO EXISTE'}`);
+
     if (existentes.length > 0) {
+      console.log(`📝 Fazendo UPDATE do quiz existente para usuário ${req.idUsuario}`);
+      
+      // ✅ CORREÇÃO: Garantir que campos vazios sejam tratados como NULL
+      const dadosParaAtualizar = [
+        idade || null, 
+        sexo || null, 
+        altura || null, 
+        peso_atual || null, 
+        peso_meta || null,
+        objetivo || null, 
+        nivel_atividade || null, 
+        frequencia_treino || null, 
+        acesso_academia || null, 
+        dieta_atual || null,
+        JSON.stringify(preferencias || {}), 
+        JSON.stringify(habitos_alimentares || {}), 
+        JSON.stringify(restricoes_medicas || {}),
+        historico_exercicios || null, 
+        JSON.stringify(tipo_treino_preferido || {}), 
+        horario_preferido || null, 
+        duracao_treino || null,
+        JSON.stringify(metas_especificas || {}), 
+        motivacao || null, 
+        JSON.stringify(obstaculos || {}),
+        req.idUsuario
+      ];
+
       // Atualizar resposta existente
       await bancoDados.query(`
         UPDATE quiz_respostas SET
@@ -69,18 +98,38 @@ roteador.post('/', requerAutenticacao, async (req, res) => {
           metas_especificas = ?, motivacao = ?, obstaculos = ?,
           atualizado_em = CURRENT_TIMESTAMP
         WHERE id_usuario = ?
-      `, [
-        idade, sexo, altura, peso_atual, peso_meta,
-        objetivo, nivel_atividade, frequencia_treino, acesso_academia, dieta_atual,
-        JSON.stringify(preferencias || {}), JSON.stringify(habitos_alimentares || {}), JSON.stringify(restricoes_medicas || {}),
-        historico_exercicios, JSON.stringify(tipo_treino_preferido || {}), horario_preferido, duracao_treino,
-        JSON.stringify(metas_especificas || {}), motivacao, JSON.stringify(obstaculos || {}),
-        req.idUsuario
-      ]);
+      `, dadosParaAtualizar);
       
       console.log(`✅ Quiz atualizado para usuário ${req.idUsuario}`);
       res.json({ mensagem: 'Quiz atualizado com sucesso' });
     } else {
+      console.log(`🆕 Fazendo INSERT de novo quiz para usuário ${req.idUsuario}`);
+      
+      // ✅ CORREÇÃO: Garantir que campos vazios sejam tratados como NULL
+      const dadosParaInserir = [
+        req.idUsuario, 
+        idade || null, 
+        sexo || null, 
+        altura || null, 
+        peso_atual || null, 
+        peso_meta || null,
+        objetivo || null, 
+        nivel_atividade || null, 
+        frequencia_treino || null, 
+        acesso_academia || null, 
+        dieta_atual || null,
+        JSON.stringify(preferencias || {}), 
+        JSON.stringify(habitos_alimentares || {}), 
+        JSON.stringify(restricoes_medicas || {}),
+        historico_exercicios || null, 
+        JSON.stringify(tipo_treino_preferido || {}), 
+        horario_preferido || null, 
+        duracao_treino || null,
+        JSON.stringify(metas_especificas || {}), 
+        motivacao || null, 
+        JSON.stringify(obstaculos || {})
+      ];
+
       // Inserir nova resposta
       await bancoDados.query(`
         INSERT INTO quiz_respostas (
@@ -90,13 +139,7 @@ roteador.post('/', requerAutenticacao, async (req, res) => {
           historico_exercicios, tipo_treino_preferido, horario_preferido, duracao_treino,
           metas_especificas, motivacao, obstaculos
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `, [
-        req.idUsuario, idade, sexo, altura, peso_atual, peso_meta,
-        objetivo, nivel_atividade, frequencia_treino, acesso_academia, dieta_atual,
-        JSON.stringify(preferencias || {}), JSON.stringify(habitos_alimentares || {}), JSON.stringify(restricoes_medicas || {}),
-        historico_exercicios, JSON.stringify(tipo_treino_preferido || {}), horario_preferido, duracao_treino,
-        JSON.stringify(metas_especificas || {}), motivacao, JSON.stringify(obstaculos || {})
-      ]);
+      `, dadosParaInserir);
       
       console.log(`✅ Quiz salvo para usuário ${req.idUsuario}`);
       res.status(201).json({ mensagem: 'Quiz salvo com sucesso' });

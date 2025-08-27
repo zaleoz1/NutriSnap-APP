@@ -158,23 +158,115 @@ export default function TelaMeusDados({ navigation }) {
   const formatarValor = (valor, campo) => {
     if (!valor || !campo) return 'Não informado';
     
+    // ✅ FUNÇÃO AUXILIAR: Formatar texto removendo underscores e capitalizando
+    const formatarTexto = (texto) => {
+      if (!texto || typeof texto !== 'string') return texto;
+      
+      // Substituir underscores por espaços e capitalizar cada palavra
+      return texto
+        .replace(/_/g, ' ')
+        .split(' ')
+        .map(palavra => palavra.charAt(0).toUpperCase() + palavra.slice(1).toLowerCase())
+        .join(' ');
+    };
+    
     switch (campo) {
       case 'sexo':
-        return valor === 'M' ? 'Masculino' : valor === 'F' ? 'Feminino' : valor;
+        if (valor === 'M' || valor === 'masculino') return 'Masculino';
+        if (valor === 'F' || valor === 'feminino') return 'Feminino';
+        return formatarTexto(valor);
+        
       case 'objetivo':
-        return valor.charAt(0).toUpperCase() + valor.slice(1);
+        const objetivos = {
+          'emagrecer': 'Emagrecer',
+          'ganhar_peso': 'Ganhar Peso',
+          'manter_peso': 'Manter Peso',
+          'ganhar_massa': 'Ganhar Massa',
+          'definir_musculos': 'Definir Músculos',
+          'melhorar_resistencia': 'Melhorar Resistência',
+          'saude_geral': 'Saúde Geral'
+        };
+        return objetivos[valor] || formatarTexto(valor);
+        
       case 'nivel_atividade':
-        return valor.charAt(0).toUpperCase() + valor.slice(1);
+        const niveis = {
+          'sedentario': 'Sedentário',
+          'leve': 'Leve',
+          'moderado': 'Moderado',
+          'ativo': 'Ativo',
+          'atleta': 'Atleta'
+        };
+        return niveis[valor] || formatarTexto(valor);
+        
       case 'frequencia_treino':
-        return valor.charAt(0).toUpperCase() + valor.slice(1);
+        const frequencias = {
+          '1_2_vezes': '1-2 vezes por semana',
+          '3_4_vezes': '3-4 vezes por semana',
+          '5_6_vezes': '5-6 vezes por semana',
+          'diario': 'Diário'
+        };
+        return frequencias[valor] || formatarTexto(valor);
+        
       case 'acesso_academia':
-        return valor.charAt(0).toUpperCase() + valor.slice(1);
+        const acessos = {
+          'academia_completa': 'Academia Completa',
+          'academia_basica': 'Academia Básica',
+          'casa': 'Casa',
+          'parque': 'Parque',
+          'sem_acesso': 'Sem Acesso'
+        };
+        return acessos[valor] || formatarTexto(valor);
+        
       case 'dieta_atual':
-        return valor.charAt(0).toUpperCase() + valor.slice(1);
+        const dietas = {
+          'nao_controlo': 'Não Controlo',
+          'vegetariana': 'Vegetariana',
+          'vegana': 'Vegana',
+          'low_carb': 'Low Carb',
+          'keto': 'Cetogênica',
+          'mediterranea': 'Mediterrânea',
+          'sem_restricoes': 'Sem Restrições'
+        };
+        return dietas[valor] || formatarTexto(valor);
+        
       case 'historico_exercicios':
-        return valor.charAt(0).toUpperCase() + valor.slice(1);
+        const historicos = {
+          'iniciante': 'Iniciante',
+          'intermediario': 'Intermediário',
+          'avancado': 'Avançado',
+          'profissional': 'Profissional'
+        };
+        return historicos[valor] || formatarTexto(valor);
+        
+      case 'horario_preferido':
+        const horarios = {
+          'manha': 'Manhã',
+          'tarde': 'Tarde',
+          'noite': 'Noite',
+          'flexivel': 'Flexível'
+        };
+        return horarios[valor] || formatarTexto(valor);
+        
+      case 'duracao_treino':
+        const duracoes = {
+          '30_min': '30 minutos',
+          '45_min': '45 minutos',
+          '60_min': '1 hora',
+          '90_min': '1 hora e 30 min',
+          '120_min': '2 horas'
+        };
+        return duracoes[valor] || formatarTexto(valor);
+        
       case 'motivacao':
-        return valor.charAt(0).toUpperCase() + valor.slice(1);
+        const motivacoes = {
+          'saude': 'Saúde',
+          'estetica': 'Estética',
+          'performance': 'Performance',
+          'competicao': 'Competição',
+          'bem_estar': 'Bem-estar'
+        };
+        return motivacoes[valor] || formatarTexto(valor);
+        
       case 'preferencias':
       case 'habitos_alimentares':
       case 'restricoes_medicas':
@@ -184,11 +276,84 @@ export default function TelaMeusDados({ navigation }) {
         if (typeof valor === 'object' && valor !== null) {
           const chaves = Object.keys(valor);
           if (chaves.length === 0) return 'Não informado';
-          return chaves.join(', ');
+          
+          // Formatar cada chave individualmente
+          const chavesFormatadas = chaves.map(chave => {
+            // Mapear valores específicos para cada tipo
+            if (campo === 'preferencias') {
+              const preferencias = {
+                'sem_restricoes': 'Sem Restrições',
+                'vegetariano': 'Vegetariano',
+                'vegano': 'Vegano',
+                'sem_gluten': 'Sem Glúten',
+                'sem_lactose': 'Sem Lactose'
+              };
+              return preferencias[chave] || formatarTexto(chave);
+            }
+            
+            if (campo === 'habitos_alimentares') {
+              const habitos = {
+                'lanches': 'Faz Lanches',
+                'refeicoes_regulares': 'Refeições Regulares',
+                'jejum_intermitente': 'Jejum Intermitente',
+                'dieta_restritiva': 'Dieta Restritiva'
+              };
+              return habitos[chave] || formatarTexto(chave);
+            }
+            
+            if (campo === 'restricoes_medicas') {
+              const restricoes = {
+                'nenhuma': 'Nenhuma',
+                'diabetes': 'Diabetes',
+                'hipertensao': 'Hipertensão',
+                'colesterol_alto': 'Colesterol Alto',
+                'intolerancia_lactose': 'Intolerância à Lactose'
+              };
+              return restricoes[chave] || formatarTexto(chave);
+            }
+            
+            if (campo === 'tipo_treino_preferido') {
+              const tipos = {
+                'cardio': 'Cardiovascular',
+                'forca': 'Força',
+                'flexibilidade': 'Flexibilidade',
+                'equilibrio': 'Equilíbrio',
+                'funcional': 'Funcional'
+              };
+              return tipos[chave] || formatarTexto(chave);
+            }
+            
+            if (campo === 'metas_especificas') {
+              const metas = {
+                'resistencia': 'Resistência',
+                'forca_maxima': 'Força Máxima',
+                'hipertrofia': 'Hipertrofia',
+                'emagrecimento': 'Emagrecimento',
+                'flexibilidade': 'Flexibilidade'
+              };
+              return metas[chave] || formatarTexto(chave);
+            }
+            
+            if (campo === 'obstaculos') {
+              const obstaculos = {
+                'falta_tempo': 'Falta de Tempo',
+                'falta_motivacao': 'Falta de Motivação',
+                'falta_dinheiro': 'Falta de Dinheiro',
+                'falta_conhecimento': 'Falta de Conhecimento',
+                'problemas_saude': 'Problemas de Saúde'
+              };
+              return obstaculos[chave] || formatarTexto(chave);
+            }
+            
+            return formatarTexto(chave);
+          });
+          
+          return chavesFormatadas.join(', ');
         }
         return valor;
+        
       default:
-        return valor;
+        return formatarTexto(valor);
     }
   };
 
@@ -289,9 +454,26 @@ export default function TelaMeusDados({ navigation }) {
       return;
     }
 
+    // ✅ VERIFICAÇÃO ADICIONAL: Garantir que dadosQuiz não esteja vazio
+    if (!dadosQuiz || Object.keys(dadosQuiz).length === 0) {
+      Alert.alert('Erro', 'Dados do quiz não foram carregados. Tente novamente.');
+      return;
+    }
+
     setSalvando(true);
     try {
-      const dadosAtualizados = { [campoEditando]: valorEditando };
+      // ✅ CORREÇÃO: Enviar todos os dados existentes + a edição
+      const dadosAtualizados = {
+        ...dadosQuiz,  // Todos os dados existentes
+        [campoEditando]: valorEditando  // Campo editado
+      };
+      
+      console.log('🔍 Dados sendo enviados para atualização:', {
+        campoEditando,
+        valorEditando,
+        dadosExistentes: dadosQuiz,
+        dadosCompletos: dadosAtualizados
+      });
       
       // Atualizar no backend - quiz
       await buscarApi('/api/quiz', {
@@ -299,6 +481,8 @@ export default function TelaMeusDados({ navigation }) {
         token,
         body: dadosAtualizados
       });
+
+      console.log('✅ Dados atualizados com sucesso no backend');
 
       // Atualizar estado local
       setDadosQuiz(prev => ({
@@ -341,6 +525,7 @@ export default function TelaMeusDados({ navigation }) {
       fecharModalEditar();
       Alert.alert('Sucesso', 'Dados atualizados com sucesso!');
     } catch (erro) {
+      console.error('❌ Erro ao atualizar dados:', erro);
       Alert.alert('Erro', 'Não foi possível atualizar os dados');
     } finally {
       setSalvando(false);
@@ -875,7 +1060,15 @@ export default function TelaMeusDados({ navigation }) {
                 <TextInput
                   style={estilos.input}
                   value={valorEditando}
-                  onChangeText={setValorEditando}
+                  onChangeText={(texto) => {
+                    // Substituir vírgulas por pontos para campos numéricos
+                    if (tipoCampo === 'numero') {
+                      const textoFormatado = texto.replace(',', '.');
+                      setValorEditando(textoFormatado);
+                    } else {
+                      setValorEditando(texto);
+                    }
+                  }}
                   placeholder={`Digite ${campoEditando?.replace(/_/g, ' ').toLowerCase()}`}
                   placeholderTextColor={colors.neutral[400]}
                   keyboardType={tipoCampo === 'numero' ? 'numeric' : 'default'}

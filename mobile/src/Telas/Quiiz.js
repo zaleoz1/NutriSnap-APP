@@ -268,6 +268,7 @@ export default function Quiz({ navigation, route }) {
         [questionId]: answerId
       }));
     } else if (currentQuestion.type === 'form') {
+      // Para campos de formulário, o processamento da vírgula é feito no onChangeText
       setAnswers(prev => ({
         ...prev,
         [questionId]: {
@@ -657,7 +658,15 @@ export default function Quiz({ navigation, route }) {
               <TextInput
                 style={styles.textInput}
                 value={answers[currentQuestion.id]?.[field.id] || ''}
-                onChangeText={(value) => handleAnswer(currentQuestion.id, field.id, value)}
+                onChangeText={(value) => {
+                  // Para campos numéricos, transformar vírgula em ponto
+                  if (field.type === 'numeric') {
+                    const processedValue = value.replace(',', '.');
+                    handleAnswer(currentQuestion.id, field.id, processedValue);
+                  } else {
+                    handleAnswer(currentQuestion.id, field.id, value);
+                  }
+                }}
                 placeholder={field.placeholder}
                 placeholderTextColor={colors.neutral[500]}
                 keyboardType={field.type === 'numeric' ? 'numeric' : 'default'}
