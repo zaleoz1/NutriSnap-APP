@@ -464,7 +464,6 @@ export default function TelaPrincipal({ navigation }) {
                 </View>
                 <View style={estilos.modalOptionContent}>
                   <Text style={estilos.modalOptionTitle}>Fotografar Refeição</Text>
-                  <Text style={estilos.modalOptionDesc}>Analise a nutrição da sua comida</Text>
                 </View>
                 <Ionicons name="chevron-forward" size={20} color={colors.neutral[400]} />
               </TouchableOpacity>
@@ -479,7 +478,6 @@ export default function TelaPrincipal({ navigation }) {
                 </View>
                 <View style={estilos.modalOptionContent}>
                   <Text style={estilos.modalOptionTitle}>Calcular IMC</Text>
-                  <Text style={estilos.modalOptionDesc}>Avalie seu índice de massa corporal</Text>
                 </View>
                 <Ionicons name="chevron-forward" size={20} color={colors.neutral[400]} />
               </TouchableOpacity>
@@ -494,7 +492,6 @@ export default function TelaPrincipal({ navigation }) {
                 </View>
                 <View style={estilos.modalOptionContent}>
                   <Text style={estilos.modalOptionTitle}>Meus Dados</Text>
-                  <Text style={estilos.modalOptionDesc}>Visualize e edite seu perfil</Text>
                 </View>
                 <Ionicons name="chevron-forward" size={20} color={colors.neutral[400]} />
               </TouchableOpacity>
@@ -509,7 +506,6 @@ export default function TelaPrincipal({ navigation }) {
                 </View>
                 <View style={estilos.modalOptionContent}>
                   <Text style={estilos.modalOptionTitle}>Plano de Treino</Text>
-                  <Text style={estilos.modalOptionDesc}>Gerencie seus exercícios</Text>
                 </View>
                 <Ionicons name="chevron-forward" size={20} color={colors.neutral[400]} />
               </TouchableOpacity>

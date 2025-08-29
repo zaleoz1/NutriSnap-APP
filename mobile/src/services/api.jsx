@@ -1,139 +1,261 @@
-import { Platform } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Função para detectar IP automaticamente
-function detectarIP() {
-  // Em desenvolvimento, tentar detectar IP automaticamente
-  if (__DEV__) {
-    // IPs comuns para desenvolvimento
-    const ipsPossiveis = [
-      'http://192.168.0.135:3000',  // IP original
-      'http://192.168.1.100:3000',  // IP alternativo comum
-      'http://10.0.2.2:3000',       // Android Emulator
-      'http://localhost:3000',       // Local
-      'http://127.0.0.1:3000'       // Loopback
-    ];
-    
-    // Por enquanto, usar o IP original
-    // Em uma implementação real, você poderia fazer ping para detectar
-    return ipsPossiveis[0];
-  }
-  
-  // Em produção, usar URL de produção
-  return 'https://seu-dominio.com';
-}
+// Configuração da API
+export const URL_BASE = 'http://192.168.0.135:3000';
 
-// URL base da API
-export const URL_BASE = detectarIP();
-
-// Função principal para fazer requisições à API
-export async function buscarApi(caminho, { method = 'GET', token, body, retries = 2 } = {}) {
-  let ultimoErro;
-  
-  for (let tentativa = 0; tentativa <= retries; tentativa++) {
-    try {
-      const url = `${URL_BASE}${caminho}`;
-      
-      // Configurar cabeçalhos
-      const cabecalhos = { 
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      };
-      
-      if (token) {
-        cabecalhos['Authorization'] = `Bearer ${token}`;
-      }
-      
-      // Configurar opções da requisição
-      const opcoes = { 
-        method, 
-        headers: cabecalhos,
-        timeout: 15000 // Aumentado para 15 segundos
-      };
-      
-      if (body && method !== 'GET') {
-        opcoes.body = JSON.stringify(body);
-      }
-      
-      console.log(`🌐 API Request: ${method} ${url} (tentativa ${tentativa + 1})`);
-      if (body) console.log('📦 Body:', body);
-      
-      // Fazer requisição
-      const resposta = await fetch(url, opcoes);
-      
-      // Verificar se a resposta é JSON
-      const contentType = resposta.headers.get('content-type');
-      let dados;
-      
-      if (contentType && contentType.includes('application/json')) {
-        dados = await resposta.json();
-      } else {
-        dados = { mensagem: await resposta.text() };
-      }
-      
-      // Log da resposta
-      console.log(`📡 API Response: ${resposta.status} ${resposta.statusText}`);
-      
-      // Verificar se houve erro HTTP
-      if (!resposta.ok) {
-        const erro = new Error(dados.mensagem || `Erro ${resposta.status}: ${resposta.statusText}`);
-        erro.status = resposta.status;
-        erro.dados = dados;
-        throw erro;
-      }
-      
-      return dados;
-      
-    } catch (erro) {
-      ultimoErro = erro;
-      console.error(`❌ Erro na API (tentativa ${tentativa + 1}):`, erro.message);
-      
-      // Se não é a última tentativa e é um erro de rede, tentar novamente
-      if (tentativa < retries && (
-        erro.name === 'TypeError' && erro.message.includes('fetch') ||
-        erro.message.includes('Network request failed')
-      )) {
-        console.log(`🔄 Tentando novamente em ${(tentativa + 1) * 1000}ms...`);
-        await new Promise(resolve => setTimeout(resolve, (tentativa + 1) * 1000));
-        continue;
-      }
-      
-      // Se é a última tentativa ou não é erro de rede, parar
-      break;
-    }
-  }
-  
-  // Todas as tentativas falharam
-  console.error('❌ Todas as tentativas falharam');
-  
-  // Tratar erros específicos
-  if (ultimoErro.name === 'TypeError' && ultimoErro.message.includes('fetch')) {
-    throw new Error('Erro de conexão. Verifique sua internet e se o servidor está rodando.');
-  }
-  
-  if (ultimoErro.status === 401) {
-    throw new Error('Sessão expirada. Faça login novamente.');
-  }
-  
-  if (ultimoErro.status === 403) {
-    throw new Error('Acesso negado. Verifique suas permissões.');
-  }
-  
-  if (ultimoErro.status === 404) {
-    throw new Error('Recurso não encontrado.');
-  }
-  
-  if (ultimoErro.status === 500) {
-    throw new Error('Erro interno do servidor. Tente novamente mais tarde.');
-  }
-  
-  // Erro genérico
-  throw new Error(ultimoErro.message || 'Erro desconhecido na comunicação com o servidor.');
-}
-
-// Função para testar conectividade com o servidor
-export async function testarConexao() {
+// Função para buscar dados da API
+export async function buscarApi(endpoint, opcoes = {}) {
   try {
-    const resposta = await buscarApi('/api/saude');
+    const { method = 'GET', token, body, headers = {} } = opcoes;
+    
+    // Configurar headers
+    const headersConfig = {
+      'Content-Type': 'application/json',
+      ...headers
+    };
+    
+    // Adicionar token de autenticação se fornecido
+    if (token) {
+      headersConfig.Authorization = `Bearer ${token}`;
+    }
+    
+    // Configurar opções da requisição
+    const config = {
+      method,
+      headers: headersConfig,
+    };
+    
+    // Adicionar body para métodos POST, PUT, PATCH
+    if (body && ['POST', 'PUT', 'PATCH'].includes(method)) {
+      config.body = JSON.stringify(body);
+    }
+    
+    console.log(`🌐 API Request: ${method} ${URL_BASE}${endpoint}`);
+    if (body) console.log('📦 Body:', body);
+    
+    // Fazer a requisição
+    const resposta = await fetch(`${URL_BASE}${endpoint}`, config);
+    
+    console.log(`📡 API Response: ${resposta.status} ${resposta.statusText}`);
+    
+    // Verificar se a resposta é ok
+    if (!resposta.ok) {
+      let mensagemErro = 'Erro na requisição';
+      
+      try {
+        const erroData = await resposta.json();
+        mensagemErro = erroData.mensagem || erroData.message || mensagemErro;
+      } catch {
+        mensagemErro = resposta.statusText || mensagemErro;
+      }
+      
+      const erro = new Error(mensagemErro);
+      erro.status = resposta.status;
+      erro.response = resposta;
+      throw erro;
+    }
+    
+    // Tentar fazer parse da resposta como JSON
+    try {
+      const dados = await resposta.json();
+      console.log('✅ API Success:', dados);
+      return dados;
+    } catch (erroParse) {
+      console.log('⚠️ Resposta não é JSON válido, retornando texto');
+      return await resposta.text();
+    }
+    
+  } catch (erro) {
+    console.error('❌ API Error:', erro);
+    
+    // Se for erro de rede, adicionar contexto
+    if (erro.name === 'TypeError' && erro.message.includes('fetch')) {
+      erro.message = 'Erro de conexão. Verifique sua internet e tente novamente.';
+    }
+    
+    throw erro;
+  }
+}
+
+// Funções específicas para autenticação
+export async function registrarUsuario(dados) {
+  return buscarApi('/api/autenticacao/registrar', {
+    method: 'POST',
+    body: dados
+  });
+}
+
+export async function fazerLogin(dados) {
+  return buscarApi('/api/autenticacao/entrar', {
+    method: 'POST',
+    body: dados
+  });
+}
+
+export async function verificarToken(token) {
+  return buscarApi('/api/autenticacao/verificar', {
+    method: 'GET',
+    token
+  });
+}
+
+// Funções para usuários
+export async function buscarPerfilUsuario(token) {
+  return buscarApi('/api/usuarios/perfil', {
+    method: 'GET',
+    token
+  });
+}
+
+export async function atualizarPerfilUsuario(token, dados) {
+  return buscarApi('/api/usuarios/perfil', {
+    method: 'PUT',
+    token,
+    body: dados
+  });
+}
+
+// Funções para quiz
+export async function buscarQuizUsuario(token) {
+  return buscarApi('/api/quiz', {
+    method: 'GET',
+    token
+  });
+}
+
+export async function salvarQuizUsuario(token, dados) {
+  return buscarApi('/api/quiz', {
+    method: 'POST',
+    token,
+    body: dados
+  });
+}
+
+export async function deletarQuizUsuario(token) {
+  return buscarApi('/api/quiz', {
+    method: 'DELETE',
+    token
+  });
+}
+
+// Funções para refeições
+export async function buscarRefeicoes(token) {
+  return buscarApi('/api/refeicoes', {
+    method: 'GET',
+    token
+  });
+}
+
+export async function salvarRefeicao(token, dados) {
+  return buscarApi('/api/refeicoes', {
+    method: 'POST',
+    token,
+    body: dados
+  });
+}
+
+export async function deletarRefeicao(token, id) {
+  return buscarApi(`/api/refeicoes/${id}`, {
+    method: 'DELETE',
+    token
+  });
+}
+
+// Funções para metas
+export async function buscarMetas(token) {
+  return buscarApi('/api/metas', {
+    method: 'GET',
+    token
+  });
+}
+
+export async function salvarMetas(token, dados) {
+  return buscarApi('/api/metas', {
+    method: 'POST',
+    token,
+    body: dados
+  });
+}
+
+// Funções para treinos
+export async function buscarTreinos(token) {
+  return buscarApi('/api/treinos', {
+    method: 'GET',
+    token
+  });
+}
+
+export async function salvarTreino(token, dados) {
+  return buscarApi('/api/treinos', {
+    method: 'POST',
+    token,
+    body: dados
+  });
+}
+
+export async function atualizarTreino(token, dados) {
+  return buscarApi('/api/treinos', {
+    method: 'PUT',
+    token,
+    body: dados
+  });
+}
+
+export async function gerarPlanoTreino(token) {
+  return buscarApi('/api/treinos/gerar', {
+    method: 'POST',
+    token,
+    body: {}
+  });
+}
+
+// Funções para análise de imagens
+export async function analisarImagem(token, dadosImagem) {
+  return buscarApi('/api/analise', {
+    method: 'POST',
+    token,
+    body: dadosImagem
+  });
+}
+
+// Função para verificar saúde da API
+export async function verificarSaudeAPI() {
+  return buscarApi('/api/saude', {
+    method: 'GET'
+  });
+}
+
+// Função para limpar dados locais
+export async function limparDadosLocais() {
+  try {
+    await AsyncStorage.multiRemove([
+      'token',
+      'usuario',
+      'dadosQuiz',
+      'metas',
+      'treinos',
+      'refeicoes'
+    ]);
+    console.log('✅ Dados locais limpos com sucesso');
+  } catch (erro) {
+    console.error('❌ Erro ao limpar dados locais:', erro);
+  }
+}
+
+// Função para fazer logout
+export async function fazerLogout() {
+  try {
+    await limparDadosLocais();
+    console.log('✅ Logout realizado com sucesso');
+  } catch (erro) {
+    console.error('❌ Erro ao fazer logout:', erro);
+  }
+}
+
+// Função para testar conectividade
+export async function testarConectividade() {
+  try {
+    const resposta = await verificarSaudeAPI();
     return {
       conectado: true,
       dados: resposta
@@ -146,23 +268,26 @@ export async function testarConexao() {
   }
 }
 
-// Função para verificar se o token ainda é válido
-export async function verificarToken(token) {
+// Função para reautenticar usuário
+export async function reautenticarUsuario(tokenAtual) {
   try {
-    const resposta = await buscarApi('/api/autenticacao/verificar', { token });
-    return resposta.valido;
+    const dados = await verificarToken(tokenAtual);
+    if (dados.valido) {
+      return {
+        sucesso: true,
+        usuario: dados.usuario
+      };
+    } else {
+      throw new Error('Token inválido');
+    }
   } catch (erro) {
-    return false;
+    console.error('❌ Erro na reautenticação:', erro);
+    return {
+      sucesso: false,
+      erro: erro.message
+    };
   }
 }
 
-// Função alternativa para compatibilidade
-export const buscarAPI = buscarApi;
-
-// Função para obter informações de erro detalhadas
-export function obterDetalhesErro(erro) {
-  if (erro.dados && erro.dados.detalhes) {
-    return erro.dados.detalhes.join(', ');
-  }
-  return erro.message;
-}
+// Função de compatibilidade para manter código existente funcionando
+export const testarConexao = testarConectividade;

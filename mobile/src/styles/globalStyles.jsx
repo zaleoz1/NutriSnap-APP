@@ -179,6 +179,15 @@ export const componentStyles = {
       borderWidth: borders.width.base,
       borderColor: colors.primary[600],
     },
+    disabled: {
+      backgroundColor: colors.neutral[400],
+      borderRadius: borders.radius.lg,
+      paddingVertical: spacing.md,
+      paddingHorizontal: spacing.lg,
+      alignItems: 'center',
+      justifyContent: 'center',
+      opacity: 0.6,
+    },
   },
   input: {
     backgroundColor: colors.neutral[50],
@@ -246,6 +255,62 @@ export const iconConfig = {
   warningColor: colors.warning,
 };
 
+// Estados de botões
+export const buttonStates = {
+  loading: {
+    opacity: 0.7,
+    backgroundColor: colors.neutral[400],
+  },
+  disabled: {
+    opacity: 0.5,
+    backgroundColor: colors.neutral[300],
+  },
+  pressed: {
+    opacity: 0.8,
+    transform: [{ scale: 0.98 }],
+  },
+};
+
+// Estilos específicos para planos de treino
+export const workoutStyles = {
+  intensity: {
+    baixa: {
+      color: colors.success,
+      backgroundColor: colors.success + '15',
+    },
+    média: {
+      color: colors.warning,
+      backgroundColor: colors.warning + '15',
+    },
+    alta: {
+      color: colors.accent.orange,
+      backgroundColor: colors.accent.orange + '15',
+    },
+    máxima: {
+      color: colors.error,
+      backgroundColor: colors.error + '15',
+    },
+  },
+  type: {
+    cardio: {
+      icon: 'directions-run',
+      color: colors.accent.blue,
+    },
+    força: {
+      icon: 'fitness-center',
+      color: colors.accent.purple,
+    },
+    funcional: {
+      icon: 'sports-soccer',
+      color: colors.accent.green,
+    },
+    flexibilidade: {
+      icon: 'accessibility',
+      color: colors.accent.pink,
+    },
+  },
+};
+
 // Exportar tudo
 export default {
   colors,
@@ -257,4 +322,6 @@ export default {
   createResponsiveStyles,
   iconSizes,
   iconConfig,
+  buttonStates,
+  workoutStyles,
 };

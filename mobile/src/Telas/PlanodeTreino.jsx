@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { 
   View, 
   Text, 
-  TextInput,
   TouchableOpacity, 
   StyleSheet, 
   StatusBar, 
@@ -10,14 +9,12 @@ import {
   Dimensions,
   Alert,
   ActivityIndicator,
-  Modal,
-  FlatList,
-  RefreshControl
+  RefreshControl,
+  Animated
 } from 'react-native';
 import { MaterialIcons, Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import { usarAutenticacao } from '../services/AuthContext';
 import { buscarApi } from '../services/api';
-import { colors, typography, spacing, borders, shadows } from '../styles/globalStyles';
 
 const { width, height } = Dimensions.get('window');
 
@@ -28,21 +25,39 @@ export default function TelaPlanoTreino({ navigation }) {
   const [planoAtual, setPlanoAtual] = useState(null);
   const [carregando, setCarregando] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [gerandoPlano, setGerandoPlano] = useState(false);
+  const [treinoSelecionado, setTreinoSelecionado] = useState(null);
+  const [fadeAnim] = useState(new Animated.Value(0));
 
   useEffect(() => {
     carregarPlanoAtual();
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 800,
+      useNativeDriver: true,
+    }).start();
   }, []);
 
   // Carregar plano atual do usuário
   const carregarPlanoAtual = async () => {
     setCarregando(true);
     try {
-      const resposta = await buscarApi('/api/treinos/atual', { token });
+      console.log('🔄 Carregando plano atual...');
+      const resposta = await buscarApi('/api/treinos', { token });
+      console.log('📋 Resposta da API:', resposta);
+      
       if (resposta && resposta.plano) {
         setPlanoAtual(resposta.plano);
+      } else if (resposta && resposta.length > 0) {
+        setPlanoAtual({ treinos: resposta });
+      } else if (resposta && typeof resposta === 'object') {
+        setPlanoAtual(resposta);
+      } else {
+        setPlanoAtual(null);
       }
     } catch (erro) {
-      console.log('Nenhum plano encontrado ou erro ao carregar');
+      console.error('❌ Erro ao carregar plano:', erro);
+      setPlanoAtual(null);
     } finally {
       setCarregando(false);
     }
@@ -55,21 +70,41 @@ export default function TelaPlanoTreino({ navigation }) {
     setRefreshing(false);
   };
 
-
-
-  // Salvar plano atual
-  const salvarPlano = async () => {
-    if (!planoAtual) return;
-    
+  // Gerar primeiro plano de treino
+  const gerarPrimeiroPlano = async () => {
+    setGerandoPlano(true);
     try {
-      await buscarApi('/api/treinos/salvar', {
+      const resposta = await buscarApi('/api/treinos/gerar', {
         method: 'POST',
         token,
-        body: { plano: planoAtual }
+        body: {}
       });
-      Alert.alert('Sucesso', 'Plano salvo com sucesso!');
+      
+      if (resposta && resposta.plano) {
+        setPlanoAtual(resposta.plano);
+        Alert.alert(
+          'Plano Gerado!', 
+          'Seu plano de treino personalizado foi criado com sucesso!',
+          [{ text: 'OK' }]
+        );
+      } else {
+        Alert.alert('Aviso', 'Plano gerado mas formato inesperado. Tente novamente.');
+      }
     } catch (erro) {
-      Alert.alert('Erro', 'Não foi possível salvar o plano');
+      if (erro.message?.includes('Complete o quiz primeiro')) {
+        Alert.alert(
+          'Quiz Necessário',
+          'Para gerar um plano personalizado, complete o quiz de perfil primeiro.',
+          [
+            { text: 'Cancelar', style: 'cancel' },
+            { text: 'Fazer Quiz', onPress: () => navigation.navigate('Quiz') }
+          ]
+        );
+      } else {
+        Alert.alert('Erro', 'Não foi possível gerar o plano de treino. Tente novamente.');
+      }
+    } finally {
+      setGerandoPlano(false);
     }
   };
 
@@ -83,7 +118,7 @@ export default function TelaPlanoTreino({ navigation }) {
       setPlanoAtual(novoPlano);
       
       try {
-        await buscarApi('/api/treinos/atualizar', {
+        await buscarApi('/api/treinos', {
           method: 'PUT',
           token,
           body: { plano: novoPlano }
@@ -94,868 +129,870 @@ export default function TelaPlanoTreino({ navigation }) {
     }
   };
 
+  // Funções auxiliares para tipos de treino
+  const getConfiguracaoTreino = (tipo) => {
+    const configs = {
+      'a': {
+        nome: 'Cardio',
+        descricao: 'Resistência cardiovascular',
+        cor: '#FF6B6B',
+        icone: 'directions-run',
+        gradiente: ['#FF6B6B', '#FF8E8E']
+      },
+      'b': {
+        nome: 'Força',
+        descricao: 'Desenvolvimento muscular',
+        cor: '#4ECDC4',
+        icone: 'fitness-center',
+        gradiente: ['#4ECDC4', '#7FDBDA']
+      },
+      'c': {
+        nome: 'Flexibilidade',
+        descricao: 'Mobilidade articular',
+        cor: '#45B7D1',
+        icone: 'accessibility',
+        gradiente: ['#45B7D1', '#6BC5E0']
+      },
+      'd': {
+        nome: 'Funcional',
+        descricao: 'Movimentos integrados',
+        cor: '#96CEB4',
+        icone: 'sports-soccer',
+        gradiente: ['#96CEB4', '#B8E6B8']
+      }
+    };
+    return configs[tipo?.toLowerCase()] || configs['a'];
+  };
+
+  // Função para obter nome do dia da semana
+  const getNomeDia = (numeroDia) => {
+    const dias = {
+      1: 'Segunda-feira',
+      2: 'Terça-feira', 
+      3: 'Quarta-feira',
+      4: 'Quinta-feira',
+      5: 'Sexta-feira',
+      6: 'Sábado',
+      7: 'Domingo'
+    };
+    return dias[numeroDia] || `Dia ${numeroDia}`;
+  };
+
   // Renderizar card de treino individual
-  const renderizarTreino = ({ item, index }) => {
-    const getCorIntensidade = (intensidade) => {
-      switch (intensidade?.toLowerCase()) {
-        case 'baixa': return colors.success;
-        case 'média': return colors.accent.yellow;
-        case 'alta': return colors.accent.orange;
-        case 'máxima': return colors.error;
-        default: return colors.neutral[500];
-      }
-    };
-
-    const getIconeTipo = (tipo) => {
-      switch (tipo?.toLowerCase()) {
-        case 'cardio': return 'directions-run';
-        case 'força': return 'fitness-center';
-        case 'flexibilidade': return 'accessibility';
-        case 'funcional': return 'sports-soccer';
-        default: return 'fitness-center';
-      }
-    };
-
+  const renderizarTreino = (treino, index) => {
+    const config = getConfiguracaoTreino(treino.tipo);
+    const nomeDia = getNomeDia(treino.dia);
+    
     return (
       <TouchableOpacity 
+        key={index}
         style={[
-          estilos.cardTreino,
-          item.concluido && estilos.cardTreinoConcluido
+          styles.treinoCard,
+          treino.concluido && styles.treinoCardConcluido
         ]}
         onPress={() => marcarTreinoConcluido(index)}
-        activeOpacity={0.8}
+        activeOpacity={0.9}
       >
-        <View style={estilos.cabecalhoTreino}>
-          <View style={estilos.infoTreino}>
-            <View style={[
-              estilos.iconeTipo,
-              { backgroundColor: getCorIntensidade(item.intensidade) + '20' }
-            ]}>
-              <MaterialIcons 
-                name={getIconeTipo(item.tipo)} 
-                size={20} 
-                color={getCorIntensidade(item.intensidade)} 
-              />
-            </View>
-            <View style={estilos.detalhesTreino}>
-              <Text style={estilos.nomeTreino}>{item.nome}</Text>
-              <Text style={estilos.descricaoTreino}>{item.descricao}</Text>
+        <View style={styles.treinoHeader}>
+          <View style={[styles.treinoIconContainer, { backgroundColor: config.cor + '20' }]}>
+            <MaterialIcons name={config.icone} size={24} color={config.cor} />
+          </View>
+          
+          <View style={styles.treinoInfo}>
+            <Text style={styles.treinoNome}>{config.nome}</Text>
+            <Text style={styles.treinoDescricao}>{config.descricao}</Text>
+            <View style={[styles.diaBadge, { backgroundColor: config.cor + '20' }]}>
+              <Text style={[styles.diaTexto, { color: config.cor }]}>
+                {nomeDia}
+              </Text>
             </View>
           </View>
           
-          <View style={estilos.statusTreino}>
-            {item.concluido ? (
-              <View style={estilos.badgeConcluido}>
-                <MaterialIcons name="check-circle" size={16} color={colors.success} />
-                <Text style={estilos.textoBadgeConcluido}>Concluído</Text>
+          <View style={styles.treinoStatus}>
+            {treino.concluido ? (
+              <View style={styles.statusConcluido}>
+                <MaterialIcons name="check-circle" size={20} color="#10B981" />
+                <Text style={styles.statusTexto}>✓</Text>
               </View>
             ) : (
-              <View style={estilos.badgePendente}>
-                <MaterialIcons name="schedule" size={16} color={colors.neutral[400]} />
-                <Text style={estilos.textoBadgePendente}>Pendente</Text>
+              <View style={styles.statusPendente}>
+                <MaterialIcons name="radio-button-unchecked" size={20} color="#9CA3AF" />
+                <Text style={styles.statusTexto}>○</Text>
               </View>
             )}
           </View>
         </View>
 
-        <View style={estilos.detalhesAdicionais}>
-          <View style={estilos.detalheItem}>
-            <MaterialIcons name="timer" size={16} color={colors.neutral[400]} />
-            <Text style={estilos.textoDetalhe}>{item.duracao}</Text>
+        <View style={styles.treinoDetalhes}>
+          <View style={styles.detalheItem}>
+            <MaterialIcons name="timer" size={16} color="#6B7280" />
+            <Text style={styles.detalheTexto}>{treino.duracao}</Text>
           </View>
           
-          <View style={estilos.detalheItem}>
-            <View style={[
-              estilos.pontoIntensidade,
-              { backgroundColor: getCorIntensidade(item.intensidade) }
-            ]} />
-            <Text style={[
-              estilos.textoDetalhe,
-              { color: getCorIntensidade(item.intensidade) }
-            ]}>
-              {item.intensidade}
+          <View style={styles.detalheItem}>
+            <View style={[styles.intensidadeDot, { backgroundColor: treino.intensidade === 'alta' ? '#EF4444' : '#F59E0B' }]} />
+            <Text style={styles.detalheTexto}>{treino.intensidade}</Text>
+          </View>
+          
+          <View style={styles.detalheItem}>
+            <MaterialIcons name="fitness-center" size={16} color="#6B7280" />
+            <Text style={styles.detalheTexto}>
+              {treino.exercicios?.length || 0} exercícios
             </Text>
-          </View>
-          
-          <View style={estilos.detalheItem}>
-            <MaterialIcons name="schedule" size={16} color={colors.neutral[400]} />
-            <Text style={estilos.textoDetalhe}>{item.horario}</Text>
           </View>
         </View>
 
-        {item.exercicios && (
-          <View style={estilos.listaExercicios}>
-            <Text style={estilos.tituloExercicios}>Exercícios:</Text>
-            {item.exercicios.slice(0, 3).map((exercicio, idx) => (
-              <Text key={idx} style={estilos.exercicio}>
-                • {exercicio.nome} - {exercicio.series}x{exercicio.repeticoes}
-              </Text>
+        {/* Lista completa de exercícios */}
+        {treino.exercicios && treino.exercicios.length > 0 ? (
+          <View style={styles.exerciciosContainer}>
+            <Text style={styles.exerciciosTitulo}>Exercícios do Treino:</Text>
+            
+            {treino.exercicios.map((exercicio, idx) => (
+              <View key={idx} style={styles.exercicioItem}>
+                <View style={styles.exercicioHeader}>
+                  <Text style={styles.exercicioBullet}>•</Text>
+                  <Text style={styles.exercicioNome}>{exercicio.nome}</Text>
+                </View>
+                
+                <View style={styles.exercicioDetalhes}>
+                  <View style={styles.exercicioSerie}>
+                    <MaterialIcons name="repeat" size={14} color="#3730A3" />
+                    <Text style={styles.exercicioSerieTexto}>
+                      {exercicio.series} série{exercicio.series > 1 ? 's' : ''}
+                    </Text>
+                  </View>
+                  
+                  <View style={styles.exercicioRepeticao}>
+                    <MaterialIcons name="fitness-center" size={14} color="#065F46" />
+                    <Text style={styles.exercicioRepeticaoTexto}>
+                      {exercicio.repeticoes} {typeof exercicio.repeticoes === 'number' ? 'reps' : ''}
+                    </Text>
+                  </View>
+                </View>
+                
+                {exercicio.descricao && (
+                  <Text style={styles.exercicioDescricao}>{exercicio.descricao}</Text>
+                )}
+              </View>
             ))}
-            {item.exercicios.length > 3 && (
-              <Text style={estilos.maisExercicios}>
-                +{item.exercicios.length - 3} exercícios
-              </Text>
-            )}
+          </View>
+        ) : (
+          <View style={styles.semExercicios}>
+            <MaterialIcons name="info-outline" size={16} color="#9CA3AF" />
+            <Text style={styles.semExerciciosTexto}>Exercícios serão configurados</Text>
           </View>
         )}
       </TouchableOpacity>
     );
   };
 
-  // Renderizar estatísticas do plano
+  // Renderizar estatísticas
   const renderizarEstatisticas = () => {
     if (!planoAtual?.treinos) return null;
     
     const totalTreinos = planoAtual.treinos.length;
     const treinosConcluidos = planoAtual.treinos.filter(t => t.concluido).length;
-    const percentualConcluido = Math.round((treinosConcluidos / totalTreinos) * 100);
+    const percentual = Math.round((treinosConcluidos / totalTreinos) * 100);
     
     return (
-      <View style={estilos.secaoEstatisticas}>
-        <Text style={estilos.tituloSecao}>Progresso da Semana</Text>
+      <View style={styles.estatisticasContainer}>
+        <Text style={styles.estatisticasTitulo}>Progresso da Semana</Text>
         
-        <View style={estilos.cardsEstatisticas}>
-          <View style={estilos.cardEstatistica}>
-            <View style={estilos.iconeEstatistica}>
-              <MaterialIcons name="fitness-center" size={24} color={colors.primary[600]} />
+        <View style={styles.estatisticasGrid}>
+          <View style={styles.estatisticaCard}>
+            <View style={styles.estatisticaIcone}>
+              <MaterialIcons name="fitness-center" size={24} color="#3B82F6" />
             </View>
-            <Text style={estilos.valorEstatistica}>{totalTreinos}</Text>
-            <Text style={estilos.labelEstatistica}>Treinos</Text>
+            <Text style={styles.estatisticaValor}>{totalTreinos}</Text>
+            <Text style={styles.estatisticaLabel}>Total</Text>
           </View>
           
-          <View style={estilos.cardEstatistica}>
-            <View style={estilos.iconeEstatistica}>
-              <MaterialIcons name="check-circle" size={24} color={colors.success} />
+          <View style={styles.estatisticaCard}>
+            <View style={styles.estatisticaIcone}>
+              <MaterialIcons name="check-circle" size={24} color="#10B981" />
             </View>
-            <Text style={estilos.valorEstatistica}>{treinosConcluidos}</Text>
-            <Text style={estilos.labelEstatistica}>Concluídos</Text>
+            <Text style={styles.estatisticaValor}>{treinosConcluidos}</Text>
+            <Text style={styles.estatisticaLabel}>Concluídos</Text>
           </View>
           
-          <View style={estilos.cardEstatistica}>
-            <View style={estilos.iconeEstatistica}>
-              <MaterialIcons name="trending-up" size={24} color={colors.accent.blue} />
+          <View style={styles.estatisticaCard}>
+            <View style={styles.estatisticaIcone}>
+              <MaterialIcons name="trending-up" size={24} color="#8B5CF6" />
             </View>
-            <Text style={estilos.valorEstatistica}>{percentualConcluido}%</Text>
-            <Text style={estilos.labelEstatistica}>Progresso</Text>
+            <Text style={styles.estatisticaValor}>{percentual}%</Text>
+            <Text style={styles.estatisticaLabel}>Progresso</Text>
           </View>
         </View>
         
-        <View style={estilos.barraProgresso}>
-          <View style={[estilos.progressoPreenchido, { width: `${percentualConcluido}%` }]} />
+        <View style={styles.progressoContainer}>
+          <View style={styles.progressoBarra}>
+            <View style={[styles.progressoPreenchido, { width: `${percentual}%` }]} />
+          </View>
+          <Text style={styles.progressoTexto}>{percentual}% concluído</Text>
+        </View>
+      </View>
+    );
+  };
+
+  // Renderizar resumo do plano
+  const renderizarResumoPlano = () => {
+    if (!planoAtual?.treinos) return null;
+    
+    const tiposUnicos = [...new Set(planoAtual.treinos.map(t => t.tipo))];
+    
+    return (
+      <View style={styles.resumoContainer}>
+        <Text style={styles.resumoTitulo}>Resumo do Plano</Text>
+        
+        <View style={styles.resumoGrid}>
+          <View style={styles.resumoCard}>
+            <MaterialIcons name="calendar-today" size={20} color="#3B82F6" />
+            <Text style={styles.resumoLabel}>Duração</Text>
+            <Text style={styles.resumoValor}>{planoAtual.treinos.length} dias</Text>
+          </View>
+          
+          <View style={styles.resumoCard}>
+            <MaterialIcons name="speed" size={20} color="#F59E0B" />
+            <Text style={styles.resumoLabel}>Intensidade</Text>
+            <Text style={styles.resumoValor}>
+              {planoAtual.treinos[0]?.intensidade || 'N/A'}
+            </Text>
+          </View>
+          
+          <View style={styles.resumoCard}>
+            <MaterialIcons name="timer" size={20} color="#10B981" />
+            <Text style={styles.resumoLabel}>Sessão</Text>
+            <Text style={styles.resumoValor}>
+              {planoAtual.treinos[0]?.duracao || 'N/A'}
+            </Text>
+          </View>
+          
+          <View style={styles.resumoCard}>
+            <MaterialIcons name="category" size={20} color="#8B5CF6" />
+            <Text style={styles.resumoLabel}>Tipos</Text>
+            <Text style={styles.resumoValor}>
+              {tiposUnicos.join(', ').toUpperCase()}
+            </Text>
+          </View>
         </View>
       </View>
     );
   };
 
   return (
-    <View style={estilos.container}>
-      <StatusBar barStyle="light-content" backgroundColor={colors.neutral[900]} />
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="#1E293B" />
       
-      {/* Header com gradiente */}
-      <View style={estilos.header}>
-        <View style={estilos.cabecalhoHeader}>
+      {/* Header moderno */}
+      <View style={styles.header}>
+        <View style={styles.headerContent}>
           <TouchableOpacity 
-            style={estilos.botaoVoltar}
+            style={styles.backButton}
             onPress={() => navigation.goBack()}
-            activeOpacity={0.8}
           >
-            <MaterialIcons name="arrow-back" size={24} color={colors.neutral[50]} />
+            <MaterialIcons name="arrow-back" size={24} color="#FFFFFF" />
           </TouchableOpacity>
           
-          <Text style={estilos.tituloHeader}>Plano de Treino</Text>
+          <View style={styles.headerText}>
+            <Text style={styles.headerTitle}>Plano de Treino</Text>
+            <Text style={styles.headerSubtitle}>Treinos personalizados por IA</Text>
+          </View>
           
-          <TouchableOpacity 
-            style={estilos.botaoConfigurar}
-            onPress={() => {}}
-            activeOpacity={0.8}
-          >
-            <MaterialIcons name="add" size={24} color={colors.neutral[50]} />
+          <TouchableOpacity style={styles.menuButton}>
+            <MaterialIcons name="more-vert" size={24} color="#FFFFFF" />
           </TouchableOpacity>
         </View>
-        
-        <Text style={estilos.subtituloHeader}>
-          Treinos personalizados por IA baseados no seu perfil
-        </Text>
       </View>
 
       <ScrollView 
-        style={estilos.scrollView}
+        style={styles.scrollView}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={estilos.conteudoScroll}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            colors={[colors.primary[600]]}
-            tintColor={colors.primary[600]}
+            colors={['#3B82F6']}
+            tintColor="#3B82F6"
           />
         }
       >
-        {carregando ? (
-          <View style={estilos.containerCarregamento}>
-            <ActivityIndicator size="large" color={colors.primary[600]} />
-            <Text style={estilos.textoCarregamento}>Carregando seu plano...</Text>
-          </View>
-        ) : planoAtual ? (
-          <>
-            {renderizarEstatisticas()}
-            
-            <View style={estilos.secaoTreinos}>
-              <Text style={estilos.tituloSecao}>Treinos da Semana</Text>
-              
-              <FlatList
-                data={planoAtual.treinos || []}
-                keyExtractor={(item, index) => index.toString()}
-                renderItem={renderizarTreino}
-                scrollEnabled={false}
-                showsVerticalScrollIndicator={false}
-              />
+        <Animated.View style={[styles.content, { opacity: fadeAnim }]}>
+          {carregando ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color="#3B82F6" />
+              <Text style={styles.loadingText}>Carregando seu plano...</Text>
             </View>
-            
-            <View style={estilos.botoesAcao}>
+          ) : planoAtual ? (
+            <>
+              {renderizarResumoPlano()}
+              {renderizarEstatisticas()}
+              
+              <View style={styles.treinosSection}>
+                <Text style={styles.sectionTitle}>Treinos da Semana</Text>
+                
+                {planoAtual.treinos && planoAtual.treinos.length > 0 ? (
+                  planoAtual.treinos.map((treino, index) => 
+                    renderizarTreino(treino, index)
+                  )
+                ) : (
+                  <View style={styles.emptyState}>
+                    <MaterialIcons name="fitness-center" size={48} color="#9CA3AF" />
+                    <Text style={styles.emptyStateTitle}>Nenhum treino configurado</Text>
+                    <Text style={styles.emptyStateSubtitle}>
+                      Os treinos aparecerão aqui após a configuração
+                    </Text>
+                  </View>
+                )}
+              </View>
+            </>
+          ) : (
+            <View style={styles.noPlanContainer}>
+              <View style={styles.noPlanIcon}>
+                <MaterialIcons name="fitness-center" size={80} color="#9CA3AF" />
+              </View>
+              <Text style={styles.noPlanTitle}>Nenhum plano encontrado</Text>
+              <Text style={styles.noPlanSubtitle}>
+                Configure suas preferências e gere seu primeiro plano personalizado
+              </Text>
+              
               <TouchableOpacity 
-                style={estilos.botaoSalvar}
-                onPress={salvarPlano}
-                activeOpacity={0.8}
+                style={[styles.generateButton, gerandoPlano && styles.generateButtonDisabled]}
+                onPress={gerarPrimeiroPlano}
+                disabled={gerandoPlano}
               >
-                <MaterialIcons name="save" size={20} color={colors.neutral[50]} />
-                <Text style={estilos.textoBotaoSalvar}>Salvar Progresso</Text>
+                {gerandoPlano ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <MaterialIcons name="add" size={20} color="#FFFFFF" />
+                )}
+                <Text style={styles.generateButtonText}>
+                  {gerandoPlano ? 'Gerando...' : 'Gerar Primeiro Plano'}
+                </Text>
               </TouchableOpacity>
-              
-
             </View>
-          </>
-        ) : (
-          <View style={estilos.containerSemPlano}>
-            <View style={estilos.iconeSemPlano}>
-              <MaterialIcons name="fitness-center" size={64} color={colors.neutral[400]} />
-            </View>
-            <Text style={estilos.tituloSemPlano}>Nenhum plano encontrado</Text>
-            <Text style={estilos.subtituloSemPlano}>
-              Configure suas preferências e gere seu primeiro plano de treino personalizado
-            </Text>
-            
-            <TouchableOpacity 
-              style={estilos.botaoGerarPrimeiro}
-              onPress={() => {}}
-              activeOpacity={0.8}
-            >
-              <MaterialIcons name="add" size={20} color={colors.neutral[50]} />
-              <Text style={estilos.textoBotaoGerarPrimeiro}>Gerar Primeiro Plano</Text>
-            </TouchableOpacity>
-          </View>
-        )}
+          )}
+        </Animated.View>
       </ScrollView>
-
-
     </View>
   );
 }
 
-const estilos = StyleSheet.create({
+const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.neutral[50],
+    backgroundColor: '#F8FAFC',
+  },
+  
+  header: {
+    backgroundColor: '#1E293B',
+    paddingTop: 60,
+    paddingBottom: 24,
+    paddingHorizontal: 20,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  
+  headerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  
+  headerText: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    marginBottom: 4,
+  },
+  
+  headerSubtitle: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#CBD5E1',
+  },
+  
+  menuButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   
   scrollView: {
     flex: 1,
   },
   
-  conteudoScroll: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.xl,
+  content: {
+    paddingHorizontal: 20,
+    paddingTop: 24,
+    paddingBottom: 32,
   },
   
-  header: {
-    backgroundColor: colors.primary[600],
-    paddingTop: spacing.xl,
-    paddingBottom: spacing.md,
-    paddingHorizontal: spacing.lg,
-    borderBottomLeftRadius: spacing.lg,
-    borderBottomRightRadius: spacing.lg,
-    alignItems: 'center',
+  loadingContainer: {
+    flex: 1,
     justifyContent: 'center',
-    marginBottom: spacing.md,
-  },
-  
-  cabecalhoHeader: {
-    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    width: '100%',
+    paddingVertical: 80,
   },
   
-  botaoVoltar: {
-    padding: spacing.sm,
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#64748B',
+    fontWeight: '500',
   },
   
-  tituloHeader: {
-    fontSize: typography.fontSize['3xl'],
-    fontWeight: typography.fontWeight.extrabold,
-    color: colors.neutral[50],
+  resumoContainer: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 24,
+    marginBottom: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  
+  resumoTitulo: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1E293B',
+    marginBottom: 20,
     textAlign: 'center',
+  },
+  
+  resumoGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+  },
+  
+  resumoCard: {
+    width: '48%',
+    backgroundColor: '#F8FAFC',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
+    alignItems: 'center',
+  },
+  
+  resumoLabel: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#64748B',
+    marginTop: 8,
+    marginBottom: 4,
+  },
+  
+  resumoValor: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#1E293B',
+    textAlign: 'center',
+  },
+  
+  estatisticasContainer: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 24,
+    marginBottom: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  
+  estatisticasTitulo: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1E293B',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  
+  estatisticasGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 24,
+  },
+  
+  estatisticaCard: {
+    alignItems: 'center',
     flex: 1,
   },
   
-  botaoConfigurar: {
-    padding: spacing.sm,
+  estatisticaIcone: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#F1F5F9',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
   },
   
-  subtituloHeader: {
-    fontSize: typography.fontSize.base,
-    fontWeight: typography.fontWeight.medium,
-    color: colors.neutral[200],
+  estatisticaValor: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: '#1E293B',
+    marginBottom: 4,
+  },
+  
+  estatisticaLabel: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#64748B',
     textAlign: 'center',
-    marginTop: spacing.xs,
-    marginBottom: spacing.lg,
   },
   
-  alertContainer: {
-    backgroundColor: colors.accent.yellow + '15',
-    padding: spacing.md,
-    borderRadius: borders.radius.lg,
-    marginBottom: spacing.lg,
-    borderWidth: borders.width.thin,
-    borderColor: colors.accent.yellow + '30',
+  progressoContainer: {
+    alignItems: 'center',
   },
   
-  alertText: {
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.medium,
-    color: colors.accent.yellow + 'DD',
-    textAlign: 'center',
-    lineHeight: typography.lineHeight.normal,
+  progressoBarra: {
+    height: 8,
+    backgroundColor: '#E2E8F0',
+    borderRadius: 4,
+    overflow: 'hidden',
+    width: '100%',
+    marginBottom: 12,
   },
   
-  formContainer: {
-    gap: spacing.xl,
-    marginBottom: spacing.xl,
+  progressoPreenchido: {
+    height: '100%',
+    borderRadius: 4,
+    backgroundColor: '#3B82F6',
   },
   
-  formSection: {
-    gap: spacing.lg,
+  progressoTexto: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#3B82F6',
+  },
+  
+  treinosSection: {
+    marginBottom: 24,
   },
   
   sectionTitle: {
-    fontSize: typography.fontSize.xl,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.neutral[800],
-    marginBottom: spacing.md,
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#1E293B',
+    marginBottom: 20,
+    textAlign: 'center',
   },
   
-  inputRow: {
+  treinoCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 20,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+  },
+  
+  treinoCardConcluido: {
+    borderColor: '#10B981',
+    borderWidth: 2,
+    backgroundColor: '#F0FDF4',
+  },
+  
+  treinoHeader: {
     flexDirection: 'row',
-    gap: spacing.md,
+    alignItems: 'flex-start',
+    marginBottom: 16,
   },
   
-  inputGroup: {
-    flex: 1,
-    gap: spacing.sm,
-  },
-  
-  inputLabel: {
-    fontSize: typography.fontSize.base,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.neutral[700],
-    marginLeft: spacing.sm,
-  },
-  
-  input: {
-    backgroundColor: colors.neutral[50],
-    borderRadius: borders.radius.lg,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
-    borderWidth: borders.width.thin,
-    borderColor: colors.neutral[300],
-    fontSize: typography.fontSize.base,
-    color: colors.neutral[900],
-    ...shadows.sm,
-  },
-  
-  inputFocused: {
-    borderColor: colors.primary[500],
-    borderWidth: borders.width.base,
-    ...shadows.base,
-  },
-  
-  objectiveSelector: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-  },
-  
-  objectiveOption: {
-    flex: 1,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
-    borderRadius: borders.radius.lg,
-    borderWidth: borders.width.thin,
-    borderColor: colors.neutral[300],
-    backgroundColor: colors.neutral[50],
-    alignItems: 'center',
-    ...shadows.sm,
-  },
-  
-  objectiveOptionSelected: {
-    backgroundColor: colors.primary[600],
-    borderColor: colors.primary[600],
-  },
-  
-  objectiveOptionText: {
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.neutral[700],
-  },
-  
-  objectiveOptionTextSelected: {
-    color: colors.neutral[50],
-  },
-  
-  timeSelector: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-  },
-  
-  timeOption: {
-    flex: 1,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
-    borderRadius: borders.radius.lg,
-    borderWidth: borders.width.thin,
-    borderColor: colors.neutral[300],
-    backgroundColor: colors.neutral[50],
-    alignItems: 'center',
-    ...shadows.sm,
-  },
-  
-  timeOptionSelected: {
-    backgroundColor: colors.primary[600],
-    borderColor: colors.primary[600],
-  },
-  
-  timeOptionText: {
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.neutral[700],
-  },
-  
-  timeOptionTextSelected: {
-    color: colors.neutral[50],
-  },
-  
-  generateButton: {
-    backgroundColor: colors.primary[600],
-    borderRadius: borders.radius.xl,
-    paddingVertical: spacing.lg,
-    paddingHorizontal: spacing.lg,
+  treinoIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: spacing.md,
-    ...shadows.lg,
-    elevation: 8,
+    marginRight: 16,
   },
   
-  generateButtonText: {
-    fontSize: typography.fontSize.lg,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.neutral[50],
-    letterSpacing: 0.5,
-  },
-  
-  workoutsContainer: {
-    marginBottom: spacing.xl,
-  },
-  
-  workoutsTitle: {
-    fontSize: typography.fontSize.xl,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.neutral[800],
-    marginBottom: spacing.md,
-  },
-  
-  workoutCard: {
-    backgroundColor: colors.neutral[50],
-    borderRadius: borders.radius.lg,
-    padding: spacing.lg,
-    marginBottom: spacing.md,
-    ...shadows.base,
-    borderWidth: borders.width.thin,
-    borderColor: colors.neutral[200],
-  },
-  
-  workoutHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: spacing.md,
-  },
-  
-  workoutDay: {
+  treinoInfo: {
     flex: 1,
   },
   
-  workoutDayText: {
-    fontSize: typography.fontSize.lg,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.neutral[900],
-    marginBottom: spacing.xs,
+  treinoNome: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1E293B',
+    marginBottom: 4,
   },
   
-  workoutTime: {
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.medium,
-    color: colors.neutral[600],
+  treinoDescricao: {
+    fontSize: 14,
+    color: '#64748B',
+    marginBottom: 8,
   },
   
-  workoutDuration: {
-    backgroundColor: colors.primary[100],
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: borders.radius.lg,
+  diaBadge: {
+    alignSelf: 'flex-start',
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 12,
   },
   
-  workoutDurationText: {
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.primary[700],
+  diaTexto: {
+    fontSize: 12,
+    fontWeight: '600',
   },
   
-  workoutName: {
-    fontSize: typography.fontSize.xl,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.neutral[900],
-    marginBottom: spacing.sm,
+  treinoStatus: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 40,
   },
   
-  workoutDescription: {
-    fontSize: typography.fontSize.base,
-    fontWeight: typography.fontWeight.medium,
-    color: colors.neutral[600],
-    lineHeight: typography.lineHeight.normal,
-    marginBottom: spacing.md,
+  statusConcluido: {
+    alignItems: 'center',
   },
   
-  workoutDetails: {
+  statusPendente: {
+    alignItems: 'center',
+  },
+  
+  statusTexto: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginTop: 2,
+  },
+  
+  treinoDetalhes: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    borderTopWidth: borders.width.thin,
-    borderTopColor: colors.neutral[200],
-    paddingTop: spacing.md,
+    marginBottom: 16,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
   },
   
-  workoutDetail: {
-    alignItems: 'center',
-  },
-  
-  workoutDetailLabel: {
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.medium,
-    color: colors.neutral[600],
-    marginBottom: spacing.xs,
-  },
-  
-  workoutDetailValue: {
-    fontSize: typography.fontSize.base,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.neutral[800],
-  },
-  
-  intensidadeContainer: {
+  detalheItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.xs,
+    flex: 1,
+    justifyContent: 'center',
+  },
+  
+  detalheTexto: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#64748B',
+    marginLeft: 6,
   },
   
   intensidadeDot: {
     width: 8,
     height: 8,
     borderRadius: 4,
+    marginRight: 6,
   },
   
-  actionButtons: {
-    gap: spacing.md,
+  exerciciosContainer: {
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
   },
   
-  saveButton: {
-    backgroundColor: colors.accent.blue,
-    borderRadius: borders.radius.xl,
-    paddingVertical: spacing.lg,
-    paddingHorizontal: spacing.lg,
+  exerciciosTitulo: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#374151',
+    marginBottom: 12,
+  },
+  
+  exercicioItem: {
+    backgroundColor: '#F8FAFC',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  
+  exercicioHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  
+  exercicioBullet: {
+    fontSize: 16,
+    color: '#3B82F6',
+    fontWeight: '600',
+    marginRight: 12,
+    width: 20,
+    textAlign: 'center',
+  },
+  
+  exercicioNome: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1E293B',
+    flex: 1,
+  },
+  
+  exercicioDetalhes: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 8,
+  },
+  
+  exercicioSerie: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  
+  exercicioSerieTexto: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#3730A3',
+    marginLeft: 6,
+  },
+  
+  exercicioRepeticao: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  
+  exercicioRepeticaoTexto: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#065F46',
+    marginLeft: 6,
+  },
+  
+  exercicioDescricao: {
+    fontSize: 13,
+    color: '#64748B',
+    marginTop: 8,
+    lineHeight: 18,
+  },
+  
+  semExercicios: {
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    ...shadows.lg,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
+  },
+  
+  semExerciciosTexto: {
+    fontSize: 14,
+    color: '#9CA3AF',
+    marginLeft: 8,
+    fontStyle: 'italic',
+  },
+  
+  emptyState: {
+    alignItems: 'center',
+    paddingVertical: 40,
+    paddingHorizontal: 20,
+  },
+  
+  emptyStateTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#64748B',
+    marginTop: 20,
+    textAlign: 'center',
+  },
+  
+  emptyStateSubtitle: {
+    fontSize: 14,
+    color: '#9CA3AF',
+    marginTop: 8,
+    textAlign: 'center',
+  },
+  
+  noPlanContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 40,
+    paddingVertical: 80,
+  },
+  
+  noPlanIcon: {
+    marginBottom: 24,
+    opacity: 0.6,
+  },
+  
+  noPlanTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#1E293B',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  
+  noPlanSubtitle: {
+    fontSize: 16,
+    color: '#64748B',
+    textAlign: 'center',
+    marginBottom: 32,
+    lineHeight: 24,
+    paddingHorizontal: 20,
+  },
+  
+  generateButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#3B82F6',
+    borderRadius: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    shadowColor: '#3B82F6',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
     elevation: 8,
   },
   
-  saveButtonText: {
-    fontSize: typography.fontSize.lg,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.neutral[50],
-    letterSpacing: 0.5,
+  generateButtonDisabled: {
+    backgroundColor: '#9CA3AF',
+    shadowOpacity: 0.1,
   },
   
-  visitorAlert: {
-    backgroundColor: colors.accent.yellow + '15',
-    padding: spacing.md,
-    borderRadius: borders.radius.lg,
-    borderWidth: borders.width.thin,
-    borderColor: colors.accent.yellow + '30',
-  },
-  
-  visitorAlertText: {
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.medium,
-    color: colors.accent.yellow + 'DD',
-    textAlign: 'center',
-    lineHeight: typography.lineHeight.normal,
-  },
-
-  // Novos estilos para a nova interface
-  containerCarregamento: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: colors.neutral[50],
-  },
-  textoCarregamento: {
-    marginTop: spacing.md,
-    fontSize: typography.fontSize.base,
-    color: colors.neutral[600],
-  },
-  containerSemPlano: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: spacing.lg,
-    backgroundColor: colors.neutral[50],
-  },
-  iconeSemPlano: {
-    marginBottom: spacing.md,
-  },
-  tituloSemPlano: {
-    fontSize: typography.fontSize['2xl'],
-    fontWeight: typography.fontWeight.bold,
-    color: colors.neutral[800],
-    marginBottom: spacing.xs,
-  },
-  subtituloSemPlano: {
-    fontSize: typography.fontSize.base,
-    fontWeight: typography.fontWeight.medium,
-    color: colors.neutral[600],
-    textAlign: 'center',
-    marginBottom: spacing.lg,
-  },
-  botaoGerarPrimeiro: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.primary[600],
-    borderRadius: borders.radius.xl,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
-    ...shadows.lg,
-    elevation: 8,
-  },
-  textoBotaoGerarPrimeiro: {
-    fontSize: typography.fontSize.base,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.neutral[50],
-    marginLeft: spacing.sm,
-  },
-
-  secaoEstatisticas: {
-    marginBottom: spacing.lg,
-  },
-  cardsEstatisticas: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginBottom: spacing.md,
-  },
-  cardEstatistica: {
-    alignItems: 'center',
-    flex: 1,
-  },
-  iconeEstatistica: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: colors.primary[100],
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing.xs,
-  },
-  valorEstatistica: {
-    fontSize: typography.fontSize['2xl'],
-    fontWeight: typography.fontWeight.bold,
-    color: colors.neutral[900],
-    marginBottom: spacing.xs,
-  },
-  labelEstatistica: {
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.medium,
-    color: colors.neutral[600],
-  },
-  barraProgresso: {
-    height: 8,
-    backgroundColor: colors.neutral[200],
-    borderRadius: 4,
-    overflow: 'hidden',
-    marginTop: spacing.sm,
-  },
-  progressoPreenchido: {
-    height: '100%',
-    borderRadius: 4,
-    backgroundColor: colors.primary[600],
-  },
-  secaoTreinos: {
-    marginBottom: spacing.lg,
-  },
-  botoesAcao: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginTop: spacing.md,
-  },
-  botaoSalvar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.accent.blue,
-    borderRadius: borders.radius.lg,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
-    ...shadows.sm,
-    elevation: 6,
-  },
-  textoBotaoSalvar: {
-    fontSize: typography.fontSize.base,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.neutral[50],
-    marginLeft: spacing.sm,
-  },
-
-  cardTreino: {
-    backgroundColor: colors.neutral[50],
-    borderRadius: borders.radius.lg,
-    padding: spacing.lg,
-    marginBottom: spacing.md,
-    ...shadows.base,
-    borderWidth: borders.width.thin,
-    borderColor: colors.neutral[200],
-  },
-  cardTreinoConcluido: {
-    opacity: 0.7,
-    borderColor: colors.success + '30',
-    borderWidth: borders.width.thin,
-  },
-  cabecalhoTreino: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: spacing.md,
-  },
-  infoTreino: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  iconeTipo: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: spacing.md,
-  },
-  detalhesTreino: {
-    flex: 1,
-  },
-  nomeTreino: {
-    fontSize: typography.fontSize.lg,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.neutral[900],
-    marginBottom: spacing.xs,
-  },
-  descricaoTreino: {
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.medium,
-    color: colors.neutral[600],
-    lineHeight: typography.lineHeight.normal,
-  },
-  statusTreino: {
-    alignItems: 'center',
-  },
-  badgeConcluido: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.success + '15',
-    paddingVertical: spacing.xs,
-    paddingHorizontal: spacing.sm,
-    borderRadius: borders.radius.md,
-    borderWidth: borders.width.thin,
-    borderColor: colors.success + '30',
-  },
-  textoBadgeConcluido: {
-    fontSize: typography.fontSize.xs,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.success,
-    marginLeft: spacing.xs,
-  },
-  badgePendente: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.neutral[200] + '20',
-    paddingVertical: spacing.xs,
-    paddingHorizontal: spacing.sm,
-    borderRadius: borders.radius.md,
-    borderWidth: borders.width.thin,
-    borderColor: colors.neutral[300] + '30',
-  },
-  textoBadgePendente: {
-    fontSize: typography.fontSize.xs,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.neutral[400],
-    marginLeft: spacing.xs,
-  },
-  detalhesAdicionais: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: spacing.md,
-  },
-  detalheItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  textoDetalhe: {
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.medium,
-    color: colors.neutral[600],
-    marginLeft: spacing.xs,
-  },
-  pontoIntensidade: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  listaExercicios: {
-    marginTop: spacing.md,
-    paddingTop: spacing.md,
-    borderTopWidth: borders.width.thin,
-    borderTopColor: colors.neutral[200],
-  },
-  tituloExercicios: {
-    fontSize: typography.fontSize.base,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.neutral[700],
-    marginBottom: spacing.xs,
-  },
-  exercicio: {
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.medium,
-    color: colors.neutral[600],
-    marginBottom: spacing.xs,
-  },
-  maisExercicios: {
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.medium,
-    color: colors.neutral[600],
-    marginTop: spacing.xs,
+  generateButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    marginLeft: 12,
   },
 });
