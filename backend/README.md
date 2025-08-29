@@ -233,8 +233,8 @@ backend/
 ├── config/          # Configurações (banco, etc.)
 ├── middleware/      # Middlewares (auth, etc.)
 ├── routes/          # Rotas da API
-├── server.js        # Servidor principal
-├── setup.js         # Script de configuração
+├── server.jsx       # Servidor principal
+├── setup.jsx        # Script de configuração
 ├── schema.sql       # Estrutura do banco
 ├── env.example      # Exemplo de variáveis de ambiente
 ├── ANALISE_NUTRICIONAL.md  # Documentação da análise nutricional
