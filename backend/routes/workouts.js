@@ -44,7 +44,7 @@ roteador.post('/gerar', requerAutenticacao, async (req, res) => {
   try {
     // Buscar dados do quiz do usuário
     const [quizData] = await bancoDados.query(
-      'SELECT * FROM quiz_respostas WHERE id_usuario = ?',
+      'SELECT * FROM meus_dados WHERE id_usuario = ?',
       [req.idUsuario]
     );
 
