@@ -15,6 +15,7 @@ import {
 import { MaterialIcons, Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import { usarAutenticacao } from '../services/AuthContext';
 import { buscarApi } from '../services/api';
+import { colors, typography, spacing, borders, shadows, componentStyles } from '../styles/globalStyles';
 
 const { width, height } = Dimensions.get('window');
 
@@ -108,6 +109,62 @@ export default function TelaPlanoTreino({ navigation }) {
     }
   };
 
+  // Gerar novo treino substituindo o atual
+  const gerarNovoTreino = async () => {
+    if (!planoAtual) {
+      Alert.alert('Aviso', 'Nenhum plano atual para substituir.');
+      return;
+    }
+
+    Alert.alert(
+      'Confirmar Novo Treino',
+      'Isso irá substituir completamente seu plano atual. Deseja continuar?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { 
+          text: 'Sim, Gerar Novo', 
+          onPress: async () => {
+            setGerandoPlano(true);
+            try {
+              const resposta = await buscarApi('/api/treinos/gerar', {
+                method: 'POST',
+                token,
+                body: {}
+              });
+              
+              if (resposta && resposta.plano) {
+                setPlanoAtual(resposta.plano);
+                Alert.alert(
+                  'Novo Plano Gerado!', 
+                  'Seu plano de treino foi atualizado com sucesso!',
+                  [{ text: 'OK' }]
+                );
+              } else {
+                Alert.alert('Aviso', 'Novo plano gerado mas formato inesperado. Tente novamente.');
+              }
+            } catch (erro) {
+              if (erro.message?.includes('Complete o quiz primeiro')) {
+                Alert.alert(
+                  'Quiz Necessário',
+                  'Para gerar um novo plano personalizado, complete o quiz de perfil primeiro.',
+                  [
+                    { text: 'Cancelar', style: 'cancel' },
+                    { text: 'Fazer Quiz', onPress: () => navigation.navigate('Quiz') }
+                  ]
+                );
+              } else {
+                Alert.alert('Erro', 'Não foi possível gerar o novo plano de treino. Tente novamente.');
+              }
+            } finally {
+              setGerandoPlano(false);
+            }
+          },
+          style: 'destructive'
+        }
+      ]
+    );
+  };
+
   // Marcar treino como concluído
   const marcarTreinoConcluido = async (diaIndex) => {
     if (!planoAtual) return;
@@ -135,30 +192,30 @@ export default function TelaPlanoTreino({ navigation }) {
       'a': {
         nome: 'Cardio',
         descricao: 'Resistência cardiovascular',
-        cor: '#FF6B6B',
+        cor: colors.accent.blue,
         icone: 'directions-run',
-        gradiente: ['#FF6B6B', '#FF8E8E']
+        gradiente: [colors.accent.blue, colors.primary[400]]
       },
       'b': {
         nome: 'Força',
         descricao: 'Desenvolvimento muscular',
-        cor: '#4ECDC4',
+        cor: colors.accent.purple,
         icone: 'fitness-center',
-        gradiente: ['#4ECDC4', '#7FDBDA']
+        gradiente: [colors.accent.purple, colors.accent.pink]
       },
       'c': {
         nome: 'Flexibilidade',
         descricao: 'Mobilidade articular',
-        cor: '#45B7D1',
+        cor: colors.accent.green,
         icone: 'accessibility',
-        gradiente: ['#45B7D1', '#6BC5E0']
+        gradiente: [colors.accent.green, colors.success]
       },
       'd': {
         nome: 'Funcional',
         descricao: 'Movimentos integrados',
-        cor: '#96CEB4',
+        cor: colors.accent.orange,
         icone: 'sports-soccer',
-        gradiente: ['#96CEB4', '#B8E6B8']
+        gradiente: [colors.accent.orange, colors.warning]
       }
     };
     return configs[tipo?.toLowerCase()] || configs['a'];
@@ -198,26 +255,23 @@ export default function TelaPlanoTreino({ navigation }) {
             <MaterialIcons name={config.icone} size={24} color={config.cor} />
           </View>
           
-          <View style={styles.treinoInfo}>
-            <Text style={styles.treinoNome}>{config.nome}</Text>
-            <Text style={styles.treinoDescricao}>{config.descricao}</Text>
-            <View style={[styles.diaBadge, { backgroundColor: config.cor + '20' }]}>
-              <Text style={[styles.diaTexto, { color: config.cor }]}>
-                {nomeDia}
-              </Text>
-            </View>
-          </View>
+                     <View style={styles.treinoInfo}>
+             <Text style={styles.treinoNome}>{config.nome}</Text>
+             <View style={[styles.diaBadge, { backgroundColor: config.cor + '20' }]}>
+               <Text style={[styles.diaTexto, { color: config.cor }]}>
+                 {nomeDia}
+               </Text>
+             </View>
+           </View>
           
           <View style={styles.treinoStatus}>
             {treino.concluido ? (
               <View style={styles.statusConcluido}>
                 <MaterialIcons name="check-circle" size={20} color="#10B981" />
-                <Text style={styles.statusTexto}>✓</Text>
               </View>
             ) : (
               <View style={styles.statusPendente}>
                 <MaterialIcons name="radio-button-unchecked" size={20} color="#9CA3AF" />
-                <Text style={styles.statusTexto}>○</Text>
               </View>
             )}
           </View>
@@ -230,7 +284,7 @@ export default function TelaPlanoTreino({ navigation }) {
           </View>
           
           <View style={styles.detalheItem}>
-            <View style={[styles.intensidadeDot, { backgroundColor: treino.intensidade === 'alta' ? '#EF4444' : '#F59E0B' }]} />
+            <View style={[styles.intensidadeDot, { backgroundColor: treino.intensidade === 'alta' ? colors.accent.red : colors.accent.orange }]} />
             <Text style={styles.detalheTexto}>{treino.intensidade}</Text>
           </View>
           
@@ -270,9 +324,7 @@ export default function TelaPlanoTreino({ navigation }) {
                   </View>
                 </View>
                 
-                {exercicio.descricao && (
-                  <Text style={styles.exercicioDescricao}>{exercicio.descricao}</Text>
-                )}
+
               </View>
             ))}
           </View>
@@ -381,7 +433,7 @@ export default function TelaPlanoTreino({ navigation }) {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#1E293B" />
+      <StatusBar barStyle="light-content" backgroundColor={colors.neutral[900]} />
       
       {/* Header moderno */}
       <View style={styles.header}>
@@ -393,12 +445,27 @@ export default function TelaPlanoTreino({ navigation }) {
             <MaterialIcons name="arrow-back" size={24} color="#FFFFFF" />
           </TouchableOpacity>
           
-          <View style={styles.headerText}>
-            <Text style={styles.headerTitle}>Plano de Treino</Text>
-            <Text style={styles.headerSubtitle}>Treinos personalizados por IA</Text>
-          </View>
+                     <View style={styles.headerText}>
+             <Text style={styles.headerTitle}>Plano de Treino</Text>
+           </View>
           
-          <TouchableOpacity style={styles.menuButton}>
+          <TouchableOpacity 
+            style={styles.menuButton}
+            onPress={() => {
+              Alert.alert(
+                'Opções do Plano',
+                'Escolha uma opção:',
+                [
+                  { text: 'Cancelar', style: 'cancel' },
+                  { 
+                    text: 'Novo Treino', 
+                    onPress: () => gerarNovoTreino(),
+                    style: 'default'
+                  }
+                ]
+              );
+            }}
+          >
             <MaterialIcons name="more-vert" size={24} color="#FFFFFF" />
           </TouchableOpacity>
         </View>
@@ -411,15 +478,15 @@ export default function TelaPlanoTreino({ navigation }) {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            colors={['#3B82F6']}
-            tintColor="#3B82F6"
+            colors={[colors.accent.blue]}
+            tintColor={colors.accent.blue}
           />
         }
       >
         <Animated.View style={[styles.content, { opacity: fadeAnim }]}>
           {carregando ? (
             <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color="#3B82F6" />
+              <ActivityIndicator size="large" color={colors.accent.blue} />
               <Text style={styles.loadingText}>Carregando seu plano...</Text>
             </View>
           ) : planoAtual ? (
@@ -461,9 +528,9 @@ export default function TelaPlanoTreino({ navigation }) {
                 disabled={gerandoPlano}
               >
                 {gerandoPlano ? (
-                  <ActivityIndicator size="small" color="#FFFFFF" />
+                  <ActivityIndicator size="small" color={colors.neutral[50]} />
                 ) : (
-                  <MaterialIcons name="add" size={20} color="#FFFFFF" />
+                  <MaterialIcons name="add" size={20} color={colors.neutral[50]} />
                 )}
                 <Text style={styles.generateButtonText}>
                   {gerandoPlano ? 'Gerando...' : 'Gerar Primeiro Plano'}
@@ -480,21 +547,19 @@ export default function TelaPlanoTreino({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: colors.neutral[900],
   },
   
   header: {
-    backgroundColor: '#1E293B',
+    backgroundColor: colors.neutral[800],
     paddingTop: 60,
-    paddingBottom: 24,
-    paddingHorizontal: 20,
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 8,
+    paddingBottom: spacing.xl,
+    paddingHorizontal: spacing.lg,
+    borderBottomLeftRadius: borders.radius['2xl'],
+    borderBottomRightRadius: borders.radius['2xl'],
+    borderWidth: 1,
+    borderColor: colors.neutral[700],
+    ...shadows.xl,
   },
   
   headerContent: {
@@ -507,9 +572,11 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: colors.neutral[700],
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: colors.neutral[600],
   },
   
   headerText: {
@@ -518,25 +585,24 @@ const styles = StyleSheet.create({
   },
   
   headerTitle: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: '#FFFFFF',
-    marginBottom: 4,
+    fontSize: typography.fontSize['2xl'],
+    fontWeight: typography.fontWeight.extrabold,
+    color: colors.neutral[50],
+    marginBottom: spacing.xs,
+    letterSpacing: -0.5,
   },
   
-  headerSubtitle: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#CBD5E1',
-  },
+
   
   menuButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: colors.neutral[700],
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: colors.neutral[600],
   },
   
   scrollView: {
@@ -544,9 +610,9 @@ const styles = StyleSheet.create({
   },
   
   content: {
-    paddingHorizontal: 20,
-    paddingTop: 24,
-    paddingBottom: 32,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.xl,
+    paddingBottom: spacing.xl,
   },
   
   loadingContainer: {
@@ -557,29 +623,27 @@ const styles = StyleSheet.create({
   },
   
   loadingText: {
-    marginTop: 16,
-    fontSize: 16,
-    color: '#64748B',
-    fontWeight: '500',
+    marginTop: spacing.md,
+    fontSize: typography.fontSize.base,
+    color: colors.neutral[500],
+    fontWeight: typography.fontWeight.medium,
   },
   
   resumoContainer: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 24,
-    marginBottom: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 4,
+    backgroundColor: colors.neutral[800],
+    borderRadius: borders.radius.xl,
+    padding: spacing.xl,
+    marginBottom: spacing.xl,
+    borderWidth: 1,
+    borderColor: colors.neutral[700],
+    ...shadows.lg,
   },
   
   resumoTitulo: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#1E293B',
-    marginBottom: 20,
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.neutral[50],
+    marginBottom: spacing.lg,
     textAlign: 'center',
   },
   
@@ -591,52 +655,52 @@ const styles = StyleSheet.create({
   
   resumoCard: {
     width: '48%',
-    backgroundColor: '#F8FAFC',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
+    backgroundColor: colors.neutral[700],
+    borderRadius: borders.radius.lg,
+    padding: spacing.md,
+    marginBottom: spacing.sm,
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.neutral[600],
   },
   
   resumoLabel: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: '#64748B',
-    marginTop: 8,
-    marginBottom: 4,
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.neutral[400],
+    marginTop: spacing.sm,
+    marginBottom: spacing.xs,
   },
   
   resumoValor: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#1E293B',
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.neutral[50],
     textAlign: 'center',
   },
   
   estatisticasContainer: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 24,
-    marginBottom: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 4,
+    backgroundColor: colors.neutral[800],
+    borderRadius: borders.radius.xl,
+    padding: spacing.xl,
+    marginBottom: spacing.xl,
+    borderWidth: 1,
+    borderColor: colors.neutral[700],
+    ...shadows.lg,
   },
   
   estatisticasTitulo: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#1E293B',
-    marginBottom: 20,
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.neutral[50],
+    marginBottom: spacing.lg,
     textAlign: 'center',
   },
   
   estatisticasGrid: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 24,
+    marginBottom: spacing.xl,
   },
   
   estatisticaCard: {
@@ -648,23 +712,25 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: '#F1F5F9',
+    backgroundColor: colors.neutral[700],
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 12,
+    marginBottom: spacing.sm,
+    borderWidth: 1,
+    borderColor: colors.neutral[600],
   },
   
   estatisticaValor: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: '#1E293B',
-    marginBottom: 4,
+    fontSize: typography.fontSize['2xl'],
+    fontWeight: typography.fontWeight.extrabold,
+    color: colors.neutral[50],
+    marginBottom: spacing.xs,
   },
   
   estatisticaLabel: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: '#64748B',
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.neutral[400],
     textAlign: 'center',
   },
   
@@ -674,61 +740,57 @@ const styles = StyleSheet.create({
   
   progressoBarra: {
     height: 8,
-    backgroundColor: '#E2E8F0',
-    borderRadius: 4,
+    backgroundColor: colors.neutral[700],
+    borderRadius: borders.radius.full,
     overflow: 'hidden',
     width: '100%',
-    marginBottom: 12,
+    marginBottom: spacing.sm,
   },
   
   progressoPreenchido: {
     height: '100%',
-    borderRadius: 4,
-    backgroundColor: '#3B82F6',
+    borderRadius: borders.radius.full,
+    backgroundColor: colors.accent.blue,
   },
   
   progressoTexto: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#3B82F6',
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.accent.blue,
   },
   
   treinosSection: {
-    marginBottom: 24,
+    marginBottom: spacing.xl,
   },
   
   sectionTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#1E293B',
-    marginBottom: 20,
+    fontSize: typography.fontSize.xl,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.neutral[50],
+    marginBottom: spacing.lg,
     textAlign: 'center',
   },
   
   treinoCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 20,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 4,
+    backgroundColor: colors.neutral[800],
+    borderRadius: borders.radius.xl,
+    padding: spacing.lg,
+    marginBottom: spacing.md,
     borderWidth: 1,
-    borderColor: '#F1F5F9',
+    borderColor: colors.neutral[700],
+    ...shadows.lg,
   },
   
   treinoCardConcluido: {
-    borderColor: '#10B981',
+    borderColor: colors.accent.green,
     borderWidth: 2,
-    backgroundColor: '#F0FDF4',
+    backgroundColor: colors.accent.green + '10',
   },
   
   treinoHeader: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    marginBottom: 16,
+    marginBottom: spacing.md,
   },
   
   treinoIconContainer: {
@@ -737,7 +799,7 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 16,
+    marginRight: spacing.md,
   },
   
   treinoInfo: {
@@ -745,28 +807,24 @@ const styles = StyleSheet.create({
   },
   
   treinoNome: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#1E293B',
-    marginBottom: 4,
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.neutral[50],
+    marginBottom: spacing.xs,
   },
   
-  treinoDescricao: {
-    fontSize: 14,
-    color: '#64748B',
-    marginBottom: 8,
-  },
+
   
   diaBadge: {
     alignSelf: 'flex-start',
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-    borderRadius: 12,
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    borderRadius: borders.radius.lg,
   },
   
   diaTexto: {
-    fontSize: 12,
-    fontWeight: '600',
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.semibold,
   },
   
   treinoStatus: {
@@ -784,18 +842,18 @@ const styles = StyleSheet.create({
   },
   
   statusTexto: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginTop: 2,
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.semibold,
+    marginTop: spacing.xs,
   },
   
   treinoDetalhes: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 16,
-    paddingTop: 16,
+    marginBottom: spacing.md,
+    paddingTop: spacing.md,
     borderTopWidth: 1,
-    borderTopColor: '#F1F5F9',
+    borderTopColor: colors.neutral[700],
   },
   
   detalheItem: {
@@ -806,70 +864,68 @@ const styles = StyleSheet.create({
   },
   
   detalheTexto: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: '#64748B',
-    marginLeft: 6,
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.neutral[400],
+    marginLeft: spacing.xs,
   },
   
   intensidadeDot: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    marginRight: 6,
+    marginRight: spacing.xs,
   },
   
   exerciciosContainer: {
-    paddingTop: 16,
+    paddingTop: spacing.md,
     borderTopWidth: 1,
-    borderTopColor: '#F1F5F9',
+    borderTopColor: colors.neutral[700],
   },
   
   exerciciosTitulo: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#374151',
-    marginBottom: 12,
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.neutral[300],
+    marginBottom: spacing.sm,
   },
   
   exercicioItem: {
-    backgroundColor: '#F8FAFC',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    backgroundColor: colors.neutral[700],
+    borderRadius: borders.radius.lg,
+    padding: spacing.md,
+    marginBottom: spacing.sm,
+    borderWidth: 1,
+    borderColor: colors.neutral[600],
+    ...shadows.sm,
   },
   
   exercicioHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: spacing.sm,
   },
   
   exercicioBullet: {
-    fontSize: 16,
-    color: '#3B82F6',
-    fontWeight: '600',
-    marginRight: 12,
+    fontSize: typography.fontSize.base,
+    color: colors.accent.blue,
+    fontWeight: typography.fontWeight.semibold,
+    marginRight: spacing.sm,
     width: 20,
     textAlign: 'center',
   },
   
   exercicioNome: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1E293B',
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.neutral[50],
     flex: 1,
   },
   
   exercicioDetalhes: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 8,
+    marginTop: spacing.sm,
   },
   
   exercicioSerie: {
@@ -878,10 +934,10 @@ const styles = StyleSheet.create({
   },
   
   exercicioSerieTexto: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: '#3730A3',
-    marginLeft: 6,
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.accent.blue,
+    marginLeft: spacing.xs,
   },
   
   exercicioRepeticao: {
@@ -890,53 +946,46 @@ const styles = StyleSheet.create({
   },
   
   exercicioRepeticaoTexto: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: '#065F46',
-    marginLeft: 6,
-  },
-  
-  exercicioDescricao: {
-    fontSize: 13,
-    color: '#64748B',
-    marginTop: 8,
-    lineHeight: 18,
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.accent.green,
+    marginLeft: spacing.xs,
   },
   
   semExercicios: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingTop: 16,
+    paddingTop: spacing.md,
     borderTopWidth: 1,
-    borderTopColor: '#F1F5F9',
+    borderTopColor: colors.neutral[700],
   },
   
   semExerciciosTexto: {
-    fontSize: 14,
-    color: '#9CA3AF',
-    marginLeft: 8,
+    fontSize: typography.fontSize.sm,
+    color: colors.neutral[400],
+    marginLeft: spacing.sm,
     fontStyle: 'italic',
   },
   
   emptyState: {
     alignItems: 'center',
-    paddingVertical: 40,
-    paddingHorizontal: 20,
+    paddingVertical: spacing.xl,
+    paddingHorizontal: spacing.lg,
   },
   
   emptyStateTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#64748B',
-    marginTop: 20,
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.neutral[400],
+    marginTop: spacing.lg,
     textAlign: 'center',
   },
   
   emptyStateSubtitle: {
-    fontSize: 14,
-    color: '#9CA3AF',
-    marginTop: 8,
+    fontSize: typography.fontSize.sm,
+    color: colors.neutral[500],
+    marginTop: spacing.sm,
     textAlign: 'center',
   },
   
@@ -944,55 +993,51 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 40,
+    padding: spacing.xl,
     paddingVertical: 80,
   },
   
   noPlanIcon: {
-    marginBottom: 24,
+    marginBottom: spacing.xl,
     opacity: 0.6,
   },
   
   noPlanTitle: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#1E293B',
-    marginBottom: 12,
+    fontSize: typography.fontSize['2xl'],
+    fontWeight: typography.fontWeight.bold,
+    color: colors.neutral[50],
+    marginBottom: spacing.sm,
     textAlign: 'center',
   },
   
   noPlanSubtitle: {
-    fontSize: 16,
-    color: '#64748B',
+    fontSize: typography.fontSize.base,
+    color: colors.neutral[400],
     textAlign: 'center',
-    marginBottom: 32,
-    lineHeight: 24,
-    paddingHorizontal: 20,
+    marginBottom: spacing.xl,
+    lineHeight: typography.lineHeight.normal,
+    paddingHorizontal: spacing.lg,
   },
   
   generateButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#3B82F6',
-    borderRadius: 16,
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-    shadowColor: '#3B82F6',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 16,
-    elevation: 8,
+    backgroundColor: colors.accent.blue,
+    borderRadius: borders.radius.lg,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.xl,
+    ...shadows.lg,
   },
   
   generateButtonDisabled: {
-    backgroundColor: '#9CA3AF',
+    backgroundColor: colors.neutral[400],
     shadowOpacity: 0.1,
   },
   
   generateButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#FFFFFF',
-    marginLeft: 12,
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.neutral[50],
+    marginLeft: spacing.sm,
   },
 });
