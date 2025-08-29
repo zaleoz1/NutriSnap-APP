@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert, ScrollView, Dimensions, Modal } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Alert, ScrollView, Dimensions, Modal, RefreshControl, ActivityIndicator } from 'react-native';
 import { Ionicons, MaterialIcons, FontAwesome5, MaterialCommunityIcons } from '@expo/vector-icons';
 import { usarAutenticacao } from '../services/AuthContext';
-import { buscarApi } from '../services/api';
+import { buscarApi, buscarTreinos, buscarMetas } from '../services/api';
 import { colors, typography, spacing, borders, shadows, componentStyles } from '../styles/globalStyles';
 import { Svg, Circle, G, Text as SvgText } from 'react-native-svg';
 
@@ -76,11 +76,21 @@ export default function TelaPrincipal({ navigation }) {
   const [meta, setMeta] = useState(null);
   const [consumido, setConsumido] = useState(0);
   const [modalVisivel, setModalVisivel] = useState(false);
-
+  const [planoTreino, setPlanoTreino] = useState(null);
+  const [carregando, setCarregando] = useState(true);
   async function carregarDados() {
     try {
-      const m = await buscarApi('/api/metas', { token });
+      setCarregando(true);
+      
+      // Carregar metas
+      const m = await buscarMetas(token);
       setMeta(m);
+      
+      // Carregar plano de treino
+      const treinos = await buscarTreinos(token);
+      setPlanoTreino(treinos);
+      
+      // Carregar refeições do dia
       const refeicoes = await buscarApi('/api/refeicoes', { token });
       const hoje = new Date().toDateString();
       const total = refeicoes
@@ -88,15 +98,41 @@ export default function TelaPrincipal({ navigation }) {
         .reduce((soma, r) => soma + (r.calorias_totais || 0), 0);
       setConsumido(total);
     } catch (erro) {
-      Alert.alert('Erro', erro.message);
+      console.error('Erro ao carregar dados:', erro);
+      // Não mostrar alerta para erros de carregamento inicial
+    } finally {
+      setCarregando(false);
     }
   }
 
-  useEffect(() => { carregarDados(); }, []);
+  useEffect(() => { 
+    carregarDados(); 
+  }, []);
+
+  // Atualizar dados quando a tela receber foco
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      carregarDados();
+    });
+
+    return unsubscribe;
+  }, [navigation]);
 
   const diario = meta?.calorias_diarias || 2290;
-  const restantes = diario - consumido;
+  const restantes = Math.max(0, diario - consumido);
   const percentual = Math.min(100, Math.round((consumido / diario) * 100));
+  
+  // Dados do plano de treino
+  const treinosSemana = planoTreino?.plano?.treinos || [];
+  const treinosConcluidos = treinosSemana.filter(t => t.concluido).length;
+  const totalTreinos = treinosSemana.length;
+  const percentualTreinos = totalTreinos > 0 ? Math.round((treinosConcluidos / totalTreinos) * 100) : 0;
+  
+  // Dados de peso e progresso
+  const pesoAtual = meta?.peso_atual || 0;
+  const pesoMeta = meta?.peso_meta || 0;
+  const diferencaPeso = pesoAtual - pesoMeta;
+  const progressoPeso = pesoAtual > 0 && pesoMeta > 0 ? Math.abs(diferencaPeso) : 0;
 
   function lidarComSair() {
     sair();
@@ -132,6 +168,41 @@ export default function TelaPrincipal({ navigation }) {
     }
   }
 
+  // Função auxiliar para configuração de tipos de treino
+  function getConfiguracaoTreino(tipo) {
+    const configs = {
+      'a': {
+        nome: 'Cardio',
+        descricao: 'Resistência cardiovascular',
+        cor: colors.accent.blue,
+        icone: 'directions-run',
+        gradiente: [colors.accent.blue, colors.primary[400]]
+      },
+      'b': {
+        nome: 'Força',
+        descricao: 'Desenvolvimento muscular',
+        cor: colors.accent.purple,
+        icone: 'fitness-center',
+        gradiente: [colors.accent.purple, colors.accent.pink]
+      },
+      'c': {
+        nome: 'Flexibilidade',
+        descricao: 'Mobilidade articular',
+        cor: colors.accent.green,
+        icone: 'accessibility',
+        gradiente: [colors.accent.green, colors.success]
+      },
+      'd': {
+        nome: 'Funcional',
+        descricao: 'Movimentos integrados',
+        cor: colors.accent.orange,
+        icone: 'sports-soccer',
+        gradiente: [colors.accent.orange, colors.warning]
+      }
+    };
+    return configs[tipo?.toLowerCase()] || configs['a'];
+  }
+
   return (
     <View style={estilos.container}>
       
@@ -139,7 +210,23 @@ export default function TelaPrincipal({ navigation }) {
         style={estilos.scrollView}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={estilos.scrollContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={carregando}
+            onRefresh={carregarDados}
+            colors={[colors.accent.blue]}
+            tintColor={colors.accent.blue}
+          />
+        }
       >
+        {/* Indicador de carregamento */}
+        {carregando && (
+          <View style={estilos.loadingContainer}>
+            <ActivityIndicator size="large" color={colors.accent.blue} />
+            <Text style={estilos.loadingText}>Carregando dados...</Text>
+          </View>
+        )}
+
         {/* Header premium com design sofisticado */}
         <View style={estilos.header}>
           <View style={estilos.headerGradient}>
@@ -253,6 +340,84 @@ export default function TelaPrincipal({ navigation }) {
           </View>
         </View>
 
+        {/* Informações Nutricionais */}
+        {meta?.metas_nutricionais ? (
+          <View style={estilos.nutritionInfo}>
+            <View style={estilos.sectionHeader}>
+              <Text style={estilos.sectionTitle}>Informações Nutricionais</Text>
+              <TouchableOpacity 
+                style={estilos.viewAllButton}
+                onPress={() => navigation.navigate('Metas')}
+              >
+                <Text style={estilos.viewAllText}>Ver metas</Text>
+                <MaterialIcons name="arrow-forward-ios" size={14} color={colors.accent.blue} />
+              </TouchableOpacity>
+            </View>
+            
+            <View style={estilos.nutritionCard}>
+              <View style={estilos.nutritionGrid}>
+                {/* Proteínas */}
+                <View style={estilos.nutritionItem}>
+                  <View style={estilos.nutritionIcon}>
+                    <MaterialCommunityIcons name="food-steak" size={20} color={colors.accent.green} />
+                  </View>
+                  <Text style={estilos.nutritionValue}>
+                    {meta.metas_nutricionais.proteinas?.gramas || '--'}g
+                  </Text>
+                  <Text style={estilos.nutritionLabel}>Proteínas</Text>
+                  <Text style={estilos.nutritionPercent}>
+                    {meta.metas_nutricionais.proteinas?.percentual || '--'}%
+                  </Text>
+                </View>
+                
+                {/* Carboidratos */}
+                <View style={estilos.nutritionItem}>
+                  <View style={estilos.nutritionIcon}>
+                    <MaterialCommunityIcons name="bread-slice" size={20} color={colors.accent.orange} />
+                  </View>
+                  <Text style={estilos.nutritionValue}>
+                    {meta.metas_nutricionais.carboidratos?.gramas || '--'}g
+                  </Text>
+                  <Text style={estilos.nutritionLabel}>Carboidratos</Text>
+                  <Text style={estilos.nutritionPercent}>
+                    {meta.metas_nutricionais.carboidratos?.percentual || '--'}%
+                  </Text>
+                </View>
+                
+                {/* Gorduras */}
+                <View style={estilos.nutritionItem}>
+                  <View style={estilos.nutritionIcon}>
+                    <MaterialCommunityIcons name="oil" size={20} color={colors.accent.purple} />
+                  </View>
+                  <Text style={estilos.nutritionValue}>
+                    {meta.metas_nutricionais.gorduras?.gramas || '--'}g
+                  </Text>
+                  <Text style={estilos.nutritionLabel}>Gorduras</Text>
+                  <Text style={estilos.nutritionPercent}>
+                    {meta.metas_nutricionais.gorduras?.percentual || '--'}%
+                  </Text>
+                </View>
+              </View>
+            </View>
+          </View>
+        ) : (
+          <View style={estilos.emptyState}>
+            <View style={estilos.emptyStateContent}>
+              <MaterialIcons name="restaurant-menu" size={48} color={colors.neutral[500]} />
+              <Text style={estilos.emptyStateTitle}>Complete seu perfil</Text>
+              <Text style={estilos.emptyStateText}>
+                Faça o quiz para receber metas nutricionais personalizadas
+              </Text>
+              <TouchableOpacity 
+                style={estilos.emptyStateButton}
+                onPress={() => navigation.navigate('Quiz')}
+              >
+                <Text style={estilos.emptyStateButtonText}>Fazer Quiz</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+
         {/* Métricas de saúde com design moderno */}
         <View style={estilos.healthMetrics}>
           <View style={estilos.sectionHeader}>
@@ -272,14 +437,26 @@ export default function TelaPrincipal({ navigation }) {
                 </View>
                 <Text style={estilos.metricTitle}>Peso Atual</Text>
               </View>
-              <Text style={estilos.metricValue}>82.5 kg</Text>
-              <Text style={estilos.metricTarget}>Última medição: hoje</Text>
-              <View style={estilos.weightTrend}>
-                <View style={estilos.trendIcon}>
-                  <Ionicons name="trending-down" size={16} color={colors.accent.green} />
+              <Text style={estilos.metricValue}>
+                {pesoAtual > 0 ? `${pesoAtual.toFixed(1)} kg` : '-- kg'}
+              </Text>
+              <Text style={estilos.metricTarget}>
+                {pesoMeta > 0 ? `Meta: ${pesoMeta.toFixed(1)} kg` : 'Meta não definida'}
+              </Text>
+              {pesoAtual > 0 && pesoMeta > 0 && (
+                <View style={estilos.weightTrend}>
+                  <View style={estilos.trendIcon}>
+                    <Ionicons 
+                      name={diferencaPeso > 0 ? "trending-down" : "trending-up"} 
+                      size={16} 
+                      color={diferencaPeso > 0 ? colors.accent.green : colors.accent.orange} 
+                    />
+                  </View>
+                  <Text style={estilos.trendText}>
+                    {diferencaPeso > 0 ? `-${diferencaPeso.toFixed(1)} kg` : `+${Math.abs(diferencaPeso).toFixed(1)} kg`} para meta
+                  </Text>
                 </View>
-                <Text style={estilos.trendText}>-0.3 kg esta semana</Text>
-              </View>
+              )}
             </View>
             
             {/* Exercício */}
@@ -288,11 +465,24 @@ export default function TelaPrincipal({ navigation }) {
                 <View style={estilos.metricIconContainer}>
                   <MaterialIcons name="local-fire-department" size={22} color={colors.accent.orange} />
                 </View>
-                <Text style={estilos.metricTitle}>Atividade</Text>
+                <Text style={estilos.metricTitle}>Treinos</Text>
               </View>
-              <Text style={estilos.metricValue}>0 cal</Text>
-              <Text style={estilos.metricTarget}>0 minutos hoje</Text>
-              <TouchableOpacity style={estilos.addButton}>
+              <Text style={estilos.metricValue}>
+                {totalTreinos > 0 ? `${treinosConcluidos}/${totalTreinos}` : '0/0'}
+              </Text>
+              <Text style={estilos.metricTarget}>
+                {totalTreinos > 0 ? `${percentualTreinos}% concluídos` : 'Nenhum treino'}
+              </Text>
+              {totalTreinos > 0 && (
+                <View style={estilos.metricProgress}>
+                  <View style={[estilos.metricProgressFill, { width: `${percentualTreinos}%` }]} />
+                  <View style={estilos.metricProgressGlow} />
+                </View>
+              )}
+              <TouchableOpacity 
+                style={estilos.addButton}
+                onPress={() => navigation.navigate('PlanoTreino')}
+              >
                 <Ionicons name="add" size={22} color={colors.neutral[50]} />
               </TouchableOpacity>
             </View>
@@ -305,15 +495,72 @@ export default function TelaPrincipal({ navigation }) {
                 </View>
                 <Text style={estilos.metricTitle}>Hidratação</Text>
               </View>
-              <Text style={estilos.metricValue}>1.2 L</Text>
-              <Text style={estilos.metricTarget}>Meta: 2.5 L</Text>
+              <Text style={estilos.metricValue}>
+                {meta?.metas_nutricionais?.agua?.litros ? `${meta.metas_nutricionais.agua.litros} L` : '2.0 L'}
+              </Text>
+              <Text style={estilos.metricTarget}>
+                Meta: {meta?.metas_nutricionais?.agua?.litros ? `${meta.metas_nutricionais.agua.litros} L` : '2.0 L'}
+              </Text>
               <View style={estilos.metricProgress}>
-                <View style={[estilos.metricProgressFill, { width: '48%' }]} />
+                <View style={[estilos.metricProgressFill, { width: '60%' }]} />
                 <View style={estilos.metricProgressGlow} />
               </View>
             </View>
           </View>
         </View>
+
+        {/* Próximo Treino */}
+        {totalTreinos > 0 && (
+          <View style={estilos.nextWorkout}>
+            <View style={estilos.sectionHeader}>
+              <Text style={estilos.sectionTitle}>Próximo Treino</Text>
+              <TouchableOpacity 
+                style={estilos.viewAllButton}
+                onPress={() => navigation.navigate('PlanoTreino')}
+              >
+                <Text style={estilos.viewAllText}>Ver plano completo</Text>
+                <MaterialIcons name="arrow-forward-ios" size={14} color={colors.accent.blue} />
+              </TouchableOpacity>
+            </View>
+            
+            <View style={estilos.workoutCard}>
+              {(() => {
+                const proximoTreino = treinosSemana.find(t => !t.concluido);
+                if (!proximoTreino) {
+                  return (
+                    <View style={estilos.workoutComplete}>
+                      <MaterialIcons name="check-circle" size={48} color={colors.accent.green} />
+                      <Text style={estilos.workoutCompleteText}>Todos os treinos concluídos!</Text>
+                      <Text style={estilos.workoutCompleteSubtext}>Parabéns pela dedicação</Text>
+                    </View>
+                  );
+                }
+                
+                const config = getConfiguracaoTreino(proximoTreino.tipo);
+                return (
+                  <View style={estilos.workoutInfo}>
+                    <View style={[estilos.workoutIcon, { backgroundColor: config.cor + '15' }]}>
+                      <MaterialIcons name={config.icone} size={28} color={config.cor} />
+                    </View>
+                    <View style={estilos.workoutDetails}>
+                      <Text style={estilos.workoutTitle}>{config.nome}</Text>
+                      <Text style={estilos.workoutDesc}>{config.descricao}</Text>
+                      <Text style={estilos.workoutDuration}>
+                        {proximoTreino.duracao || '45 min'} • {proximoTreino.intensidade || 'Média'}
+                      </Text>
+                    </View>
+                    <TouchableOpacity 
+                      style={[estilos.workoutButton, { backgroundColor: config.cor }]}
+                      onPress={() => navigation.navigate('PlanoTreino')}
+                    >
+                      <Text style={estilos.workoutButtonText}>Iniciar</Text>
+                    </TouchableOpacity>
+                  </View>
+                );
+              })()}
+            </View>
+          </View>
+        )}
 
         {/* Ações rápidas com design intuitivo */}
         <View style={estilos.quickActions}>
@@ -531,6 +778,20 @@ const estilos = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.xl,
     paddingBottom: spacing.xl,
+  },
+  
+  // Indicador de carregamento
+  loadingContainer: {
+    alignItems: 'center',
+    paddingVertical: spacing.xl,
+    marginBottom: spacing.lg,
+  },
+  
+  loadingText: {
+    fontSize: typography.fontSize.base,
+    color: colors.neutral[400],
+    marginTop: spacing.md,
+    fontWeight: typography.fontWeight.medium,
   },
   
   // Header premium com gradiente
@@ -865,6 +1126,111 @@ const estilos = StyleSheet.create({
     fontWeight: typography.fontWeight.semibold,
   },
   
+  // Informações nutricionais
+  nutritionInfo: {
+    marginBottom: spacing.xl,
+  },
+  
+  nutritionCard: {
+    backgroundColor: colors.neutral[800],
+    borderRadius: borders.radius['2xl'],
+    padding: spacing.xl,
+    ...shadows.xl,
+    borderWidth: 1,
+    borderColor: colors.neutral[700],
+  },
+  
+  nutritionGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: spacing.md,
+  },
+  
+  nutritionItem: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: spacing.md,
+  },
+  
+  nutritionIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.neutral[700],
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.sm,
+    borderWidth: 1,
+    borderColor: colors.neutral[600],
+  },
+  
+  nutritionValue: {
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.neutral[50],
+    marginBottom: spacing.xs,
+  },
+  
+  nutritionLabel: {
+    fontSize: typography.fontSize.sm,
+    color: colors.neutral[400],
+    marginBottom: spacing.xs,
+    fontWeight: typography.fontWeight.medium,
+    textAlign: 'center',
+  },
+  
+  nutritionPercent: {
+    fontSize: typography.fontSize.xs,
+    color: colors.accent.blue,
+    fontWeight: typography.fontWeight.semibold,
+  },
+  
+  // Estado vazio
+  emptyState: {
+    marginBottom: spacing.xl,
+  },
+  
+  emptyStateContent: {
+    backgroundColor: colors.neutral[800],
+    borderRadius: borders.radius['2xl'],
+    padding: spacing.xl,
+    alignItems: 'center',
+    ...shadows.xl,
+    borderWidth: 1,
+    borderColor: colors.neutral[700],
+  },
+  
+  emptyStateTitle: {
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.neutral[50],
+    marginTop: spacing.md,
+    marginBottom: spacing.sm,
+  },
+  
+  emptyStateText: {
+    fontSize: typography.fontSize.base,
+    color: colors.neutral[400],
+    textAlign: 'center',
+    marginBottom: spacing.lg,
+    lineHeight: typography.lineHeight.normal,
+    fontWeight: typography.fontWeight.medium,
+  },
+  
+  emptyStateButton: {
+    backgroundColor: colors.accent.blue,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    borderRadius: borders.radius.lg,
+    ...shadows.lg,
+  },
+  
+  emptyStateButtonText: {
+    color: colors.neutral[50],
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.semibold,
+  },
+  
   // Métricas de saúde modernas
   healthMetrics: {
     marginBottom: spacing.xl,
@@ -990,6 +1356,92 @@ const estilos = StyleSheet.create({
     ...shadows.lg,
     borderWidth: 2,
     borderColor: colors.neutral[900],
+  },
+  
+  // Próximo treino
+  nextWorkout: {
+    marginBottom: spacing.xl,
+  },
+  
+  workoutCard: {
+    backgroundColor: colors.neutral[800],
+    borderRadius: borders.radius['2xl'],
+    padding: spacing.xl,
+    ...shadows.xl,
+    borderWidth: 1,
+    borderColor: colors.neutral[700],
+  },
+  
+  workoutComplete: {
+    alignItems: 'center',
+    paddingVertical: spacing.xl,
+  },
+  
+  workoutCompleteText: {
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.neutral[50],
+    marginTop: spacing.md,
+    marginBottom: spacing.xs,
+  },
+  
+  workoutCompleteSubtext: {
+    fontSize: typography.fontSize.sm,
+    color: colors.neutral[400],
+    fontWeight: typography.fontWeight.medium,
+  },
+  
+  workoutInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.lg,
+  },
+  
+  workoutIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: colors.neutral[600],
+  },
+  
+  workoutDetails: {
+    flex: 1,
+  },
+  
+  workoutTitle: {
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.neutral[50],
+    marginBottom: spacing.xs,
+  },
+  
+  workoutDesc: {
+    fontSize: typography.fontSize.sm,
+    color: colors.neutral[400],
+    marginBottom: spacing.xs,
+    fontWeight: typography.fontWeight.medium,
+  },
+  
+  workoutDuration: {
+    fontSize: typography.fontSize.xs,
+    color: colors.neutral[500],
+    fontWeight: typography.fontWeight.medium,
+  },
+  
+  workoutButton: {
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    borderRadius: borders.radius.lg,
+    ...shadows.lg,
+  },
+  
+  workoutButtonText: {
+    color: colors.neutral[50],
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.semibold,
   },
   
   // Ações rápidas intuitivas

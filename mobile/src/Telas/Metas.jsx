@@ -141,37 +141,22 @@ export default function TelaMetas({ navigation }) {
             <Text style={styles.cardPercentual}>{dados.percentual}%</Text>
           </View>
         </View>
-        {dados.fontes && Array.isArray(dados.fontes) && dados.fontes.length > 0 && (
-          <View style={styles.fontesContainer}>
-            <Text style={styles.fontesTitle}>Fontes:</Text>
-            <Text style={styles.fontesText}>{dados.fontes.join(', ')}</Text>
-          </View>
-        )}
       </View>
     );
   };
 
-  const renderizarCardVitamina = ({ titulo, dados, cor }) => {
-    if (!dados || !dados.quantidade) return null;
-    
-    return (
-      <View style={[styles.cardVitamina, { borderLeftColor: cor }]}>
-        <View style={styles.vitaminaHeader}>
-          <Text style={styles.vitaminaTitle}>{titulo}</Text>
-          <Text style={styles.vitaminaQuantidade}>{dados.quantidade}</Text>
-        </View>
-        {dados.importancia && (
-          <Text style={styles.vitaminaImportancia}>{dados.importancia}</Text>
-        )}
-        {dados.fontes && Array.isArray(dados.fontes) && dados.fontes.length > 0 && (
-          <View style={styles.fontesContainer}>
-            <Text style={styles.fontesTitle}>Fontes:</Text>
-            <Text style={styles.fontesText}>{dados.fontes.join(', ')}</Text>
-          </View>
-        )}
-      </View>
-    );
-  };
+     const renderizarCardVitamina = ({ titulo, dados, cor }) => {
+     if (!dados || !dados.quantidade) return null;
+     
+     return (
+       <View style={[styles.cardVitamina, { borderLeftColor: cor }]}>
+         <View style={styles.vitaminaHeader}>
+           <Text style={styles.vitaminaTitle}>{titulo}</Text>
+           <Text style={styles.vitaminaQuantidade}>{dados.quantidade}</Text>
+         </View>
+       </View>
+     );
+   };
 
   const renderizarCardEstrategia = ({ titulo, valor, icone, cor }) => {
     if (!valor || (typeof valor === 'string' && valor.trim() === '')) return null;
@@ -187,21 +172,7 @@ export default function TelaMetas({ navigation }) {
     );
   };
 
-  const renderizarCardDica = ({ dica, index }) => {
-    if (!dica || (typeof dica === 'string' && dica.trim() === '')) return null;
-    
-    return (
-      <View style={styles.cardDica}>
-        <View style={styles.dicaHeader}>
-          <View style={[styles.dicaIcon, { backgroundColor: colors.primary[100] }]}>
-            <Ionicons name="bulb" size={16} color={colors.primary[600]} />
-          </View>
-          <Text style={styles.dicaTitle}>Dica {index + 1}</Text>
-        </View>
-        <Text style={styles.dicaText}>{dica}</Text>
-      </View>
-    );
-  };
+  
 
   const renderizarProgresso = () => {
     if (!metas || !metas.peso_atual || !metas.peso_meta) return null;
@@ -412,33 +383,23 @@ export default function TelaMetas({ navigation }) {
             <View style={styles.sectionContainer}>
               <Text style={styles.sectionTitle}>Micronutrientes</Text>
               
-              {metas.micronutrientes.fibras && (
-                <View style={styles.cardMicronutriente}>
-                  <View style={styles.micronutrienteHeader}>
-                    <Text style={styles.micronutrienteTitle}>Fibras</Text>
-                    <Text style={styles.micronutrienteValor}>{metas.micronutrientes.fibras.gramas}g/dia</Text>
-                  </View>
-                  {metas.micronutrientes.fibras.fontes && Array.isArray(metas.micronutrientes.fibras.fontes) && (
-                    <Text style={styles.micronutrienteFontes}>
-                      Fontes: {metas.micronutrientes.fibras.fontes.join(', ')}
-                    </Text>
-                  )}
-                </View>
-              )}
+                             {metas.micronutrientes.fibras && (
+                 <View style={styles.cardMicronutriente}>
+                   <View style={styles.micronutrienteHeader}>
+                     <Text style={styles.micronutrienteTitle}>Fibras</Text>
+                     <Text style={styles.micronutrienteValor}>{metas.micronutrientes.fibras.gramas}g/dia</Text>
+                   </View>
+                 </View>
+               )}
 
-              {metas.micronutrientes.agua && (
-                <View style={styles.cardMicronutriente}>
-                  <View style={styles.micronutrienteHeader}>
-                    <Text style={styles.micronutrienteTitle}>Água</Text>
-                    <Text style={styles.micronutrienteValor}>{metas.micronutrientes.agua.litros}L/dia</Text>
-                  </View>
-                  {metas.micronutrientes.agua.copos && (
-                    <Text style={styles.micronutrienteFontes}>
-                      {metas.micronutrientes.agua.copos} copos por dia
-                    </Text>
-                  )}
-                </View>
-              )}
+               {metas.micronutrientes.agua && (
+                 <View style={styles.cardMicronutriente}>
+                   <View style={styles.micronutrienteHeader}>
+                     <Text style={styles.micronutrienteTitle}>Água</Text>
+                     <Text style={styles.micronutrienteValor}>{metas.micronutrientes.agua.litros}L/dia</Text>
+                   </View>
+                 </View>
+               )}
 
               {/* Renderizar outras vitaminas e minerais */}
               {metas.micronutrientes && Object.entries(metas.micronutrientes).map(([key, valor]) => {
@@ -487,17 +448,7 @@ export default function TelaMetas({ navigation }) {
             </View>
           )}
 
-          {/* Dicas Personalizadas */}
-          {metas.dicas && Array.isArray(metas.dicas) && metas.dicas.length > 0 && (
-            <View style={styles.sectionContainer}>
-              <Text style={styles.sectionTitle}>Dicas Personalizadas</Text>
-              {metas.dicas.map((dica, index) => (
-                <View key={`dica-${index}`}>
-                  {renderizarCardDica({ dica, index })}
-                </View>
-              ))}
-            </View>
-          )}
+          
 
           {/* Progresso Esperado */}
           {renderizarProgresso()}
@@ -741,12 +692,7 @@ const styles = StyleSheet.create({
     fontWeight: typography.fontWeight.medium,
     color: colors.accent.purple,
   },
-  vitaminaImportancia: {
-    fontSize: typography.fontSize.sm,
-    color: colors.neutral[400],
-    marginBottom: spacing.sm,
-    fontStyle: 'italic',
-  },
+  
   cardMicronutriente: {
     backgroundColor: colors.neutral[800],
     borderRadius: borders.radius.xl,
@@ -772,11 +718,7 @@ const styles = StyleSheet.create({
     fontWeight: typography.fontWeight.medium,
     color: colors.accent.purple,
   },
-  micronutrienteFontes: {
-    fontSize: typography.fontSize.sm,
-    color: colors.neutral[400],
-    lineHeight: typography.lineHeight.relaxed,
-  },
+  
   cardEstrategia: {
     backgroundColor: colors.neutral[800],
     borderRadius: borders.radius.xl,
@@ -803,38 +745,7 @@ const styles = StyleSheet.create({
     color: colors.neutral[400],
     marginLeft: spacing.xl,
   },
-  cardDica: {
-    backgroundColor: colors.neutral[800],
-    borderRadius: borders.radius.xl,
-    padding: spacing.lg,
-    marginBottom: spacing.md,
-    ...shadows.lg,
-    borderWidth: 1,
-    borderColor: colors.neutral[700],
-  },
-  dicaHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: spacing.sm,
-  },
-  dicaIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: spacing.sm,
-  },
-  dicaTitle: {
-    fontSize: typography.fontSize.base,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.neutral[50],
-  },
-  dicaText: {
-    fontSize: typography.fontSize.base,
-    color: colors.neutral[400],
-    lineHeight: typography.lineHeight.relaxed,
-  },
+  
   progressoContainer: {
     padding: spacing.lg,
   },
