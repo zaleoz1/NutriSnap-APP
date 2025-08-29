@@ -46,6 +46,23 @@ async function configurarBanco() {
     
     console.log('✅ Banco de dados "nutrisnap" criado/atualizado');
 
+    // Verificar se a coluna metas_nutricionais existe na tabela metas
+    try {
+      await conexao.query('USE nutrisnap');
+      const [colunas] = await conexao.query('DESCRIBE metas');
+      const colunaExiste = colunas.some(col => col.Field === 'metas_nutricionais');
+      
+      if (!colunaExiste) {
+        console.log('📝 Adicionando coluna metas_nutricionais à tabela metas...');
+        await conexao.query('ALTER TABLE metas ADD COLUMN metas_nutricionais JSON AFTER calorias_diarias');
+        console.log('✅ Coluna metas_nutricionais adicionada com sucesso');
+      } else {
+        console.log('✅ Coluna metas_nutricionais já existe');
+      }
+    } catch (err) {
+      console.log('⚠️ Erro ao verificar/atualizar tabela metas:', err.message);
+    }
+
     // Verificar tabelas
     const [tabelas] = await conexao.query('SHOW TABLES');
     console.log('📊 Tabelas criadas:', tabelas.map(t => Object.values(t)[0]).join(', '));

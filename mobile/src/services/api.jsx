@@ -177,6 +177,15 @@ export async function salvarMetas(token, dados) {
   });
 }
 
+// Nova função para gerar metas nutricionais com IA
+export async function gerarMetasNutricionais(token) {
+  return buscarApi('/api/metas/gerar-ia', {
+    method: 'POST',
+    token,
+    body: {}
+  });
+}
+
 // Funções para treinos
 export async function buscarTreinos(token) {
   return buscarApi('/api/treinos', {

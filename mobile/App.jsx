@@ -34,7 +34,7 @@ export default function App() {
             <Stack.Screen name="Principal" component={HomeScreen} options={{ headerShown: false }} />
             <Stack.Screen name="Dashboard" component={DashboardScreen} options={{ headerShown: false }} />
             <Stack.Screen name="IMC" component={BMIScreen} options={{ headerShown: false }} />
-            <Stack.Screen name="Meta" component={GoalScreen} options={{ title: 'Meta de Peso' }} />
+            <Stack.Screen name="Metas" component={GoalScreen} options={{ headerShown: false }} />
             <Stack.Screen name="PlanoTreino" component={WorkoutPlanScreen} options={{ headerShown: false }} />
             <Stack.Screen name="Refeicoes" component={MealsScreen} options={{ headerShown: false }} />
             <Stack.Screen name="Diario" component={DiarioScreen} options={{ headerShown: false }} />

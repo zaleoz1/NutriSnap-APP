@@ -25,6 +25,7 @@ CREATE TABLE IF NOT EXISTS metas (
   peso_meta FLOAT NOT NULL,
   dias INT NOT NULL,
   calorias_diarias INT NOT NULL,
+  metas_nutricionais JSON,
   criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (id_usuario) REFERENCES usuarios(id) ON DELETE CASCADE
 );

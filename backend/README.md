@@ -60,6 +60,8 @@ mysql -u root -p
 # Execute o schema
 mysql -u root -p < schema.sql
 ```
+Get-Content "C:\Users\Isaléo Guimarães\OneDrive\Documentos\Projetos\NutriSnap-APP\backend\schema.sql" | mysql -u root -p
+
 
 ### 4. Instalação de Dependências
 ```bash
@@ -81,7 +83,7 @@ O banco `nutrisnap` contém as seguintes tabelas:
 
 - **usuarios**: Dados dos usuários (id, nome, email, senha)
 - **refeicoes**: Registro de refeições (id, id_usuario, itens, calorias_totais, timestamp)
-- **metas**: Metas de peso e calorias (id, id_usuario, peso_atual, peso_meta, dias, calorias_diarias)
+- **metas**: Metas de peso e calorias (id, id_usuario, peso_atual, peso_meta, dias, calorias_diarias, metas_nutricionais)
 - **treinos**: Planos de treino (id, id_usuario, plano, criado_em)
 
 ## 🔌 Endpoints da API
@@ -99,6 +101,69 @@ O banco `nutrisnap` contém as seguintes tabelas:
 ### Metas
 - `GET /api/metas` - Listar metas (requer auth)
 - `POST /api/metas` - Criar meta (requer auth)
+- `POST /api/metas/gerar-ia` - Gerar metas nutricionais com IA (requer auth)
+
+**🧠 Metas Nutricionais com IA:**
+A API de metas utiliza inteligência artificial para gerar recomendações nutricionais personalizadas baseadas nos dados do quiz:
+
+**Dados analisados pelo sistema:**
+- Idade, sexo, altura, peso atual e meta
+- Objetivo (emagrecer, ganhar massa, manter peso)
+- Nível de atividade física
+- Frequência de treinos
+- Preferências alimentares
+- Restrições médicas
+- Hábitos alimentares
+
+**Metas geradas automaticamente:**
+- **Calorias diárias** calculadas com fórmula Mifflin-St Jeor
+- **Macronutrientes** (proteínas, carboidratos, gorduras) otimizados para o objetivo
+- **Micronutrientes** (vitaminas, minerais, fibras) com recomendações personalizadas
+- **Estratégias nutricionais** (horários, frequência de refeições)
+- **Dicas personalizadas** baseadas no perfil
+- **Progresso esperado** em diferentes períodos de tempo
+
+**Exemplo de resposta:**
+```json
+{
+  "calorias_diarias": 1850,
+  "macronutrientes": {
+    "proteinas": {
+      "gramas": 162,
+      "percentual": 35,
+      "fontes": ["Carnes magras", "Ovos", "Leguminosas"]
+    },
+    "carboidratos": {
+      "gramas": 185,
+      "percentual": 40,
+      "fontes": ["Arroz integral", "Batata doce", "Aveia"]
+    },
+    "gorduras": {
+      "gramas": 51,
+      "percentual": 25,
+      "fontes": ["Azeite", "Castanhas", "Abacate"]
+    }
+  },
+  "micronutrientes": {
+    "fibras": { "gramas": 26, "fontes": ["Frutas", "Vegetais"] },
+    "agua": { "litros": 2.3, "copos": 10 },
+    "vitamina_d": { "quantidade": "15-20 mcg/dia", "importancia": "Saúde óssea" }
+  },
+  "estrategias": {
+    "frequencia_refeicoes": 5,
+    "pre_treino": "1-2 horas antes",
+    "hidratacao": "Beber 2.3L de água por dia"
+  },
+  "dicas": [
+    "Mantenha déficit calórico de 300-500 calorias por dia",
+    "Priorize proteínas para manter massa muscular"
+  ],
+  "progresso_esperado": {
+    "primeiro_mes": { "peso": -2, "energia": "Aumento significativo" },
+    "tres_meses": { "peso": -6, "composicao_corporal": "Melhora significativa" }
+  }
+}
+```
 
 ### Treinos
 - `GET /api/treinos` - Listar treinos (requer auth)
@@ -225,7 +290,20 @@ curl -X POST http://localhost:3000/api/analise \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer seu_token" \
   -d '{"dadosImagemBase64":"dados_base64_aqui"}'
-```## 📚 Desenvolvimento
+```
+
+### Problemas com Metas Nutricionais
+```bash
+# Verifique se o quiz foi completado
+curl -X GET http://localhost:3000/api/quiz \
+  -H "Authorization: Bearer seu_token"
+
+# Teste a geração de metas
+curl -X POST http://localhost:3000/api/metas/gerar-ia \
+  -H "Authorization: Bearer seu_token"
+```
+
+## 📚 Desenvolvimento
 
 ### Estrutura de Arquivos
 ```
@@ -256,12 +334,31 @@ router.get('/protegida', requerAutenticacao, (req, res) => {
   // req.idUsuario contém o ID do usuário autenticado
   res.json({ mensagem: 'Rota protegida' });
 });
-```### Testando a API de Análise
+```
+
+### Testando a API de Análise
 ```bash
 # Teste manualmente com uma imagem real
 # 1. Capture uma foto de comida
 # 2. Converta para base64
 # 3. Faça uma requisição POST para /api/analise
+```
+
+### Testando Metas Nutricionais
+```bash
+# 1. Complete o quiz primeiro
+curl -X POST http://localhost:3000/api/quiz \
+  -H "Authorization: Bearer seu_token" \
+  -H "Content-Type: application/json" \
+  -d '{"idade": 25, "sexo": "masculino", ...}'
+
+# 2. Gere metas nutricionais
+curl -X POST http://localhost:3000/api/metas/gerar-ia \
+  -H "Authorization: Bearer seu_token"
+
+# 3. Visualize as metas geradas
+curl -X GET http://localhost:3000/api/metas \
+  -H "Authorization: Bearer seu_token"
 ```
 
 ## 📄 Licença

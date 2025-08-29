@@ -1,310 +1,512 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet, StatusBar, ScrollView, Dimensions } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  StyleSheet,
+  Alert,
+  ActivityIndicator,
+  RefreshControl,
+  Dimensions,
+  StatusBar
+} from 'react-native';
+import { Ionicons, MaterialIcons, FontAwesome5 } from '@expo/vector-icons';
+import { colors, spacing, typography, shadows, componentStyles, borders } from '../styles/globalStyles';
 import { usarAutenticacao } from '../services/AuthContext';
-import { buscarApi } from '../services/api';
-import { colors, typography, spacing, borders, shadows, componentStyles } from '../styles/globalStyles';
+import { buscarMetas, gerarMetasNutricionais } from '../services/api';
 
 const { width } = Dimensions.get('window');
 
-function calcularCaloriasDiarias({ peso, altura, idade, sexo, nivelAtividade, objetivo }) {
-  let tmb = 10 * peso + 6.25 * altura - 5 * idade;
-  tmb += sexo === 'M' ? 5 : -161;
-
-  const multiplicadoresAtividade = {
-    sedentario: 1.2,
-    leve: 1.375,
-    moderado: 1.55,
-    intenso: 1.725
-  };
-  let calorias = tmb * (multiplicadoresAtividade[nivelAtividade] || 1.2);
-  if (objetivo === 'emagrecer') calorias -= 500;
-  if (objetivo === 'ganhar') calorias += 500;
-  return Math.round(calorias);
-}
-
-export default function TelaMeta() {
+export default function TelaMetas({ navigation }) {
   const { token } = usarAutenticacao();
-  const [pesoAtual, setPesoAtual] = useState('');
-  const [pesoMeta, setPesoMeta] = useState('');
-  const [dias, setDias] = useState('');
-  const [altura, setAltura] = useState('');
-  const [idade, setIdade] = useState('');
-  const [sexo, setSexo] = useState('M');
-  const [nivelAtividade, setNivelAtividade] = useState('moderado');
-  const [objetivo, setObjetivo] = useState('emagrecer');
-  const [caloriasDiarias, setCaloriasDiarias] = useState(null);
-  
-  // Estados para foco dos inputs
-  const [focusedInputs, setFocusedInputs] = useState({});
+  const [metas, setMetas] = useState(null);
+  const [carregando, setCarregando] = useState(false);
+  const [gerandoIA, setGerandoIA] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
-  const setInputFocus = (inputName, isFocused) => {
-    setFocusedInputs(prev => ({ ...prev, [inputName]: isFocused }));
+  useEffect(() => {
+    carregarMetas();
+  }, []);
+
+  const carregarMetas = async () => {
+    try {
+      setCarregando(true);
+      const dadosMetas = await buscarMetas(token);
+      console.log('📊 Dados das metas recebidos:', dadosMetas);
+      
+      if (dadosMetas) {
+        // Extrair dados básicos da tabela metas
+        const metasBasicas = {
+          id: dadosMetas.id,
+          peso_atual: dadosMetas.peso_atual,
+          peso_meta: dadosMetas.peso_meta,
+          dias: dadosMetas.dias,
+          calorias_diarias: dadosMetas.calorias_diarias,
+          criado_em: dadosMetas.criado_em
+        };
+
+        // Extrair dados nutricionais do JSON
+        let metasNutricionais = {};
+        if (dadosMetas.metas_nutricionais) {
+          try {
+            metasNutricionais = typeof dadosMetas.metas_nutricionais === 'string' 
+              ? JSON.parse(dadosMetas.metas_nutricionais) 
+              : dadosMetas.metas_nutricionais;
+          } catch (erro) {
+            console.error('❌ Erro ao fazer parse das metas nutricionais:', erro);
+            metasNutricionais = {};
+          }
+        }
+
+        // Combinar dados básicos com nutricionais
+        const metasCompletas = {
+          ...metasBasicas,
+          ...metasNutricionais
+        };
+
+        console.log('🔍 Estrutura final das metas:', {
+          temMacronutrientes: !!metasCompletas.macronutrientes,
+          temMicronutrientes: !!metasCompletas.micronutrientes,
+          temEstrategias: !!metasCompletas.estrategias,
+          temDicas: !!metasCompletas.dicas,
+          temProgresso: !!metasCompletas.progresso_esperado
+        });
+
+        setMetas(metasCompletas);
+      } else {
+        setMetas(null);
+      }
+    } catch (erro) {
+      console.error('❌ Erro ao carregar metas:', erro);
+      if (erro.status !== 404) {
+        Alert.alert('Erro', 'Não foi possível carregar suas metas');
+      }
+    } finally {
+      setCarregando(false);
+    }
   };
 
-  function lidarComCalculo() {
-    const calorias = calcularCaloriasDiarias({
-      peso: parseFloat(pesoAtual || '0'),
-      altura: parseFloat(altura || '0') * 100,
-      idade: parseInt(idade || '0'),
-      sexo,
-      nivelAtividade,
-      objetivo
-    });
-    setCaloriasDiarias(calorias);
-  }
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await carregarMetas();
+    setRefreshing(false);
+  };
 
-  async function salvarMeta() {
+  const gerarMetasComIA = async () => {
     try {
-      await buscarApi('/api/metas', {
-        method: 'POST',
-        token,
-        body: {
-          peso_atual: parseFloat(pesoAtual),
-          peso_meta: parseFloat(pesoMeta),
-          dias: parseInt(dias),
-          calorias_diarias: parseInt(caloriasDiarias || '0')
-        }
-      });
-      Alert.alert('Sucesso', 'Meta salva e meta diária definida!');
+      setGerandoIA(true);
+      const resultado = await gerarMetasNutricionais(token);
+      
+      if (resultado.metas) {
+        // Atualizar o estado com as novas metas
+        await carregarMetas();
+        Alert.alert(
+          'Sucesso!', 
+          'Suas metas nutricionais foram geradas com inteligência artificial baseadas no seu perfil!',
+          [{ text: 'OK' }]
+        );
+      }
     } catch (erro) {
-      Alert.alert('Erro', erro.message);
+      console.error('❌ Erro ao gerar metas com IA:', erro);
+      if (erro.status === 400) {
+        Alert.alert(
+          'Quiz Necessário', 
+          'Complete o quiz de perfil primeiro para gerar metas personalizadas.',
+          [
+            { text: 'Cancelar', style: 'cancel' },
+            { text: 'Fazer Quiz', onPress: () => navigation.navigate('Quiz') }
+          ]
+        );
+      } else {
+        Alert.alert('Erro', 'Não foi possível gerar metas com IA. Tente novamente.');
+      }
+    } finally {
+      setGerandoIA(false);
     }
+  };
+
+  const renderizarCardMacronutriente = ({ titulo, dados, cor, icone }) => {
+    if (!dados || !dados.gramas || !dados.percentual) return null;
+    
+    return (
+      <View style={[styles.cardMacronutriente, { borderLeftColor: cor }]}>
+        <View style={styles.cardHeader}>
+          <View style={[styles.iconContainer, { backgroundColor: cor + '15' }]}>
+            <FontAwesome5 name={icone} size={20} color={cor} />
+          </View>
+          <View style={styles.cardInfo}>
+            <Text style={styles.cardTitle}>{titulo}</Text>
+            <Text style={styles.cardValue}>{dados.gramas}g</Text>
+            <Text style={styles.cardPercentual}>{dados.percentual}%</Text>
+          </View>
+        </View>
+        {dados.fontes && Array.isArray(dados.fontes) && dados.fontes.length > 0 && (
+          <View style={styles.fontesContainer}>
+            <Text style={styles.fontesTitle}>Fontes:</Text>
+            <Text style={styles.fontesText}>{dados.fontes.join(', ')}</Text>
+          </View>
+        )}
+      </View>
+    );
+  };
+
+  const renderizarCardVitamina = ({ titulo, dados, cor }) => {
+    if (!dados || !dados.quantidade) return null;
+    
+    return (
+      <View style={[styles.cardVitamina, { borderLeftColor: cor }]}>
+        <View style={styles.vitaminaHeader}>
+          <Text style={styles.vitaminaTitle}>{titulo}</Text>
+          <Text style={styles.vitaminaQuantidade}>{dados.quantidade}</Text>
+        </View>
+        {dados.importancia && (
+          <Text style={styles.vitaminaImportancia}>{dados.importancia}</Text>
+        )}
+        {dados.fontes && Array.isArray(dados.fontes) && dados.fontes.length > 0 && (
+          <View style={styles.fontesContainer}>
+            <Text style={styles.fontesTitle}>Fontes:</Text>
+            <Text style={styles.fontesText}>{dados.fontes.join(', ')}</Text>
+          </View>
+        )}
+      </View>
+    );
+  };
+
+  const renderizarCardEstrategia = ({ titulo, valor, icone, cor }) => {
+    if (!valor || (typeof valor === 'string' && valor.trim() === '')) return null;
+    
+    return (
+      <View style={[styles.cardEstrategia, { borderLeftColor: cor }]}>
+        <View style={styles.estrategiaHeader}>
+          <MaterialIcons name={icone} size={24} color={cor} />
+          <Text style={styles.estrategiaTitle}>{titulo}</Text>
+        </View>
+        <Text style={styles.estrategiaValor}>{valor}</Text>
+      </View>
+    );
+  };
+
+  const renderizarCardDica = ({ dica, index }) => {
+    if (!dica || (typeof dica === 'string' && dica.trim() === '')) return null;
+    
+    return (
+      <View style={styles.cardDica}>
+        <View style={styles.dicaHeader}>
+          <View style={[styles.dicaIcon, { backgroundColor: colors.primary[100] }]}>
+            <Ionicons name="bulb" size={16} color={colors.primary[600]} />
+          </View>
+          <Text style={styles.dicaTitle}>Dica {index + 1}</Text>
+        </View>
+        <Text style={styles.dicaText}>{dica}</Text>
+      </View>
+    );
+  };
+
+  const renderizarProgresso = () => {
+    if (!metas || !metas.peso_atual || !metas.peso_meta) return null;
+
+    const { peso_atual, peso_meta, progresso_esperado } = metas;
+    const diferenca = peso_meta - peso_atual;
+    const objetivo = metas.objetivo || 'manter_peso';
+
+    return (
+      <View style={styles.progressoContainer}>
+        <Text style={styles.progressoTitle}>Progresso Esperado</Text>
+        
+        <View style={styles.progressoCard}>
+          <View style={styles.progressoHeader}>
+            <Text style={styles.progressoLabel}>Peso Atual</Text>
+            <Text style={styles.progressoValor}>{peso_atual}kg</Text>
+          </View>
+          <View style={styles.progressoHeader}>
+            <Text style={styles.progressoLabel}>Meta</Text>
+            <Text style={styles.progressoValor}>{peso_meta}kg</Text>
+          </View>
+          <View style={styles.progressoHeader}>
+            <Text style={styles.progressoLabel}>Diferença</Text>
+            <Text style={[styles.progressoValor, { color: diferenca > 0 ? colors.success : colors.error }]}>
+              {diferenca > 0 ? '+' : ''}{diferenca}kg
+            </Text>
+          </View>
+        </View>
+
+        {progresso_esperado && progresso_esperado.primeiro_mes && (
+          <View style={styles.progressoCard}>
+            <Text style={styles.progressoSubtitle}>Primeiro Mês</Text>
+            {progresso_esperado.primeiro_mes.peso && (
+              <View style={styles.progressoItem}>
+                <Text style={styles.progressoItemLabel}>Peso:</Text>
+                <Text style={styles.progressoItemValor}>
+                  {progresso_esperado.primeiro_mes.peso > 0 ? '+' : ''}{progresso_esperado.primeiro_mes.peso}kg
+                </Text>
+              </View>
+            )}
+            {progresso_esperado.primeiro_mes.energia && (
+              <View style={styles.progressoItem}>
+                <Text style={styles.progressoItemLabel}>Energia:</Text>
+                <Text style={styles.progressoItemValor}>{progresso_esperado.primeiro_mes.energia}</Text>
+              </View>
+            )}
+          </View>
+        )}
+
+        {progresso_esperado && progresso_esperado.tres_meses && (
+          <View style={styles.progressoCard}>
+            <Text style={styles.progressoSubtitle}>Três Meses</Text>
+            {progresso_esperado.tres_meses.peso && (
+              <View style={styles.progressoItem}>
+                <Text style={styles.progressoItemLabel}>Peso:</Text>
+                <Text style={styles.progressoItemValor}>
+                  {progresso_esperado.tres_meses.peso > 0 ? '+' : ''}{progresso_esperado.tres_meses.peso}kg
+                </Text>
+              </View>
+            )}
+            {progresso_esperado.tres_meses.composicao_corporal && (
+              <View style={styles.progressoItem}>
+                <Text style={styles.progressoItemLabel}>Composição:</Text>
+                <Text style={styles.progressoItemValor}>{progresso_esperado.tres_meses.composicao_corporal}</Text>
+              </View>
+            )}
+          </View>
+        )}
+      </View>
+    );
+  };
+
+  if (carregando) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={colors.primary[600]} />
+        <Text style={styles.loadingText}>Carregando suas metas...</Text>
+      </View>
+    );
   }
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor={colors.neutral[50]} />
+      <StatusBar barStyle="light-content" backgroundColor={colors.neutral[900]} />
       
       <ScrollView 
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[colors.accent.blue]}
+            tintColor={colors.accent.blue}
+          />
+        }
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <View style={styles.titleContainer}>
-            <Text style={styles.title}>Meta de Peso</Text>
-            <Text style={styles.subtitle}>Defina seus objetivos e calcule suas necessidades calóricas</Text>
-          </View>
-          <View style={styles.iconContainer}>
-            <MaterialIcons name="flag" size={40} color={colors.primary[600]} />
-          </View>
-        </View>
-
-        {/* Formulário */}
-        <View style={styles.formContainer}>
-          <View style={styles.formSection}>
-            <Text style={styles.sectionTitle}>Informações Pessoais</Text>
-            
-            <View style={styles.inputRow}>
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Peso Atual (kg)</Text>
-                <TextInput
-                  style={[
-                    styles.input,
-                    focusedInputs.pesoAtual && styles.inputFocused
-                  ]}
-                  placeholder="Ex: 70.5"
-                  placeholderTextColor={colors.neutral[400]}
-                  value={pesoAtual}
-                  onChangeText={setPesoAtual}
-                  onFocus={() => setInputFocus('pesoAtual', true)}
-                  onBlur={() => setInputFocus('pesoAtual', false)}
-                  keyboardType="numeric"
-                />
-              </View>
-              
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Peso Meta (kg)</Text>
-                <TextInput
-                  style={[
-                    styles.input,
-                    focusedInputs.pesoMeta && styles.inputFocused
-                  ]}
-                  placeholder="Ex: 65.0"
-                  placeholderTextColor={colors.neutral[400]}
-                  value={pesoMeta}
-                  onChangeText={setPesoMeta}
-                  onFocus={() => setInputFocus('pesoMeta', true)}
-                  onBlur={() => setInputFocus('pesoMeta', false)}
-                  keyboardType="numeric"
-                />
-              </View>
-            </View>
-
-            <View style={styles.inputRow}>
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Altura (m)</Text>
-                <TextInput
-                  style={[
-                    styles.input,
-                    focusedInputs.altura && styles.inputFocused
-                  ]}
-                  placeholder="Ex: 1.75"
-                  placeholderTextColor={colors.neutral[400]}
-                  value={altura}
-                  onChangeText={setAltura}
-                  onFocus={() => setInputFocus('altura', true)}
-                  onBlur={() => setInputFocus('altura', false)}
-                  keyboardType="numeric"
-                />
-              </View>
-              
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Idade</Text>
-                <TextInput
-                  style={[
-                    styles.input,
-                    focusedInputs.idade && styles.inputFocused
-                  ]}
-                  placeholder="Ex: 25"
-                  placeholderTextColor={colors.neutral[400]}
-                  value={idade}
-                  onChangeText={setIdade}
-                  onFocus={() => setInputFocus('idade', true)}
-                  onBlur={() => setInputFocus('idade', false)}
-                  keyboardType="numeric"
-                />
-              </View>
-            </View>
-
-            <View style={styles.inputRow}>
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Sexo</Text>
-                <View style={styles.sexSelector}>
-                  <TouchableOpacity
-                    style={[
-                      styles.sexOption,
-                      sexo === 'M' && styles.sexOptionSelected
-                    ]}
-                    onPress={() => setSexo('M')}
-                  >
-                    <Text style={[
-                      styles.sexOptionText,
-                      sexo === 'M' && styles.sexOptionTextSelected
-                    ]}>Masculino</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[
-                      styles.sexOption,
-                      sexo === 'F' && styles.sexOptionSelected
-                    ]}
-                    onPress={() => setSexo('F')}
-                  >
-                    <Text style={[
-                      styles.sexOptionText,
-                      sexo === 'F' && styles.sexOptionTextSelected
-                    ]}>Feminino</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-              
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Prazo (dias)</Text>
-                <TextInput
-                  style={[
-                    styles.input,
-                    focusedInputs.dias && styles.inputFocused
-                  ]}
-                  placeholder="Ex: 90"
-                  placeholderTextColor={colors.neutral[400]}
-                  value={dias}
-                  onChangeText={setDias}
-                  onFocus={() => setInputFocus('dias', true)}
-                  onBlur={() => setInputFocus('dias', false)}
-                  keyboardType="numeric"
-                />
-              </View>
-            </View>
-          </View>
-
-          <View style={styles.formSection}>
-            <Text style={styles.sectionTitle}>Preferências</Text>
-            
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Nível de Atividade</Text>
-              <View style={styles.activitySelector}>
-                {['sedentario', 'leve', 'moderado', 'intenso'].map((nivel) => (
-                  <TouchableOpacity
-                    key={nivel}
-                    style={[
-                      styles.activityOption,
-                      nivelAtividade === nivel && styles.activityOptionSelected
-                    ]}
-                    onPress={() => setNivelAtividade(nivel)}
-                  >
-                    <Text style={[
-                      styles.activityOptionText,
-                      nivelAtividade === nivel && styles.activityOptionTextSelected
-                    ]}>
-                      {nivel.charAt(0).toUpperCase() + nivel.slice(1)}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Objetivo</Text>
-              <View style={styles.objectiveSelector}>
-                {['emagrecer', 'manter', 'ganhar'].map((obj) => (
-                  <TouchableOpacity
-                    key={obj}
-                    style={[
-                      styles.objectiveOption,
-                      objetivo === obj && styles.objectiveOptionSelected
-                    ]}
-                    onPress={() => setObjetivo(obj)}
-                  >
-                    <Text style={[
-                      styles.objectiveOptionText,
-                      objetivo === obj && styles.objectiveOptionTextSelected
-                    ]}>
-                      {obj.charAt(0).toUpperCase() + obj.slice(1)}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-          </View>
-
-          <TouchableOpacity
-            onPress={lidarComCalculo}
-            style={styles.calculateButton}
-            activeOpacity={0.8}
+      {/* Header moderno */}
+      <View style={styles.header}>
+        <View style={styles.headerContent}>
+          <TouchableOpacity 
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
           >
-            <Text style={styles.calculateButtonText}>Calcular Calorias</Text>
+            <MaterialIcons name="arrow-back" size={24} color="#FFFFFF" />
+          </TouchableOpacity>
+          
+          <View style={styles.headerText}>
+            <Text style={styles.headerTitle}>Metas Nutricionais</Text>
+          </View>
+          
+          <TouchableOpacity 
+            style={styles.menuButton}
+            onPress={() => {
+              Alert.alert(
+                'Opções das Metas',
+                'Escolha uma opção:',
+                [
+                  { text: 'Cancelar', style: 'cancel' },
+                  { 
+                    text: 'Gerar Novas Metas', 
+                    onPress: () => gerarMetasComIA(),
+                    style: 'default'
+                  }
+                ]
+              );
+            }}
+          >
+            <MaterialIcons name="more-vert" size={24} color="#FFFFFF" />
           </TouchableOpacity>
         </View>
+      </View>
 
-        {/* Resultado */}
-        {caloriasDiarias && (
-          <View style={styles.resultContainer}>
-            <View style={styles.resultHeader}>
-              <Text style={styles.resultTitle}>Meta Diária de Calorias</Text>
-              <Text style={styles.resultValue}>{caloriasDiarias}</Text>
-              <Text style={styles.resultUnit}>kcal</Text>
+      {!metas ? (
+        <View style={styles.emptyContainer}>
+          <MaterialIcons name="target" size={64} color={colors.neutral[400]} />
+          <Text style={styles.emptyTitle}>Nenhuma meta encontrada</Text>
+          <Text style={styles.emptySubtitle}>
+            Gere suas metas nutricionais personalizadas com inteligência artificial
+          </Text>
+          <TouchableOpacity 
+            style={[componentStyles.button.primary, styles.generateButton]}
+            onPress={gerarMetasComIA}
+            disabled={gerandoIA}
+          >
+            {gerandoIA ? (
+              <ActivityIndicator size="small" color="white" />
+            ) : (
+              <>
+                <MaterialIcons name="psychology" size={20} color="white" />
+                <Text style={styles.generateButtonText}>Gerar com IA</Text>
+              </>
+            )}
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <>
+          {/* Resumo das Metas */}
+          <View style={styles.resumoContainer}>
+            <Text style={styles.sectionTitle}>Resumo das Metas</Text>
+            <View style={styles.resumoCard}>
+              <View style={styles.resumoItem}>
+                <Text style={styles.resumoLabel}>Calorias Diárias</Text>
+                <Text style={styles.resumoValor}>{metas.calorias_diarias || 'N/A'} kcal</Text>
+              </View>
+              <View style={styles.resumoItem}>
+                <Text style={styles.resumoLabel}>Duração</Text>
+                <Text style={styles.resumoValor}>{metas.dias || 'N/A'} dias</Text>
+              </View>
+              <View style={styles.resumoItem}>
+                <Text style={styles.resumoLabel}>Objetivo</Text>
+                <Text style={styles.resumoValor}>
+                  {metas.objetivo === 'emagrecer' ? 'Emagrecer' : 
+                   metas.objetivo === 'ganhar_massa' ? 'Ganhar Massa' : 
+                   metas.objetivo === 'manter_peso' ? 'Manter Peso' : 'N/A'}
+                </Text>
+              </View>
             </View>
-            
-            <Text style={styles.resultDescription}>
-              Esta é a quantidade de calorias que você deve consumir diariamente para atingir seu objetivo de {objetivo}.
-            </Text>
           </View>
-        )}
 
-        {/* Botões de ação */}
-        {caloriasDiarias && (
-          <View style={styles.actionButtons}>
-            <TouchableOpacity
-              onPress={salvarMeta}
-              style={styles.saveButton}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.saveButtonText}>Salvar Meta</Text>
-            </TouchableOpacity>
-          </View>
-        )}
+          {/* Macronutrientes */}
+          {metas.macronutrientes && (
+            <View style={styles.sectionContainer}>
+              <Text style={styles.sectionTitle}>Macronutrientes</Text>
+              {metas.macronutrientes.proteinas && renderizarCardMacronutriente({
+                titulo: 'Proteínas',
+                dados: metas.macronutrientes.proteinas,
+                cor: colors.accent.blue,
+                icone: 'drumstick-bite'
+              })}
+              {metas.macronutrientes.carboidratos && renderizarCardMacronutriente({
+                titulo: 'Carboidratos',
+                dados: metas.macronutrientes.carboidratos,
+                cor: colors.accent.green,
+                icone: 'bread-slice'
+              })}
+              {metas.macronutrientes.gorduras && renderizarCardMacronutriente({
+                titulo: 'Gorduras',
+                dados: metas.macronutrientes.gorduras,
+                cor: colors.accent.orange,
+                icone: 'seedling'
+              })}
+            </View>
+          )}
+
+          {/* Micronutrientes */}
+          {metas.micronutrientes && (
+            <View style={styles.sectionContainer}>
+              <Text style={styles.sectionTitle}>Micronutrientes</Text>
+              
+              {metas.micronutrientes.fibras && (
+                <View style={styles.cardMicronutriente}>
+                  <View style={styles.micronutrienteHeader}>
+                    <Text style={styles.micronutrienteTitle}>Fibras</Text>
+                    <Text style={styles.micronutrienteValor}>{metas.micronutrientes.fibras.gramas}g/dia</Text>
+                  </View>
+                  {metas.micronutrientes.fibras.fontes && Array.isArray(metas.micronutrientes.fibras.fontes) && (
+                    <Text style={styles.micronutrienteFontes}>
+                      Fontes: {metas.micronutrientes.fibras.fontes.join(', ')}
+                    </Text>
+                  )}
+                </View>
+              )}
+
+              {metas.micronutrientes.agua && (
+                <View style={styles.cardMicronutriente}>
+                  <View style={styles.micronutrienteHeader}>
+                    <Text style={styles.micronutrienteTitle}>Água</Text>
+                    <Text style={styles.micronutrienteValor}>{metas.micronutrientes.agua.litros}L/dia</Text>
+                  </View>
+                  {metas.micronutrientes.agua.copos && (
+                    <Text style={styles.micronutrienteFontes}>
+                      {metas.micronutrientes.agua.copos} copos por dia
+                    </Text>
+                  )}
+                </View>
+              )}
+
+              {/* Renderizar outras vitaminas e minerais */}
+              {metas.micronutrientes && Object.entries(metas.micronutrientes).map(([key, valor]) => {
+                if (key === 'fibras' || key === 'agua' || !valor) return null;
+                return (
+                  <View key={`micronutriente-${key}`}>
+                    {renderizarCardVitamina({
+                      titulo: key.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()),
+                      dados: valor,
+                      cor: colors.accent.purple
+                    })}
+                  </View>
+                );
+              })}
+            </View>
+          )}
+
+          {/* Estratégias */}
+          {metas.estrategias && (
+            <View style={styles.sectionContainer}>
+              <Text style={styles.sectionTitle}>Estratégias Nutricionais</Text>
+              {metas.estrategias.frequencia_refeicoes && renderizarCardEstrategia({
+                titulo: 'Frequência de Refeições',
+                valor: `${metas.estrategias.frequencia_refeicoes} refeições por dia`,
+                icone: 'schedule',
+                cor: colors.accent.blue
+              })}
+              {metas.estrategias.pre_treino && renderizarCardEstrategia({
+                titulo: 'Pré-Treino',
+                valor: metas.estrategias.pre_treino,
+                icone: 'fitness-center',
+                cor: colors.accent.green
+              })}
+              {metas.estrategias.pos_treino && renderizarCardEstrategia({
+                titulo: 'Pós-Treino',
+                valor: metas.estrategias.pos_treino,
+                icone: 'restore',
+                cor: colors.accent.orange
+              })}
+              {metas.estrategias.hidratacao && renderizarCardEstrategia({
+                titulo: 'Hidratação',
+                valor: metas.estrategias.hidratacao,
+                icone: 'local-drink',
+                cor: colors.accent.blue
+              })}
+            </View>
+          )}
+
+          {/* Dicas Personalizadas */}
+          {metas.dicas && Array.isArray(metas.dicas) && metas.dicas.length > 0 && (
+            <View style={styles.sectionContainer}>
+              <Text style={styles.sectionTitle}>Dicas Personalizadas</Text>
+              {metas.dicas.map((dica, index) => (
+                <View key={`dica-${index}`}>
+                  {renderizarCardDica({ dica, index })}
+                </View>
+              ))}
+            </View>
+          )}
+
+          {/* Progresso Esperado */}
+          {renderizarProgresso()}
+        </>
+      )}
+      
+      <View style={styles.content}>
+        
+      </View>
       </ScrollView>
     </View>
   );
@@ -313,319 +515,380 @@ export default function TelaMeta() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.neutral[50],
+    backgroundColor: colors.neutral[900],
   },
   
   scrollView: {
     flex: 1,
   },
   
-  scrollContent: {
+  content: {
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
+    paddingTop: spacing.xl,
     paddingBottom: spacing.xl,
   },
-  
   header: {
+    backgroundColor: colors.neutral[800],
+    paddingTop: 60,
+    paddingBottom: spacing.xl,
+    paddingHorizontal: spacing.lg,
+    borderBottomLeftRadius: borders.radius['2xl'],
+    borderBottomRightRadius: borders.radius['2xl'],
+    borderWidth: 1,
+    borderColor: colors.neutral[700],
+    ...shadows.xl,
+  },
+  
+  headerContent: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: spacing.xl,
   },
   
-  titleContainer: {
-    flex: 1,
-  },
-  
-  title: {
-    fontSize: typography.fontSize['3xl'],
-    fontWeight: typography.fontWeight.extrabold,
-    color: colors.neutral[900],
-    marginBottom: spacing.xs,
-  },
-  
-  subtitle: {
-    fontSize: typography.fontSize.base,
-    fontWeight: typography.fontWeight.medium,
-    color: colors.neutral[600],
-    lineHeight: typography.lineHeight.normal,
-  },
-  
-  iconContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: colors.primary[100],
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.neutral[700],
     alignItems: 'center',
     justifyContent: 'center',
-    ...shadows.lg,
+    borderWidth: 1,
+    borderColor: colors.neutral[600],
   },
   
-  icon: {
-    fontSize: 40,
+  headerText: {
+    flex: 1,
+    alignItems: 'center',
   },
   
-  alertContainer: {
-    backgroundColor: colors.accent.yellow + '15',
-    padding: spacing.md,
-    borderRadius: borders.radius.lg,
-    marginBottom: spacing.lg,
-    borderWidth: borders.width.thin,
-    borderColor: colors.accent.yellow + '30',
+  headerTitle: {
+    fontSize: typography.fontSize['2xl'],
+    fontWeight: typography.fontWeight.extrabold,
+    color: colors.neutral[50],
+    marginBottom: spacing.xs,
+    letterSpacing: -0.5,
   },
   
-  alertText: {
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.medium,
-    color: colors.accent.yellow + 'DD',
+  menuButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.neutral[700],
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: colors.neutral[600],
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: colors.neutral[900],
+  },
+  loadingText: {
+    marginTop: spacing.md,
+    fontSize: typography.fontSize.lg,
+    color: colors.neutral[400],
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing['3xl'],
+  },
+  emptyTitle: {
+    fontSize: typography.fontSize.xl,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.neutral[300],
+    marginTop: spacing.lg,
     textAlign: 'center',
-    lineHeight: typography.lineHeight.normal,
   },
-  
-  formContainer: {
-    gap: spacing.xl,
-    marginBottom: spacing.xl,
+  emptySubtitle: {
+    fontSize: typography.fontSize.base,
+    color: colors.neutral[400],
+    marginTop: spacing.sm,
+    textAlign: 'center',
+    lineHeight: typography.lineHeight.relaxed,
   },
-  
-  formSection: {
-    gap: spacing.lg,
+  generateButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: spacing.xl,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.lg,
   },
-  
+  generateButtonText: {
+    color: 'white',
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.semibold,
+    marginLeft: spacing.sm,
+  },
+  resumoContainer: {
+    padding: spacing.lg,
+  },
   sectionTitle: {
     fontSize: typography.fontSize.xl,
     fontWeight: typography.fontWeight.bold,
-    color: colors.neutral[800],
+    color: colors.neutral[50],
+    marginBottom: spacing.md,
+    textAlign: 'center',
+  },
+  resumoCard: {
+    backgroundColor: colors.neutral[800],
+    borderRadius: borders.radius.xl,
+    padding: spacing.lg,
+    ...shadows.lg,
+    borderWidth: 1,
+    borderColor: colors.neutral[700],
+  },
+  resumoItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: spacing.sm,
+  },
+  resumoLabel: {
+    fontSize: typography.fontSize.base,
+    color: colors.neutral[400],
+  },
+  resumoValor: {
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.neutral[50],
+  },
+  sectionContainer: {
+    padding: spacing.lg,
+  },
+  cardMacronutriente: {
+    backgroundColor: colors.neutral[800],
+    borderRadius: borders.radius.xl,
+    padding: spacing.lg,
+    marginBottom: spacing.md,
+    borderLeftWidth: 4,
+    ...shadows.lg,
+    borderWidth: 1,
+    borderColor: colors.neutral[700],
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: spacing.md,
   },
-  
-  inputRow: {
-    flexDirection: 'row',
-    gap: spacing.md,
+  iconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: spacing.md,
   },
-  
-  inputGroup: {
+  cardInfo: {
     flex: 1,
-    gap: spacing.sm,
   },
-  
-  inputLabel: {
-    fontSize: typography.fontSize.base,
+  cardTitle: {
+    fontSize: typography.fontSize.lg,
     fontWeight: typography.fontWeight.semibold,
-    color: colors.neutral[700],
+    color: colors.neutral[50],
+  },
+  cardValue: {
+    fontSize: typography.fontSize['2xl'],
+    fontWeight: typography.fontWeight.bold,
+    color: colors.accent.blue,
+  },
+  cardPercentual: {
+    fontSize: typography.fontSize.sm,
+    color: colors.neutral[400],
+  },
+  fontesContainer: {
+    marginTop: spacing.sm,
+  },
+  fontesTitle: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.neutral[300],
+    marginBottom: spacing.xs,
+  },
+  fontesText: {
+    fontSize: typography.fontSize.sm,
+    color: colors.neutral[400],
+    lineHeight: typography.lineHeight.relaxed,
+  },
+  cardVitamina: {
+    backgroundColor: colors.neutral[800],
+    borderRadius: borders.radius.xl,
+    padding: spacing.lg,
+    marginBottom: spacing.md,
+    borderLeftWidth: 4,
+    ...shadows.lg,
+    borderWidth: 1,
+    borderColor: colors.neutral[700],
+  },
+  vitaminaHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.sm,
+  },
+  vitaminaTitle: {
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.neutral[50],
+    textTransform: 'capitalize',
+  },
+  vitaminaQuantidade: {
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.accent.purple,
+  },
+  vitaminaImportancia: {
+    fontSize: typography.fontSize.sm,
+    color: colors.neutral[400],
+    marginBottom: spacing.sm,
+    fontStyle: 'italic',
+  },
+  cardMicronutriente: {
+    backgroundColor: colors.neutral[800],
+    borderRadius: borders.radius.xl,
+    padding: spacing.lg,
+    marginBottom: spacing.md,
+    ...shadows.lg,
+    borderWidth: 1,
+    borderColor: colors.neutral[700],
+  },
+  micronutrienteHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.sm,
+  },
+  micronutrienteTitle: {
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.neutral[50],
+  },
+  micronutrienteValor: {
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.accent.purple,
+  },
+  micronutrienteFontes: {
+    fontSize: typography.fontSize.sm,
+    color: colors.neutral[400],
+    lineHeight: typography.lineHeight.relaxed,
+  },
+  cardEstrategia: {
+    backgroundColor: colors.neutral[800],
+    borderRadius: borders.radius.xl,
+    padding: spacing.lg,
+    marginBottom: spacing.md,
+    borderLeftWidth: 4,
+    ...shadows.lg,
+    borderWidth: 1,
+    borderColor: colors.neutral[700],
+  },
+  estrategiaHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: spacing.sm,
+  },
+  estrategiaTitle: {
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.neutral[50],
     marginLeft: spacing.sm,
   },
-  
-  input: {
-    backgroundColor: colors.neutral[50],
-    borderRadius: borders.radius.lg,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
-    borderWidth: borders.width.thin,
-    borderColor: colors.neutral[300],
+  estrategiaValor: {
     fontSize: typography.fontSize.base,
-    color: colors.neutral[900],
-    ...shadows.sm,
+    color: colors.neutral[400],
+    marginLeft: spacing.xl,
   },
-  
-  inputFocused: {
-    borderColor: colors.primary[500],
-    borderWidth: borders.width.base,
-    ...shadows.base,
-  },
-  
-  sexSelector: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-  },
-  
-  sexOption: {
-    flex: 1,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
-    borderRadius: borders.radius.lg,
-    borderWidth: borders.width.thin,
-    borderColor: colors.neutral[300],
-    backgroundColor: colors.neutral[50],
-    alignItems: 'center',
-    ...shadows.sm,
-  },
-  
-  sexOptionSelected: {
-    backgroundColor: colors.primary[600],
-    borderColor: colors.primary[600],
-  },
-  
-  sexOptionText: {
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.neutral[700],
-  },
-  
-  sexOptionTextSelected: {
-    color: colors.neutral[50],
-  },
-  
-  activitySelector: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
-  },
-  
-  activityOption: {
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    borderRadius: borders.radius.lg,
-    borderWidth: borders.width.thin,
-    borderColor: colors.neutral[300],
-    backgroundColor: colors.neutral[50],
-    ...shadows.sm,
-  },
-  
-  activityOptionSelected: {
-    backgroundColor: colors.primary[600],
-    borderColor: colors.primary[600],
-  },
-  
-  activityOptionText: {
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.medium,
-    color: colors.neutral[700],
-  },
-  
-  activityOptionTextSelected: {
-    color: colors.neutral[50],
-  },
-  
-  objectiveSelector: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-  },
-  
-  objectiveOption: {
-    flex: 1,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
-    borderRadius: borders.radius.lg,
-    borderWidth: borders.width.thin,
-    borderColor: colors.neutral[300],
-    backgroundColor: colors.neutral[50],
-    alignItems: 'center',
-    ...shadows.sm,
-  },
-  
-  objectiveOptionSelected: {
-    backgroundColor: colors.primary[600],
-    borderColor: colors.primary[600],
-  },
-  
-  objectiveOptionText: {
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.neutral[700],
-  },
-  
-  objectiveOptionTextSelected: {
-    color: colors.neutral[50],
-  },
-  
-  calculateButton: {
-    backgroundColor: colors.primary[600],
+  cardDica: {
+    backgroundColor: colors.neutral[800],
     borderRadius: borders.radius.xl,
-    paddingVertical: spacing.lg,
-    paddingHorizontal: spacing.lg,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: spacing.md,
-    ...shadows.lg,
-    elevation: 8,
-  },
-  
-  calculateButtonText: {
-    fontSize: typography.fontSize.lg,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.neutral[50],
-    letterSpacing: 0.5,
-  },
-  
-  resultContainer: {
-    backgroundColor: colors.neutral[50],
-    borderRadius: borders.radius.xl,
-    padding: spacing.xl,
-    marginBottom: spacing.xl,
-    ...shadows.lg,
-    borderWidth: borders.width.thin,
-    borderColor: colors.neutral[200],
-  },
-  
-  resultHeader: {
-    alignItems: 'center',
-    marginBottom: spacing.lg,
-  },
-  
-  resultTitle: {
-    fontSize: typography.fontSize.lg,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.neutral[600],
+    padding: spacing.lg,
     marginBottom: spacing.md,
-  },
-  
-  resultValue: {
-    fontSize: typography.fontSize['5xl'],
-    fontWeight: typography.fontWeight.extrabold,
-    color: colors.primary[600],
-    lineHeight: typography.lineHeight.tight,
-  },
-  
-  resultUnit: {
-    fontSize: typography.fontSize.lg,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.neutral[600],
-    marginTop: spacing.xs,
-  },
-  
-  resultDescription: {
-    fontSize: typography.fontSize.base,
-    fontWeight: typography.fontWeight.medium,
-    color: colors.neutral[600],
-    textAlign: 'center',
-    lineHeight: typography.lineHeight.normal,
-  },
-  
-  actionButtons: {
-    gap: spacing.md,
-  },
-  
-  saveButton: {
-    backgroundColor: colors.accent.blue,
-    borderRadius: borders.radius.xl,
-    paddingVertical: spacing.lg,
-    paddingHorizontal: spacing.lg,
-    alignItems: 'center',
-    justifyContent: 'center',
     ...shadows.lg,
-    elevation: 8,
+    borderWidth: 1,
+    borderColor: colors.neutral[700],
   },
-  
-  saveButtonText: {
-    fontSize: typography.fontSize.lg,
+  dicaHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: spacing.sm,
+  },
+  dicaIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: spacing.sm,
+  },
+  dicaTitle: {
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.neutral[50],
+  },
+  dicaText: {
+    fontSize: typography.fontSize.base,
+    color: colors.neutral[400],
+    lineHeight: typography.lineHeight.relaxed,
+  },
+  progressoContainer: {
+    padding: spacing.lg,
+  },
+  progressoTitle: {
+    fontSize: typography.fontSize.xl,
     fontWeight: typography.fontWeight.bold,
     color: colors.neutral[50],
-    letterSpacing: 0.5,
+    marginBottom: spacing.md,
+    textAlign: 'center',
   },
-  
-  visitorAlert: {
-    backgroundColor: colors.accent.yellow + '15',
-    padding: spacing.md,
-    borderRadius: borders.radius.lg,
-    borderWidth: borders.width.thin,
-    borderColor: colors.accent.yellow + '30',
+  progressoCard: {
+    backgroundColor: colors.neutral[800],
+    borderRadius: borders.radius.xl,
+    padding: spacing.lg,
+    marginBottom: spacing.md,
+    ...shadows.lg,
+    borderWidth: 1,
+    borderColor: colors.neutral[700],
   },
-  
-  visitorAlertText: {
+  progressoHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: spacing.xs,
+  },
+  progressoLabel: {
+    fontSize: typography.fontSize.base,
+    color: colors.neutral[400],
+  },
+  progressoValor: {
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.neutral[50],
+  },
+  progressoSubtitle: {
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.neutral[300],
+    marginBottom: spacing.sm,
+  },
+  progressoItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: spacing.xs,
+  },
+  progressoItemLabel: {
+    fontSize: typography.fontSize.sm,
+    color: colors.neutral[400],
+  },
+  progressoItemValor: {
     fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.medium,
-    color: colors.accent.yellow + 'DD',
-    textAlign: 'center',
-    lineHeight: typography.lineHeight.normal,
+    color: colors.neutral[300],
   },
+
 });
