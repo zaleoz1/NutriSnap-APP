@@ -4,7 +4,7 @@ import { requerAutenticacao } from '../middleware/auth.js';
 
 const roteador = express.Router();
 
-// Buscar plano de treino atual
+// Busca plano de treino atual do usuário
 roteador.get('/', requerAutenticacao, async (req, res) => {
   try {
     const [linhas] = await bancoDados.query(
@@ -21,7 +21,7 @@ roteador.get('/', requerAutenticacao, async (req, res) => {
   }
 });
 
-// Salvar plano de treino
+// Salva plano de treino
 roteador.post('/', requerAutenticacao, async (req, res) => {
   try {
     const { plano } = req.body;
@@ -39,10 +39,9 @@ roteador.post('/', requerAutenticacao, async (req, res) => {
   }
 });
 
-// Gerar plano de treino personalizado baseado no quiz
+// Gera plano de treino personalizado baseado no quiz
 roteador.post('/gerar', requerAutenticacao, async (req, res) => {
   try {
-    // Buscar dados do quiz do usuário
     const [quizData] = await bancoDados.query(
       'SELECT * FROM meus_dados WHERE id_usuario = ?',
       [req.idUsuario]
@@ -55,11 +54,8 @@ roteador.post('/gerar', requerAutenticacao, async (req, res) => {
     }
 
     const dadosQuiz = quizData[0];
-    
-    // Gerar plano baseado nos dados do quiz
     const plano = gerarPlanoTreino(dadosQuiz);
     
-    // Salvar o plano gerado
     await bancoDados.query(
       'INSERT INTO treinos (id_usuario, plano) VALUES (?, ?)',
       [req.idUsuario, JSON.stringify(plano)]
@@ -80,25 +76,22 @@ roteador.post('/gerar', requerAutenticacao, async (req, res) => {
   }
 });
 
-// Atualizar plano de treino
+// Atualiza plano de treino existente
 roteador.put('/', requerAutenticacao, async (req, res) => {
   try {
     const { plano } = req.body;
     
-    // Verificar se já existe um plano
     const [treinosExistentes] = await bancoDados.query(
       'SELECT id FROM treinos WHERE id_usuario = ? ORDER BY id DESC LIMIT 1',
       [req.idUsuario]
     );
 
     if (treinosExistentes.length > 0) {
-      // Atualizar plano existente
       await bancoDados.query(
         'UPDATE treinos SET plano = ? WHERE id_usuario = ? ORDER BY id DESC LIMIT 1',
         [JSON.stringify(plano), req.idUsuario]
       );
     } else {
-      // Criar novo plano
       await bancoDados.query(
         'INSERT INTO treinos (id_usuario, plano) VALUES (?, ?)',
         [req.idUsuario, JSON.stringify(plano)]
@@ -115,7 +108,7 @@ roteador.put('/', requerAutenticacao, async (req, res) => {
   }
 });
 
-// Função para gerar plano de treino personalizado
+// Gera plano de treino personalizado baseado nos dados do quiz
 function gerarPlanoTreino(dadosQuiz) {
   const {
     idade,
@@ -132,19 +125,11 @@ function gerarPlanoTreino(dadosQuiz) {
     metas_especificas
   } = dadosQuiz;
 
-  // Determinar intensidade baseada no objetivo e nível de atividade
   const intensidade = determinarIntensidade(objetivo, nivel_atividade);
-  
-  // Determinar frequência de treinos
   const frequencia = determinarFrequencia(frequencia_treino);
-  
-  // Determinar tipos de treino baseados no objetivo
   const tiposTreino = determinarTiposTreino(objetivo, metas_especificas);
-  
-  // Determinar duração baseada na preferência
   const duracao = determinarDuracao(duracao_treino);
   
-  // Gerar treinos para a semana
   const treinos = gerarTreinosSemana(
     frequencia,
     tiposTreino,
@@ -176,6 +161,7 @@ function gerarPlanoTreino(dadosQuiz) {
   };
 }
 
+// Determina intensidade do treino baseada no objetivo e nível de atividade
 function determinarIntensidade(objetivo, nivelAtividade) {
   if (objetivo === 'emagrecer') {
     return nivelAtividade === 'iniciante' ? 'média' : 'alta';
@@ -189,6 +175,7 @@ function determinarIntensidade(objetivo, nivelAtividade) {
   return 'média';
 }
 
+// Converte frequência de treino em número de dias
 function determinarFrequencia(frequenciaTreino) {
   const frequencias = {
     '1_2_vezes': 2,
@@ -199,6 +186,7 @@ function determinarFrequencia(frequenciaTreino) {
   return frequencias[frequenciaTreino] || 3;
 }
 
+// Determina tipos de treino baseados no objetivo
 function determinarTiposTreino(objetivo, metasEspecificas) {
   const tipos = [];
   
@@ -212,7 +200,6 @@ function determinarTiposTreino(objetivo, metasEspecificas) {
     tipos.push('funcional', 'cardio');
   }
 
-  // Adicionar tipos baseados em metas específicas
   if (metasEspecificas) {
     try {
       const metas = typeof metasEspecificas === 'string' ? JSON.parse(metasEspecificas) : metasEspecificas;
@@ -224,9 +211,10 @@ function determinarTiposTreino(objetivo, metasEspecificas) {
     }
   }
 
-  return [...new Set(tipos)]; // Remove duplicatas
+  return [...new Set(tipos)];
 }
 
+// Converte duração de treino em minutos
 function determinarDuracao(duracaoTreino) {
   const duracoes = {
     '30_min': 30,
@@ -237,14 +225,13 @@ function determinarDuracao(duracaoTreino) {
   return duracoes[duracaoTreino] || 60;
 }
 
+// Gera treinos para a semana baseado na frequência
 function gerarTreinosSemana(frequencia, tiposTreino, intensidade, duracao, acessoAcademia, horarioPreferido) {
   const treinos = [];
-  
-  // Distribuir tipos de treino ao longo da semana de forma equilibrada
   let tipoIndex = 0;
   
   for (let i = 0; i < frequencia; i++) {
-    const dia = i + 1; // Dia da semana (1 = Segunda, 2 = Terça, etc.)
+    const dia = i + 1;
     const tipo = tiposTreino[tipoIndex % tiposTreino.length];
     
     const treino = gerarTreinoEspecifico(
@@ -263,6 +250,7 @@ function gerarTreinosSemana(frequencia, tiposTreino, intensidade, duracao, acess
   return treinos;
 }
 
+// Gera treino específico para um dia
 function gerarTreinoEspecifico(dia, tipo, intensidade, duracao, acessoAcademia, horarioPreferido) {
   const treino = {
     dia: dia,
@@ -279,6 +267,7 @@ function gerarTreinoEspecifico(dia, tipo, intensidade, duracao, acessoAcademia, 
   return treino;
 }
 
+// Gera nome descritivo para o treino
 function gerarNomeTreino(tipo, intensidade) {
   const nomes = {
     cardio: {
@@ -310,6 +299,7 @@ function gerarNomeTreino(tipo, intensidade) {
   return nomes[tipo]?.[intensidade] || `${tipo.charAt(0).toUpperCase() + tipo.slice(1)} ${intensidade}`;
 }
 
+// Gera descrição do treino
 function gerarDescricaoTreino(tipo, intensidade, duracao) {
   const descricoes = {
     cardio: `Treino cardiovascular de ${duracao} minutos focado em melhorar resistência e queima calórica.`,
@@ -321,6 +311,7 @@ function gerarDescricaoTreino(tipo, intensidade, duracao) {
   return descricoes[tipo] || `Treino personalizado de ${duracao} minutos.`;
 }
 
+// Gera lista de exercícios baseada no tipo de treino
 function gerarExercicios(tipo, intensidade, duracao, acessoAcademia) {
   const exercicios = [];
   
@@ -368,7 +359,6 @@ function gerarExercicios(tipo, intensidade, duracao, acessoAcademia) {
     );
   }
   
-  // Ajustar baseado na intensidade
   if (intensidade === 'alta' || intensidade === 'máxima') {
     exercicios.forEach(ex => {
       if (ex.repeticoes !== '30s' && ex.repeticoes !== '2 min' && ex.repeticoes !== '20s') {

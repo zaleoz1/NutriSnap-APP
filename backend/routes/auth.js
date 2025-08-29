@@ -6,7 +6,7 @@ import { z } from 'zod';
 
 const roteador = express.Router();
 
-// Esquemas de validação melhorados
+// Esquemas de validação para registro e login
 const esquemaRegistro = z.object({
   nome: z.string()
     .min(2, 'Nome deve ter pelo menos 2 caracteres')
@@ -32,13 +32,11 @@ const esquemaLogin = z.object({
     .min(1, 'Senha é obrigatória')
 });
 
-// Rota de registro
+// Cria nova conta de usuário
 roteador.post('/registrar', async (req, res) => {
   try {
-    // Validar dados de entrada
     const dadosValidados = esquemaRegistro.parse(req.body);
     
-    // Verificar se email já existe
     const [usuariosExistentes] = await bancoDados.query(
       'SELECT id FROM usuarios WHERE email = ?', 
       [dadosValidados.email]
@@ -50,11 +48,9 @@ roteador.post('/registrar', async (req, res) => {
       });
     }
 
-    // Criptografar senha
     const saltRounds = 12;
     const senhaCriptografada = await bcrypt.hash(dadosValidados.senha, saltRounds);
     
-    // Inserir usuário
     const [resultado] = await bancoDados.query(
       'INSERT INTO usuarios (nome, email, senha) VALUES (?, ?, ?)',
       [dadosValidados.nome, dadosValidados.email, senhaCriptografada]
@@ -88,13 +84,11 @@ roteador.post('/registrar', async (req, res) => {
   }
 });
 
-// Rota de login
+// Autentica usuário e retorna token JWT
 roteador.post('/entrar', async (req, res) => {
   try {
-    // Validar dados de entrada
     const dadosValidados = esquemaLogin.parse(req.body);
     
-    // Buscar usuário
     const [usuarios] = await bancoDados.query(
       'SELECT id, nome, email, senha FROM usuarios WHERE email = ?',
       [dadosValidados.email]
@@ -108,7 +102,6 @@ roteador.post('/entrar', async (req, res) => {
     
     const usuario = usuarios[0];
     
-    // Verificar senha
     const senhaCorreta = await bcrypt.compare(dadosValidados.senha, usuario.senha);
     if (!senhaCorreta) {
       return res.status(401).json({ 
@@ -116,7 +109,6 @@ roteador.post('/entrar', async (req, res) => {
       });
     }
     
-    // Gerar token JWT
     const payload = { 
       id: usuario.id, 
       email: usuario.email,
@@ -135,7 +127,6 @@ roteador.post('/entrar', async (req, res) => {
     
     console.log(`✅ Login realizado: ${usuario.email} (ID: ${usuario.id})`);
     
-    // Retornar dados do usuário (sem senha) e token
     res.json({
       token,
       usuario: {
@@ -163,7 +154,7 @@ roteador.post('/entrar', async (req, res) => {
   }
 });
 
-// Rota de verificação de token (opcional)
+// Verifica se o token é válido e retorna dados do usuário
 roteador.get('/verificar', async (req, res) => {
   try {
     const cabecalho = req.headers.authorization || '';
@@ -178,7 +169,6 @@ roteador.get('/verificar', async (req, res) => {
     
     const decodificado = jwt.verify(token, process.env.JWT_SECRET || 'secreta');
     
-    // Buscar dados atualizados do usuário
     const [usuarios] = await bancoDados.query(
       'SELECT id, nome, email FROM usuarios WHERE id = ?',
       [decodificado.id]

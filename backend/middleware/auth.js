@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 
+// Middleware principal de autenticação
 export function requerAutenticacao(req, res, next) {
   try {
     const cabecalho = req.headers.authorization || '';
@@ -30,7 +31,6 @@ export function requerAutenticacao(req, res, next) {
     try {
       const decodificado = jwt.verify(token, process.env.JWT_SECRET || 'secreta');
       
-      // Validar estrutura do payload
       if (!decodificado.id || !decodificado.email) {
         return res.status(401).json({ 
           mensagem: 'Token malformado',
@@ -38,7 +38,6 @@ export function requerAutenticacao(req, res, next) {
         });
       }
       
-      // Adicionar dados do usuário ao request
       req.idUsuario = decodificado.id;
       req.emailUsuario = decodificado.email;
       req.nomeUsuario = decodificado.nome;
@@ -93,7 +92,6 @@ export function autenticacaoOpcional(req, res, next) {
           req.autenticado = true;
         }
       } catch (jwtError) {
-        // Token inválido, mas não é erro crítico
         req.autenticado = false;
       }
     } else {

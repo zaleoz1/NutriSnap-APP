@@ -4,23 +4,22 @@ import { verificarToken, testarConexao } from './api';
 
 const ContextoAutenticacao = createContext(null);
 
+// Provedor de contexto para gerenciar autenticação global
 export function ProvedorAutenticacao({ children }) {
   const [token, setToken] = useState(null);
   const [usuario, setUsuario] = useState(null);
   const [carregando, setCarregando] = useState(true);
   const [conectado, setConectado] = useState(false);
 
-  // Verificar conectividade com o servidor
   useEffect(() => {
     verificarConectividade();
   }, []);
 
-  // Carregar dados salvos na inicialização
   useEffect(() => {
     carregarDadosSalvos();
   }, []);
 
-  // Verificar conectividade com o servidor
+  // Verifica conectividade com o servidor
   const verificarConectividade = async () => {
     try {
       const resultado = await testarConexao();
@@ -35,7 +34,7 @@ export function ProvedorAutenticacao({ children }) {
     }
   };
 
-  // Carregar dados salvos do AsyncStorage
+  // Carrega dados salvos do AsyncStorage na inicialização
   const carregarDadosSalvos = async () => {
     try {
       const [tokenSalvo, usuarioSalvo] = await Promise.all([
@@ -44,7 +43,6 @@ export function ProvedorAutenticacao({ children }) {
       ]);
 
       if (tokenSalvo && usuarioSalvo) {
-        // Verificar se o token ainda é válido
         const tokenValido = await verificarToken(tokenSalvo);
         
         if (tokenValido) {
@@ -64,10 +62,9 @@ export function ProvedorAutenticacao({ children }) {
     }
   };
 
-  // Fazer login
+  // Autentica usuário e salva dados localmente
   const fazerLogin = async (novoToken, novoUsuario) => {
     try {
-      // Validar dados
       if (!novoToken || !novoUsuario) {
         throw new Error('Token e usuário são obrigatórios');
       }
@@ -77,11 +74,9 @@ export function ProvedorAutenticacao({ children }) {
         usuario: novoUsuario.email 
       });
 
-      // Salvar no estado
       setToken(novoToken);
       setUsuario(novoUsuario);
 
-      // Salvar no AsyncStorage
       await Promise.all([
         AsyncStorage.setItem('token', novoToken),
         AsyncStorage.setItem('user', JSON.stringify(novoUsuario))
@@ -98,7 +93,7 @@ export function ProvedorAutenticacao({ children }) {
     }
   };
 
-  // Fazer logout
+  // Remove dados de autenticação
   const fazerLogout = async () => {
     try {
       await limparDados();
@@ -108,7 +103,7 @@ export function ProvedorAutenticacao({ children }) {
     }
   };
 
-  // Limpar todos os dados
+  // Limpa todos os dados de autenticação
   const limparDados = async () => {
     setToken(null);
     setUsuario(null);
@@ -123,35 +118,28 @@ export function ProvedorAutenticacao({ children }) {
     }
   };
 
-  // Verificar se o usuário está autenticado
+  // Verifica se o usuário está autenticado
   const estaAutenticado = () => {
     return !!(token && usuario);
   };
 
-  // Funções de compatibilidade com nomes em português
   const entrar = fazerLogin;
   const sair = fazerLogout;
 
-  // Contexto fornecido
   const contexto = {
-    // Estados
     token,
     usuario,
     carregando,
     conectado,
     
-    // Funções principais
     fazerLogin,
     fazerLogout,
     
-    // Funções de compatibilidade
     entrar,
     sair,
     
-    // Funções utilitárias
     estaAutenticado,
     
-    // Funções de gerenciamento
     limparDados,
     verificarConectividade
   };
@@ -163,6 +151,7 @@ export function ProvedorAutenticacao({ children }) {
   );
 }
 
+// Hook para usar o contexto de autenticação
 export function usarAutenticacao() {
   const contexto = useContext(ContextoAutenticacao);
   

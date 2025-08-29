@@ -3,6 +3,7 @@ import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { usarAutenticacao } from '../services/AuthContext';
 import { colors, spacing } from '../styles/globalStyles';
 
+// Componente que gerencia a navegação baseada no estado de autenticação
 export default function NavigationHandler({ navigation }) {
   const { token, carregando } = usarAutenticacao();
 

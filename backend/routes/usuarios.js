@@ -4,7 +4,7 @@ import { requerAutenticacao } from '../middleware/auth.js';
 
 const roteador = express.Router();
 
-// Buscar perfil do usuário
+// Busca perfil completo do usuário incluindo dados do quiz
 roteador.get('/perfil', requerAutenticacao, async (req, res) => {
   try {
     const [usuarios] = await bancoDados.query(
@@ -20,7 +20,6 @@ roteador.get('/perfil', requerAutenticacao, async (req, res) => {
     
     const usuario = usuarios[0];
     
-    // Buscar dados do quiz se existirem
     const [quizData] = await bancoDados.query(
       'SELECT idade, sexo, altura, peso_atual, peso_meta, objetivo, nivel_atividade FROM meus_dados WHERE id_usuario = ?',
       [req.idUsuario]
@@ -40,19 +39,17 @@ roteador.get('/perfil', requerAutenticacao, async (req, res) => {
   }
 });
 
-// Atualizar perfil do usuário
+// Atualiza perfil do usuário e dados do quiz
 roteador.put('/perfil', requerAutenticacao, async (req, res) => {
   try {
     const { nome, email, idade, sexo, altura, peso_atual, peso_meta, objetivo, nivel_atividade } = req.body;
     
-    // Validar dados obrigatórios
     if (!nome || !email) {
       return res.status(400).json({ 
         mensagem: 'Nome e email são obrigatórios' 
       });
     }
     
-    // Verificar se email já existe (exceto para o usuário atual)
     if (email) {
       const [usuariosExistentes] = await bancoDados.query(
         'SELECT id FROM usuarios WHERE email = ? AND id != ?',
@@ -66,20 +63,17 @@ roteador.put('/perfil', requerAutenticacao, async (req, res) => {
       }
     }
     
-    // Atualizar dados básicos do usuário
     await bancoDados.query(
       'UPDATE usuarios SET nome = ?, email = ? WHERE id = ?',
       [nome, email, req.idUsuario]
     );
     
-    // Verificar se existe dados do quiz para este usuário
     const [quizExistente] = await bancoDados.query(
       'SELECT id FROM meus_dados WHERE id_usuario = ?',
       [req.idUsuario]
     );
     
     if (quizExistente.length > 0) {
-      // Atualizar dados do quiz
       await bancoDados.query(`
         UPDATE meus_dados SET
           idade = ?, sexo = ?, altura = ?, peso_atual = ?, peso_meta = ?,
@@ -90,7 +84,6 @@ roteador.put('/perfil', requerAutenticacao, async (req, res) => {
         objetivo || null, nivel_atividade || null, req.idUsuario
       ]);
     } else if (idade || sexo || altura || peso_atual || peso_meta || objetivo || nivel_atividade) {
-      // Inserir novos dados do quiz
       await bancoDados.query(`
         INSERT INTO meus_dados (
           id_usuario, idade, sexo, altura, peso_atual, peso_meta,
