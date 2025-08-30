@@ -563,7 +563,11 @@ export default function TelaPrincipal({ navigation }) {
         <View style={estilos.healthMetrics}>
           <View style={estilos.sectionHeader}>
             <Text style={estilos.sectionTitle}>Métricas de Saúde</Text>
-            <TouchableOpacity style={estilos.viewAllButton}>
+            <TouchableOpacity 
+              style={estilos.viewAllButton}
+              onPress={() => navigation.navigate('Diario')}
+              activeOpacity={0.8}
+            >
               <Text style={estilos.viewAllText}>Ver todas</Text>
               <MaterialIcons name="arrow-forward-ios" size={14} color={colors.accent.blue} />
             </TouchableOpacity>
