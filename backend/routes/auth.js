@@ -6,7 +6,7 @@ import { z } from 'zod';
 
 const roteador = express.Router();
 
-// Esquemas de validação melhorados
+// Esquemas de validação
 const esquemaRegistro = z.object({
   nome: z.string()
     .min(2, 'Nome deve ter pelo menos 2 caracteres')

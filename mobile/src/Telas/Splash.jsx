@@ -126,10 +126,7 @@ export default function SplashScreen({ navigation }) {
         </View>
       </Animated.View>
 
-      {/* Barra de progresso inferior */}
-      <View style={styles.progressBarContainer}>
-        <View style={styles.progressBar} />
-      </View>
+
     </View>
   );
 }
@@ -194,18 +191,5 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   
-  progressBarContainer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 3,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-  },
-  
-  progressBar: {
-    height: '100%',
-    backgroundColor: '#4facfe',
-    borderRadius: 2,
-  },
+
 });

@@ -63,7 +63,7 @@ roteador.post('/', requerAutenticacao, async (req, res) => {
     if (existentes.length > 0) {
       console.log(`📝 Fazendo UPDATE do quiz existente para usuário ${req.idUsuario}`);
       
-      // ✅ CORREÇÃO: Garantir que campos vazios sejam tratados como NULL
+      //Garantir que campos vazios sejam tratados como NULL
       const dadosParaAtualizar = [
         idade || null, 
         sexo || null, 
@@ -105,7 +105,7 @@ roteador.post('/', requerAutenticacao, async (req, res) => {
     } else {
       console.log(`🆕 Fazendo INSERT de novo quiz para usuário ${req.idUsuario}`);
       
-      // ✅ CORREÇÃO: Garantir que campos vazios sejam tratados como NULL
+      //Garantir que campos vazios sejam tratados como NULL
       const dadosParaInserir = [
         req.idUsuario, 
         idade || null, 

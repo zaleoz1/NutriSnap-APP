@@ -62,7 +62,7 @@ roteador.post('/gerar-ia', requerAutenticacao, async (req, res) => {
         req.idUsuario, 
         dadosQuiz.peso_atual || 70, 
         dadosQuiz.peso_meta || 65, 
-        30, // 30 dias por padrão
+        30,
         metasNutricionais.calorias_diarias,
         JSON.stringify(metasNutricionais)
       ]
@@ -108,7 +108,7 @@ function gerarMetasNutricionais(dadosQuiz) {
     obstaculos
   } = dadosQuiz;
 
-  // Calcular TMB (Taxa Metabólica Basal) usando fórmula de Mifflin-St Jeor
+  // Calcular TMB (Taxa Metabólica Basal)
   let tmb;
   if (sexo === 'masculino') {
     tmb = 10 * peso_atual + 6.25 * altura * 100 - 5 * idade + 5;
@@ -133,13 +133,13 @@ function gerarMetasNutricionais(dadosQuiz) {
   let deficit_surplus;
   
   if (objetivo === 'emagrecer') {
-    deficit_surplus = -500; // Déficit de 500 calorias por dia
+    deficit_surplus = -500;
     calorias_diarias = Math.round(caloriasManutencao + deficit_surplus);
   } else if (objetivo === 'ganhar_massa') {
-    deficit_surplus = 300; // Superávit de 300 calorias por dia
+    deficit_surplus = 300;
     calorias_diarias = Math.round(caloriasManutencao + deficit_surplus);
   } else {
-    deficit_surplus = 0; // Manter peso
+    deficit_surplus = 0; 
     calorias_diarias = Math.round(caloriasManutencao);
   }
 

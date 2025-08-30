@@ -288,18 +288,21 @@ export default function TelaRegistro({ navigation }) {
             <Text style={estilos.textoBoasVindas}>Junte-se a nós!</Text>
             <Text style={estilos.textoSubtitulo}>Crie sua conta e comece sua jornada para uma vida mais saudável</Text>
             
-            <View style={estilos.statusConexao}>
-              <View style={[
-                estilos.pontoConexao, 
-                { backgroundColor: conectado ? '#00C9FF' : '#FF6B6B' }
-              ]} />
-              <Text style={[
-                estilos.textoConexao,
-                { color: conectado ? '#00C9FF' : '#FF6B6B' }
-              ]}>
-                {conectado ? 'Conectado ao servidor' : 'Servidor não acessível'}
-              </Text>
-            </View>
+            {/* Indicador de conectividade - apenas quando desconectado */}
+            {!conectado && (
+              <View style={estilos.statusConexao}>
+                <View style={[
+                  estilos.pontoConexao, 
+                  { backgroundColor: '#FF6B6B' }
+                ]} />
+                <Text style={[
+                  estilos.textoConexao,
+                  { color: '#FF6B6B' }
+                ]}>
+                  Servidor não acessível
+                </Text>
+              </View>
+            )}
           </Animated.View>
 
           <Animated.View 

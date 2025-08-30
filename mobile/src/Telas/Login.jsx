@@ -215,19 +215,21 @@ export default function TelaLogin({ navigation }) {
             
             <Text style={estilos.textoBoasVindas}>Bem-vindo de volta!</Text>
 
-            {/* Indicador de conectividade elegante */}
-            <View style={estilos.statusConexao}>
-              <View style={[
-                estilos.pontoConexao, 
-                { backgroundColor: conectado ? '#00C9FF' : '#FF6B6B' }
-              ]} />
-              <Text style={[
-                estilos.textoConexao,
-                { color: conectado ? '#00C9FF' : '#FF6B6B' }
-              ]}>
-                {conectado ? 'Conectado ao servidor' : 'Servidor não acessível'}
-              </Text>
-            </View>
+            {/* Indicador de conectividade - apenas quando desconectado */}
+            {!conectado && (
+              <View style={estilos.statusConexao}>
+                <View style={[
+                  estilos.pontoConexao, 
+                  { backgroundColor: '#FF6B6B' }
+                ]} />
+                <Text style={[
+                  estilos.textoConexao,
+                  { color: '#FF6B6B' }
+                ]}>
+                  Servidor não acessível
+                </Text>
+              </View>
+            )}
           </Animated.View>
 
           {/* Formulário com animação */}
