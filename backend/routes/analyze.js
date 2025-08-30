@@ -6,7 +6,7 @@ const roteador = express.Router();
 
 // Proxy seguro para análise de imagem via Gemini (mantém a chave no backend)
 roteador.post('/', requerAutenticacao, async (req, res) => {
-  const { dadosImagemBase64 } = req.body;
+  const { dadosImagemBase64, pesoTotal, quantidadeItens, descricaoRefeicao } = req.body;
   if (!dadosImagemBase64) return res.status(400).json({ mensagem: 'Imagem ausente' });
 
   try {
@@ -15,15 +15,41 @@ roteador.post('/', requerAutenticacao, async (req, res) => {
 
     const urlApi = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${chave}`;
     
-    // Prompt melhorado para incluir informações nutricionais detalhadas
-    const prompt = `Analise esta imagem de uma refeição. Identifique cada item e forneça informações nutricionais completas.
+    // Construir prompt dinâmico baseado nas informações fornecidas
+    let prompt = `Analise esta imagem de uma refeição. Identifique cada item e forneça informações nutricionais completas.
 
 Para cada alimento identificado, estime:
 - Nome do alimento
 - Calorias (kcal)
 - Proteínas (g)
 - Carboidratos (g) 
-- Gorduras (g)
+- Gorduras (g)`;
+
+    // Adicionar informações de peso, quantidade e descrição se fornecidas
+    const informacoesAdicionais = [];
+    
+    if (pesoTotal) {
+      informacoesAdicionais.push(`- Peso total da refeição: ${pesoTotal} gramas`);
+    }
+    
+    if (quantidadeItens) {
+      informacoesAdicionais.push(`- Quantidade de itens: ${quantidadeItens}`);
+    }
+    
+    if (descricaoRefeicao) {
+      informacoesAdicionais.push(`- Descrição da refeição: ${descricaoRefeicao}`);
+    }
+    
+    if (informacoesAdicionais.length > 0) {
+      prompt += `
+
+INFORMAÇÕES ADICIONAIS:
+${informacoesAdicionais.join('\n')}
+
+Use essas informações para uma análise mais precisa e contextualizada. Se há quantidade de itens especificada, divida os valores nutricionais pela quantidade de itens para obter a porção individual de cada item. A descrição pode ajudar a identificar melhor os alimentos e suas preparações.`;
+    }
+
+    prompt += `
 
 Responda APENAS com JSON puro, sem explicações, sem blocos de código, sem texto extra.
 
@@ -45,6 +71,16 @@ Formato esperado:
 }
 
 IMPORTANTE: Sempre inclua todos os campos nutricionais para cada item. Se não conseguir estimar algum valor, use 0.`;
+
+    // Log das informações recebidas
+    console.log('📊 Informações recebidas:', {
+      pesoTotal: pesoTotal || 'Não informado',
+      quantidadeItens: quantidadeItens || 'Não informado',
+      descricaoRefeicao: descricaoRefeicao || 'Não informado',
+      temPeso: !!pesoTotal,
+      temQuantidade: !!quantidadeItens,
+      temDescricao: !!descricaoRefeicao
+    });
 
     const payload = {
       contents: [{ parts: [{ text: prompt }, { inlineData: { mimeType: 'image/jpeg', data: dadosImagemBase64 } }] }],

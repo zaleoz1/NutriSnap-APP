@@ -25,6 +25,10 @@ export default function TelaRefeicoes() {
   const [imagemBase64, setImagemBase64] = useState(null);
   const [analisando, setAnalisando] = useState(false);
   const [progressoAnalise, setProgressoAnalise] = useState(0);
+  const [pesoTotal, setPesoTotal] = useState('');
+  const [quantidadeItens, setQuantidadeItens] = useState('');
+  const [descricaoRefeicao, setDescricaoRefeicao] = useState('');
+  const [mostrarFormularioPeso, setMostrarFormularioPeso] = useState(false);
 
   function recalcularTotal(itens) {
     const calorias = itens.reduce((soma, item) => soma + (parseFloat(item.calorias) || 0), 0);
@@ -52,6 +56,8 @@ export default function TelaRefeicoes() {
       setProteinasTotal(0);
       setCarboidratosTotal(0);
       setGordurasTotal(0);
+      // Mostrar formulário de peso/quantidade
+      setMostrarFormularioPeso(true);
     }
   }
 
@@ -67,6 +73,8 @@ export default function TelaRefeicoes() {
       setProteinasTotal(0);
       setCarboidratosTotal(0);
       setGordurasTotal(0);
+      // Mostrar formulário de peso/quantidade
+      setMostrarFormularioPeso(true);
     }
   }
 
@@ -78,6 +86,7 @@ export default function TelaRefeicoes() {
 
     setAnalisando(true);
     setProgressoAnalise(0);
+    setMostrarFormularioPeso(false);
     
     // Simular progresso da análise
     const simularProgresso = () => {
@@ -98,8 +107,20 @@ export default function TelaRefeicoes() {
     try {
       console.log('🔍 Iniciando análise de imagem...');
       console.log('📸 Tamanho da imagem base64:', imagemBase64 ? imagemBase64.length : 0);
+      console.log('⚖️ Peso total:', pesoTotal);
+      console.log('🔢 Quantidade de itens:', quantidadeItens);
+      console.log('📝 Descrição:', descricaoRefeicao);
       
-      const dados = await buscarApi('/api/analise', { method:'POST', token, body:{ dadosImagemBase64: imagemBase64 } });
+      const dados = await buscarApi('/api/analise', { 
+        method:'POST', 
+        token, 
+        body:{ 
+          dadosImagemBase64: imagemBase64,
+          pesoTotal: pesoTotal || null,
+          quantidadeItens: quantidadeItens || null,
+          descricaoRefeicao: descricaoRefeicao || null
+        } 
+      });
       
       // Completar o progresso
       clearInterval(intervaloProgresso);
@@ -159,6 +180,10 @@ export default function TelaRefeicoes() {
     setProteinasTotal(0);
     setCarboidratosTotal(0);
     setGordurasTotal(0);
+    setPesoTotal('');
+    setQuantidadeItens('');
+    setDescricaoRefeicao('');
+    setMostrarFormularioPeso(false);
   }
 
   function abrirModalAdicao() {
@@ -331,7 +356,6 @@ export default function TelaRefeicoes() {
         <View style={styles.header}>
           <View style={styles.containerTitulo}>
             <Text style={styles.titulo}>Análise Nutricional</Text>
-            <Text style={styles.subtitulo}>Transforme fotos em insights nutricionais</Text>
           </View>
           <View style={styles.containerIconeHeader}>
             <View style={styles.circuloIconeHeader}>
@@ -398,6 +422,66 @@ export default function TelaRefeicoes() {
               </View>
             </View>
             
+            {/* Formulário de Peso e Quantidade */}
+            {mostrarFormularioPeso && !analisando && (
+              <View style={styles.containerFormularioPeso}>
+                <View style={styles.cabecalhoFormularioPeso}>
+                  <View style={styles.infoFormularioPeso}>
+                    <MaterialIcons name="scale" size={20} color={colors.accent.blue} />
+                    <Text style={styles.textoFormularioPeso}>Informações Adicionais (Opcional)</Text>
+                  </View>
+                  <TouchableOpacity 
+                    onPress={() => setMostrarFormularioPeso(false)}
+                    style={styles.botaoOcultarFormulario}
+                    activeOpacity={0.7}
+                  >
+                    <MaterialIcons name="close" size={16} color={colors.neutral[400]} />
+                  </TouchableOpacity>
+                </View>
+                <Text style={styles.descricaoFormularioPeso}>Para análise mais precisa</Text>
+                
+                <View style={styles.camposFormularioPeso}>
+                  <View style={styles.grupoInputPeso}>
+                    <Text style={styles.rotuloInputPeso}>Peso Total (gramas)</Text>
+                    <TextInput
+                      style={styles.campoInputPeso}
+                      value={pesoTotal}
+                      onChangeText={setPesoTotal}
+                      placeholder="Ex: 500"
+                      placeholderTextColor={colors.neutral[500]}
+                      keyboardType="numeric"
+                    />
+                  </View>
+                  
+                  <View style={styles.grupoInputPeso}>
+                    <Text style={styles.rotuloInputPeso}>Quantidade de Itens</Text>
+                    <TextInput
+                      style={styles.campoInputPeso}
+                      value={quantidadeItens}
+                      onChangeText={setQuantidadeItens}
+                      placeholder="Ex: 3 biscoitos"
+                      placeholderTextColor={colors.neutral[500]}
+                      keyboardType="numeric"
+                    />
+                  </View>
+                </View>
+                
+                <View style={styles.grupoInputDescricao}>
+                  <Text style={styles.rotuloInputPeso}>Descrição da Refeição</Text>
+                  <TextInput
+                    style={styles.campoInputDescricao}
+                    value={descricaoRefeicao}
+                    onChangeText={setDescricaoRefeicao}
+                    placeholder="Ex: Almoço de domingo, comida caseira..."
+                    placeholderTextColor={colors.neutral[500]}
+                    multiline={true}
+                    numberOfLines={3}
+                    textAlignVertical="top"
+                  />
+                </View>
+              </View>
+            )}
+
             {/* Barra de Progresso da Análise */}
             {analisando && (
               <View style={styles.containerProgresso}>
@@ -452,6 +536,22 @@ export default function TelaRefeicoes() {
                 </View>
               </TouchableOpacity>
             </View>
+
+            {/* Botão para mostrar formulário quando oculto */}
+            {!mostrarFormularioPeso && !analisando && (
+              <View style={styles.containerBotaoMostrarFormulario}>
+                <TouchableOpacity 
+                  onPress={() => setMostrarFormularioPeso(true)}
+                  style={styles.botaoMostrarFormulario}
+                  activeOpacity={0.9}
+                >
+                  <View style={styles.conteudoBotaoMostrarFormulario}>
+                    <MaterialIcons name="add" size={18} color={colors.accent.blue} />
+                    <Text style={styles.textoBotaoMostrarFormulario}>Adicionar Informações</Text>
+                  </View>
+                </TouchableOpacity>
+              </View>
+            )}
           </View>
         )}
 
@@ -1256,6 +1356,134 @@ const styles = StyleSheet.create({
     fontWeight: typography.fontWeight.bold,
     color: colors.neutral[50],
     letterSpacing: 0.5,
+  },
+
+  // Formulário de Peso e Quantidade
+  containerFormularioPeso: {
+    marginTop: spacing.md,
+    marginBottom: spacing.md,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.lg,
+    backgroundColor: colors.neutral[800],
+    borderRadius: borders.radius.lg,
+    borderWidth: borders.width.thin,
+    borderColor: colors.neutral[700],
+    ...shadows.base,
+  },
+
+  cabecalhoFormularioPeso: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: spacing.lg,
+  },
+
+  infoFormularioPeso: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    flex: 1,
+  },
+
+  botaoOcultarFormulario: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: colors.neutral[700],
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: spacing.sm,
+  },
+
+  textoFormularioPeso: {
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.neutral[300],
+  },
+
+  descricaoFormularioPeso: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.neutral[500],
+    fontStyle: 'italic',
+  },
+
+  camposFormularioPeso: {
+    flexDirection: 'row',
+    gap: spacing.md,
+  },
+
+  grupoInputPeso: {
+    flex: 1,
+    gap: spacing.sm,
+  },
+
+  rotuloInputPeso: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.neutral[400],
+    marginLeft: spacing.sm,
+  },
+
+  campoInputPeso: {
+    backgroundColor: colors.neutral[700],
+    borderRadius: borders.radius.lg,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    borderWidth: borders.width.thin,
+    borderColor: colors.neutral[600],
+    fontSize: typography.fontSize.base,
+    color: colors.neutral[50],
+    ...shadows.sm,
+  },
+
+  grupoInputDescricao: {
+    marginTop: spacing.md,
+    gap: spacing.sm,
+  },
+
+  campoInputDescricao: {
+    backgroundColor: colors.neutral[700],
+    borderRadius: borders.radius.lg,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    borderWidth: borders.width.thin,
+    borderColor: colors.neutral[600],
+    fontSize: typography.fontSize.base,
+    color: colors.neutral[50],
+    minHeight: 80,
+    ...shadows.sm,
+  },
+
+  // Botão para mostrar formulário
+  containerBotaoMostrarFormulario: {
+    marginTop: spacing.md,
+    marginBottom: spacing.md,
+  },
+
+  botaoMostrarFormulario: {
+    backgroundColor: colors.neutral[800],
+    borderRadius: borders.radius.lg,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    borderWidth: borders.width.thin,
+    borderColor: colors.accent.blue + '30',
+    borderStyle: 'dashed',
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...shadows.sm,
+  },
+
+  conteudoBotaoMostrarFormulario: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+
+  textoBotaoMostrarFormulario: {
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.accent.blue,
   },
 
   // Barra de Progresso da Análise

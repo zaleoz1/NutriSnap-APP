@@ -204,34 +204,14 @@ export default function TelaDiario({ navigation }) {
     navigation.navigate('Refeicoes');
   };
 
-  const navegarParaExercicios = () => {
-    Alert.alert('Exercícios', 'Funcionalidade em desenvolvimento');
-  };
 
-  const navegarParaAgua = () => {
-    Alert.alert('Controle de Água', 'Funcionalidade em desenvolvimento');
-  };
-
-  const navegarParaNutricao = () => {
-    Alert.alert('Nutrição', 'Funcionalidade em desenvolvimento');
-  };
-
-  const navegarParaObservacoes = () => {
-    Alert.alert('Observações', 'Funcionalidade em desenvolvimento');
-  };
-
-  const navegarParaJejum = () => {
-    Alert.alert('Jejum Intermitente', 'Funcionalidade em desenvolvimento');
-  };
 
   // Funções de adição
   const adicionarAlimento = (refeicao) => {
     Alert.alert(`Adicionar ${refeicao}`, 'Funcionalidade em desenvolvimento');
   };
 
-  const adicionarExercicio = () => {
-    navigation.navigate('PlanoTreino');
-  };
+
 
   const adicionarAgua = () => {
     setModalAguaVisivel(true);
@@ -637,11 +617,11 @@ export default function TelaDiario({ navigation }) {
       // Se for o segundo ou mais, é lanche
       return indiceAtual === 0 ? 'almoco' : 'lanches';
     }
-    // Jantar: 16h às 22h
-    else if (hora >= 16 && hora <= 22) {
+    // Jantar: 18h às 22h
+    else if (hora >= 18 && hora <= 22) {
       return 'jantar';
     }
-    // Lanches: outros horários (14h-16h e 22h-4h)
+    // Lanches: qualquer outro horário
     else {
       return 'lanches';
     }
@@ -970,7 +950,7 @@ export default function TelaDiario({ navigation }) {
                         <Text style={styles.treinoNome}>Jantar</Text>
                         <View style={[styles.diaBadge, { backgroundColor: '#8B5CF6' + '20' }]}>
                           <Text style={[styles.diaTexto, { color: '#8B5CF6' }]}>
-                            {jantar.length > 0 ? `${jantar.length} refeição(ões)` : '16h - 22h'}
+                            {jantar.length > 0 ? `${jantar.length} refeição(ões)` : '18h - 22h'}
                           </Text>
                         </View>
                       </View>
@@ -1032,7 +1012,7 @@ export default function TelaDiario({ navigation }) {
                         <Text style={styles.treinoNome}>Lanches</Text>
                         <View style={[styles.diaBadge, { backgroundColor: '#10B981' + '20' }]}>
                           <Text style={[styles.diaTexto, { color: '#10B981' }]}>
-                            {lanches.length > 0 ? `${lanches.length} lanche(s)` : '14h-16h / 22h-4h'}
+                            {lanches.length > 0 ? `${lanches.length} lanche(s)` : 'Qualquer horário'}
                           </Text>
                         </View>
                       </View>
@@ -1124,55 +1104,7 @@ export default function TelaDiario({ navigation }) {
           </View>
         </View>
 
-        {/* Seção de Exercícios */}
-        <View style={styles.treinosSection}>
-          <Text style={styles.sectionTitle}>Atividade Física</Text>
-          <View style={styles.treinoCard}>
-            <View style={styles.treinoHeader}>
-              <View style={[styles.treinoIconContainer, { backgroundColor: '#EF4444' + '20' }]}>
-                <FontAwesome5 name="dumbbell" size={24} color="#EF4444" />
-              </View>
-              
-              <View style={styles.treinoInfo}>
-                <Text style={styles.treinoNome}>Exercícios</Text>
-                <View style={[styles.diaBadge, { backgroundColor: '#EF4444' + '20' }]}>
-                  <Text style={[styles.diaTexto, { color: '#EF4444' }]}>
-                    Queima: {caloriasExercicio} kcal
-                  </Text>
-                </View>
-              </View>
-              
-              <TouchableOpacity style={styles.botaoOpcoes}>
-                <MaterialIcons name="more-horiz" size={20} color={colors.neutral[400]} />
-              </TouchableOpacity>
-            </View>
-            
-            <TouchableOpacity style={styles.botaoAdicionar} onPress={adicionarExercicio}>
-              <MaterialIcons name="add" size={20} color={colors.neutral[50]} />
-              <Text style={styles.textoBotaoAdicionar}>Fazer Exercícios</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
 
-        {/* Botões de Ação */}
-        <View style={styles.treinosSection}>
-          <Text style={styles.sectionTitle}>Ferramentas</Text>
-          <View style={styles.botoesAcao}>
-            <TouchableOpacity style={styles.botaoAcao} onPress={navegarParaNutricao}>
-              <View style={styles.iconeBotaoAcao}>
-                <FontAwesome5 name="chart-pie" size={20} color="#8B5CF6" />
-              </View>
-              <Text style={styles.textoBotaoAcao}>Nutrição</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity style={styles.botaoAcao} onPress={navegarParaObservacoes}>
-              <View style={styles.iconeBotaoAcao}>
-                <FontAwesome5 name="sticky-note" size={20} color="#F59E0B" />
-              </View>
-              <Text style={styles.textoBotaoAcao}>Observações</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
         </Animated.View>
       </ScrollView>
 
@@ -1449,32 +1381,7 @@ const styles = StyleSheet.create({
     color: colors.neutral[50],
   },
 
-  botoesAcao: {
-    flexDirection: 'row',
-    gap: spacing.md,
-  },
 
-  botaoAcao: {
-    flex: 1,
-    backgroundColor: colors.neutral[800],
-    borderRadius: borders.radius.xl,
-    paddingVertical: spacing.lg,
-    paddingHorizontal: spacing.lg,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: colors.neutral[700],
-    ...shadows.lg,
-  },
-
-  iconeBotaoAcao: {
-    marginBottom: spacing.sm,
-  },
-
-  textoBotaoAcao: {
-    fontSize: typography.fontSize.base,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.neutral[50],
-  },
 
   // Modal
   modalOverlay: {
