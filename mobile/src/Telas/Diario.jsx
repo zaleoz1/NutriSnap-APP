@@ -17,7 +17,7 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MaterialIcons, Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import { usarAutenticacao } from '../services/AuthContext';
-import { buscarRefeicoes, buscarMetas } from '../services/api';
+import { buscarRefeicoes, buscarMetas, deletarRefeicao } from '../services/api';
 import { colors, typography, spacing, borders, shadows, componentStyles } from '../styles/globalStyles';
 
 const { width, height } = Dimensions.get('window');
@@ -257,6 +257,324 @@ export default function TelaDiario({ navigation }) {
     setQuantidadeAgua('');
   };
 
+  // Função para limpar refeições do dia
+  const limparRefeicoesDoDia = async () => {
+    try {
+      if (!token) {
+        Alert.alert('Erro', 'Token de autenticação não encontrado');
+        return;
+      }
+
+      // Deletar cada refeição do banco de dados
+      const promessasDeletar = refeicoes.map(refeicao => 
+        deletarRefeicao(token, refeicao.id)
+      );
+
+      // Aguardar todas as deleções
+      await Promise.all(promessasDeletar);
+
+      // Limpar o estado local após sucesso no banco
+      setRefeicoes([]);
+      setTotaisNutricionais({
+        calorias: 0,
+        proteinas: 0,
+        carboidratos: 0,
+        gorduras: 0
+      });
+      setCaloriasAlimentos(0);
+      
+      Alert.alert(
+        'Sucesso', 
+        `${refeicoes.length} refeição(ões) foram removidas do banco de dados com sucesso!`,
+        [{ text: 'OK' }]
+      );
+    } catch (erro) {
+      console.error('Erro ao limpar refeições:', erro);
+      Alert.alert('Erro', 'Não foi possível limpar as refeições do banco de dados');
+    }
+  };
+
+  // Função para limpar água do dia
+  const limparAguaDoDia = async () => {
+    try {
+      setAguaConsumida(0);
+      await salvarAguaNoStorage(0);
+      
+      Alert.alert(
+        'Sucesso', 
+        'Controle de água foi resetado com sucesso!',
+        [{ text: 'OK' }]
+      );
+    } catch (erro) {
+      console.error('Erro ao limpar água:', erro);
+      Alert.alert('Erro', 'Não foi possível limpar o controle de água');
+    }
+  };
+
+  // Funções para menus específicos de cada seção
+  const mostrarMenuCafeManha = () => {
+    Alert.alert(
+      'Café da Manhã',
+      'Escolha uma opção:',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { 
+          text: 'Limpar Refeições', 
+          onPress: () => {
+            Alert.alert(
+              'Confirmar Limpeza',
+              'Tem certeza que deseja limpar todas as refeições do café da manhã?',
+              [
+                { text: 'Cancelar', style: 'cancel' },
+                { 
+                  text: 'Limpar', 
+                  style: 'destructive',
+                  onPress: async () => await limparRefeicoesPorTipo('cafe_da_manha')
+                }
+              ]
+            );
+          },
+          style: 'destructive'
+        }
+      ]
+    );
+  };
+
+  const mostrarMenuAlmoco = () => {
+    Alert.alert(
+      'Almoço',
+      'Escolha uma opção:',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { 
+          text: 'Limpar Refeições', 
+          onPress: () => {
+            Alert.alert(
+              'Confirmar Limpeza',
+              'Tem certeza que deseja limpar todas as refeições do almoço?',
+              [
+                { text: 'Cancelar', style: 'cancel' },
+                { 
+                  text: 'Limpar', 
+                  style: 'destructive',
+                  onPress: async () => await limparRefeicoesPorTipo('almoco')
+                }
+              ]
+            );
+          },
+          style: 'destructive'
+        }
+      ]
+    );
+  };
+
+  const mostrarMenuJantar = () => {
+    Alert.alert(
+      'Jantar',
+      'Escolha uma opção:',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { 
+          text: 'Limpar Refeições', 
+          onPress: () => {
+            Alert.alert(
+              'Confirmar Limpeza',
+              'Tem certeza que deseja limpar todas as refeições do jantar?',
+              [
+                { text: 'Cancelar', style: 'cancel' },
+                { 
+                  text: 'Limpar', 
+                  style: 'destructive',
+                  onPress: async () => await limparRefeicoesPorTipo('jantar')
+                }
+              ]
+            );
+          },
+          style: 'destructive'
+        }
+      ]
+    );
+  };
+
+  const mostrarMenuLanches = () => {
+    Alert.alert(
+      'Lanches',
+      'Escolha uma opção:',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { 
+          text: 'Limpar Lanches', 
+          onPress: () => {
+            Alert.alert(
+              'Confirmar Limpeza',
+              'Tem certeza que deseja limpar todos os lanches?',
+              [
+                { text: 'Cancelar', style: 'cancel' },
+                { 
+                  text: 'Limpar', 
+                  style: 'destructive',
+                  onPress: async () => await limparRefeicoesPorTipo('lanches')
+                }
+              ]
+            );
+          },
+          style: 'destructive'
+        }
+      ]
+    );
+  };
+
+  const mostrarMenuAgua = () => {
+    Alert.alert(
+      'Controle de Água',
+      'Escolha uma opção:',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { 
+          text: 'Limpar Água', 
+          onPress: () => {
+            Alert.alert(
+              'Confirmar Limpeza',
+              'Tem certeza que deseja resetar o controle de água?',
+              [
+                { text: 'Cancelar', style: 'cancel' },
+                { 
+                  text: 'Limpar', 
+                  style: 'destructive',
+                  onPress: limparAguaDoDia
+                }
+              ]
+            );
+          },
+          style: 'destructive'
+        }
+      ]
+    );
+  };
+
+  // Função para limpar refeições por tipo
+  const limparRefeicoesPorTipo = async (tipo) => {
+    try {
+      if (!token) {
+        Alert.alert('Erro', 'Token de autenticação não encontrado');
+        return;
+      }
+
+      const grupos = agruparRefeicoesPorTipo();
+      const refeicoesParaRemover = grupos[tipo];
+      
+      if (refeicoesParaRemover.length === 0) {
+        Alert.alert('Aviso', 'Não há refeições para limpar nesta categoria.');
+        return;
+      }
+
+      // Deletar cada refeição do tipo específico do banco de dados
+      const promessasDeletar = refeicoesParaRemover.map(refeicao => 
+        deletarRefeicao(token, refeicao.id)
+      );
+
+      // Aguardar todas as deleções
+      await Promise.all(promessasDeletar);
+
+      // Remover refeições do tipo específico do estado local
+      const novasRefeicoes = refeicoes.filter(refeicao => {
+        const tipoRefeicao = classificarRefeicaoPorHorario(refeicao.timestamp, refeicoes);
+        return tipoRefeicao !== tipo;
+      });
+
+      setRefeicoes(novasRefeicoes);
+
+      // Recalcular totais nutricionais
+      const totais = novasRefeicoes.reduce((acc, refeicao) => {
+        acc.calorias += parseFloat(refeicao.calorias_totais) || 0;
+        acc.proteinas += parseFloat(refeicao.proteinas_totais) || 0;
+        acc.carboidratos += parseFloat(refeicao.carboidratos_totais) || 0;
+        acc.gorduras += parseFloat(refeicao.gorduras_totais) || 0;
+        return acc;
+      }, { calorias: 0, proteinas: 0, carboidratos: 0, gorduras: 0 });
+
+      setTotaisNutricionais(totais);
+      setCaloriasAlimentos(totais.calorias);
+
+      Alert.alert(
+        'Sucesso', 
+        `${refeicoesParaRemover.length} refeição(ões) foram removidas do banco de dados com sucesso!`,
+        [{ text: 'OK' }]
+      );
+    } catch (erro) {
+      console.error('Erro ao limpar refeições por tipo:', erro);
+      Alert.alert('Erro', 'Não foi possível limpar as refeições do banco de dados');
+    }
+  };
+
+  // Função para mostrar menu de opções
+  const mostrarMenuOpcoes = () => {
+    Alert.alert(
+      'Opções do Diário',
+      'Escolha uma opção:',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { 
+          text: 'Limpar Refeições do Dia', 
+          onPress: () => {
+            Alert.alert(
+              'Confirmar Limpeza',
+              'Tem certeza que deseja limpar todas as refeições do dia? Esta ação não pode ser desfeita.',
+              [
+                { text: 'Cancelar', style: 'cancel' },
+                { 
+                  text: 'Limpar', 
+                  style: 'destructive',
+                  onPress: limparRefeicoesDoDia
+                }
+              ]
+            );
+          },
+          style: 'destructive'
+        },
+        { 
+          text: 'Limpar Água do Dia', 
+          onPress: () => {
+            Alert.alert(
+              'Confirmar Limpeza',
+              'Tem certeza que deseja resetar o controle de água do dia?',
+              [
+                { text: 'Cancelar', style: 'cancel' },
+                { 
+                  text: 'Limpar', 
+                  style: 'destructive',
+                  onPress: limparAguaDoDia
+                }
+              ]
+            );
+          },
+          style: 'destructive'
+        },
+        { 
+          text: 'Limpar Tudo do Dia', 
+          onPress: () => {
+            Alert.alert(
+              'Confirmar Limpeza Completa',
+              'Tem certeza que deseja limpar todas as refeições e resetar a água do dia? Esta ação não pode ser desfeita.',
+              [
+                { text: 'Cancelar', style: 'cancel' },
+                { 
+                  text: 'Limpar Tudo', 
+                  style: 'destructive',
+                  onPress: async () => {
+                    await limparRefeicoesDoDia();
+                    await limparAguaDoDia();
+                  }
+                }
+              ]
+            );
+          },
+          style: 'destructive'
+        }
+      ]
+    );
+  };
+
   // Formatar data
   const formatarData = (data) => {
     const hoje = new Date();
@@ -406,22 +724,7 @@ export default function TelaDiario({ navigation }) {
           
           <TouchableOpacity 
             style={styles.menuButton}
-            onPress={() => {
-              Alert.alert(
-                'Opções do Diário',
-                'Escolha uma opção:',
-                [
-                  { text: 'Cancelar', style: 'cancel' },
-                  { 
-                    text: 'Navegar Data', 
-                    onPress: () => {
-                      Alert.alert('Navegação de Data', 'Funcionalidade em desenvolvimento');
-                    },
-                    style: 'default'
-                  }
-                ]
-              );
-            }}
+            onPress={mostrarMenuOpcoes}
           >
             <MaterialIcons name="more-vert" size={24} color="#FFFFFF" />
           </TouchableOpacity>
@@ -548,7 +851,7 @@ export default function TelaDiario({ navigation }) {
                         </View>
                       </View>
                       
-                      <TouchableOpacity style={styles.botaoOpcoes}>
+                      <TouchableOpacity style={styles.botaoOpcoes} onPress={mostrarMenuCafeManha}>
                         <MaterialIcons name="more-horiz" size={20} color={colors.neutral[400]} />
                       </TouchableOpacity>
                     </View>
@@ -610,7 +913,7 @@ export default function TelaDiario({ navigation }) {
                         </View>
                       </View>
                       
-                      <TouchableOpacity style={styles.botaoOpcoes}>
+                      <TouchableOpacity style={styles.botaoOpcoes} onPress={mostrarMenuAlmoco}>
                         <MaterialIcons name="more-horiz" size={20} color={colors.neutral[400]} />
                       </TouchableOpacity>
                     </View>
@@ -672,7 +975,7 @@ export default function TelaDiario({ navigation }) {
                         </View>
                       </View>
                       
-                      <TouchableOpacity style={styles.botaoOpcoes}>
+                      <TouchableOpacity style={styles.botaoOpcoes} onPress={mostrarMenuJantar}>
                         <MaterialIcons name="more-horiz" size={20} color={colors.neutral[400]} />
                       </TouchableOpacity>
                     </View>
@@ -734,7 +1037,7 @@ export default function TelaDiario({ navigation }) {
                         </View>
                       </View>
                       
-                      <TouchableOpacity style={styles.botaoOpcoes}>
+                      <TouchableOpacity style={styles.botaoOpcoes} onPress={mostrarMenuLanches}>
                         <MaterialIcons name="more-horiz" size={20} color={colors.neutral[400]} />
                       </TouchableOpacity>
                     </View>
@@ -795,7 +1098,7 @@ export default function TelaDiario({ navigation }) {
                 </View>
               </View>
               
-              <TouchableOpacity style={styles.botaoOpcoes}>
+              <TouchableOpacity style={styles.botaoOpcoes} onPress={mostrarMenuAgua}>
                 <MaterialIcons name="more-horiz" size={20} color={colors.neutral[400]} />
               </TouchableOpacity>
             </View>

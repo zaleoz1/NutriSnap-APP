@@ -430,7 +430,7 @@ const estilos = StyleSheet.create({
   },
 
   emailUsuario: {
-    fontSize: typography.fontSize.base,
+    fontSize: typography.fontSize.xs,
     color: colors.neutral[400],
   },
 
