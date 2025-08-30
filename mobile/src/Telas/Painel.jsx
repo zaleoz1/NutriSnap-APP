@@ -78,30 +78,58 @@ export default function TelaPrincipal({ navigation }) {
   const [modalVisivel, setModalVisivel] = useState(false);
   const [planoTreino, setPlanoTreino] = useState(null);
   const [carregando, setCarregando] = useState(true);
+  const [dadosCarregados, setDadosCarregados] = useState(false);
   async function carregarDados() {
     try {
       setCarregando(true);
       
       // Carregar metas
       const m = await buscarMetas(token);
+      console.log('📊 Metas carregadas:', m);
       setMeta(m);
       
       // Carregar plano de treino
       const treinos = await buscarTreinos(token);
+      console.log('🏋️ Treinos carregados:', treinos);
       setPlanoTreino(treinos);
       
       // Carregar refeições do dia
       const refeicoes = await buscarApi('/api/refeicoes', { token });
-      const hoje = new Date().toDateString();
-      const total = refeicoes
-        .filter(r => new Date(r.timestamp).toDateString() === hoje)
-        .reduce((soma, r) => soma + (r.calorias_totais || 0), 0);
-      setConsumido(total);
+      console.log('🍽️ Refeições carregadas:', refeicoes);
+      
+      // Verificar se refeicoes é um array válido
+      if (Array.isArray(refeicoes)) {
+        const hoje = new Date().toDateString();
+        const refeicoesHoje = refeicoes.filter(r => {
+          if (!r || !r.timestamp) return false;
+          try {
+            const dataRefeicao = new Date(r.timestamp).toDateString();
+            return dataRefeicao === hoje;
+          } catch (erro) {
+            console.warn('Erro ao processar timestamp da refeição:', r.timestamp);
+            return false;
+          }
+        });
+        
+        console.log('📅 Refeições de hoje:', refeicoesHoje);
+        
+        const total = refeicoesHoje.reduce((soma, r) => {
+          const calorias = parseFloat(r.calorias_totais) || 0;
+          return soma + calorias;
+        }, 0);
+        
+        console.log('🔥 Total de calorias hoje:', total);
+        setConsumido(total);
+      } else {
+        console.warn('⚠️ Dados de refeições não são um array válido:', refeicoes);
+        setConsumido(0);
+      }
     } catch (erro) {
       console.error('Erro ao carregar dados:', erro);
       // Não mostrar alerta para erros de carregamento inicial
     } finally {
       setCarregando(false);
+      setDadosCarregados(true);
     }
   }
 
@@ -120,7 +148,7 @@ export default function TelaPrincipal({ navigation }) {
 
   const diario = meta?.calorias_diarias || 2290;
   const restantes = Math.max(0, diario - consumido);
-  const percentual = Math.min(100, Math.round((consumido / diario) * 100));
+  const percentual = diario > 0 ? Math.min(100, Math.round((consumido / diario) * 100)) : 0;
   
   // Dados do plano de treino
   const treinosSemana = planoTreino?.plano?.treinos || [];
@@ -227,8 +255,30 @@ export default function TelaPrincipal({ navigation }) {
           </View>
         )}
 
-        {/* Header premium com design sofisticado */}
-        <View style={estilos.header}>
+        {/* Mensagem quando não há dados */}
+        {dadosCarregados && !carregando && !meta && (
+          <View style={estilos.emptyState}>
+            <View style={estilos.emptyStateContent}>
+              <MaterialIcons name="info" size={48} color={colors.neutral[500]} />
+              <Text style={estilos.emptyStateTitle}>Configure suas metas</Text>
+              <Text style={estilos.emptyStateText}>
+                Para ver seu resumo diário, primeiro configure suas metas nutricionais e comece a registrar suas refeições.
+              </Text>
+              <TouchableOpacity 
+                style={estilos.emptyStateButton}
+                onPress={() => navigation.navigate('Metas')}
+              >
+                <Text style={estilos.emptyStateButtonText}>Configurar Metas</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+
+        {/* Conteúdo principal - só mostra quando dados estão carregados */}
+        {dadosCarregados && !carregando && meta && (
+          <>
+            {/* Header premium com design sofisticado */}
+            <View style={estilos.header}>
           <View style={estilos.headerGradient}>
             <View style={estilos.headerContent}>
               <View style={estilos.profileSection}>
@@ -288,7 +338,7 @@ export default function TelaPrincipal({ navigation }) {
                   progress={percentual}
                   size={140}
                   strokeWidth={12}
-                  calories={restantes}
+                  calories={Math.round(restantes)}
                   label="Restantes"
                 />
               </View>
@@ -299,7 +349,7 @@ export default function TelaPrincipal({ navigation }) {
                     <MaterialIcons name="flag" size={18} color={colors.accent.blue} />
                   </View>
                   <View style={estilos.calorieText}>
-                    <Text style={estilos.calorieValue}>{diario}</Text>
+                    <Text style={estilos.calorieValue}>{Math.round(diario)}</Text>
                     <Text style={estilos.calorieDesc}>Meta diária</Text>
                   </View>
                 </View>
@@ -309,7 +359,7 @@ export default function TelaPrincipal({ navigation }) {
                     <MaterialIcons name="restaurant" size={18} color={colors.accent.green} />
                   </View>
                   <View style={estilos.calorieText}>
-                    <Text style={estilos.calorieValue}>{consumido}</Text>
+                    <Text style={estilos.calorieValue}>{Math.round(consumido)}</Text>
                     <Text style={estilos.calorieDesc}>Consumidas</Text>
                   </View>
                 </View>
@@ -333,87 +383,118 @@ export default function TelaPrincipal({ navigation }) {
                 <View style={estilos.progressGlow} />
               </View>
               <View style={estilos.progressInfo}>
-                <Text style={estilos.progressText}>{consumido} / {diario} calorias</Text>
-                <Text style={estilos.progressRemaining}>{restantes} restantes</Text>
+                <Text style={estilos.progressText}>{Math.round(consumido)} / {Math.round(diario)} calorias</Text>
+                <Text style={estilos.progressRemaining}>{Math.round(restantes)} restantes</Text>
               </View>
             </View>
           </View>
         </View>
 
         {/* Informações Nutricionais */}
-        {meta?.metas_nutricionais ? (
-          <View style={estilos.nutritionInfo}>
-            <View style={estilos.sectionHeader}>
-              <Text style={estilos.sectionTitle}>Informações Nutricionais</Text>
-              <TouchableOpacity 
-                style={estilos.viewAllButton}
-                onPress={() => navigation.navigate('Metas')}
-              >
-                <Text style={estilos.viewAllText}>Ver metas</Text>
-                <MaterialIcons name="arrow-forward-ios" size={14} color={colors.accent.blue} />
-              </TouchableOpacity>
-            </View>
+        {(() => {
+          // Extrair dados nutricionais das metas
+          let dadosNutricionais = null;
+          
+          if (meta?.metas_nutricionais) {
+            try {
+              // Se for string, fazer parse do JSON
+              if (typeof meta.metas_nutricionais === 'string') {
+                dadosNutricionais = JSON.parse(meta.metas_nutricionais);
+              } else {
+                dadosNutricionais = meta.metas_nutricionais;
+              }
+            } catch (erro) {
+              console.error('Erro ao fazer parse das metas nutricionais:', erro);
+              dadosNutricionais = null;
+            }
+          }
+          
+          // Verificar se temos dados de macronutrientes
+          const temMacronutrientes = dadosNutricionais?.macronutrientes || dadosNutricionais?.proteinas;
+          
+          if (temMacronutrientes) {
+            const macronutrientes = dadosNutricionais.macronutrientes || dadosNutricionais;
             
-            <View style={estilos.nutritionCard}>
-              <View style={estilos.nutritionGrid}>
-                {/* Proteínas */}
-                <View style={estilos.nutritionItem}>
-                  <View style={estilos.nutritionIcon}>
-                    <MaterialCommunityIcons name="food-steak" size={20} color={colors.accent.green} />
-                  </View>
-                  <Text style={estilos.nutritionValue}>
-                    {meta.metas_nutricionais.proteinas?.gramas || '--'}g
-                  </Text>
-                  <Text style={estilos.nutritionLabel}>Proteínas</Text>
-                  <Text style={estilos.nutritionPercent}>
-                    {meta.metas_nutricionais.proteinas?.percentual || '--'}%
-                  </Text>
+            return (
+              <View style={estilos.nutritionInfo}>
+                <View style={estilos.sectionHeader}>
+                  <Text style={estilos.sectionTitle}>Informações Nutricionais</Text>
+                  <TouchableOpacity 
+                    style={estilos.viewAllButton}
+                    onPress={() => navigation.navigate('Metas')}
+                  >
+                    <Text style={estilos.viewAllText}>Ver metas</Text>
+                    <MaterialIcons name="arrow-forward-ios" size={14} color={colors.accent.blue} />
+                  </TouchableOpacity>
                 </View>
                 
-                {/* Carboidratos */}
-                <View style={estilos.nutritionItem}>
-                  <View style={estilos.nutritionIcon}>
-                    <MaterialCommunityIcons name="bread-slice" size={20} color={colors.accent.orange} />
+                <View style={estilos.nutritionCard}>
+                  <View style={estilos.nutritionGrid}>
+                    {/* Proteínas */}
+                    <View style={estilos.nutritionItem}>
+                      <View style={estilos.nutritionIcon}>
+                        <MaterialCommunityIcons name="food-steak" size={20} color={colors.accent.green} />
+                      </View>
+                      <Text style={estilos.nutritionValue}>
+                        {macronutrientes.proteinas?.gramas || macronutrientes.proteinas || '--'}g
+                      </Text>
+                      <Text style={estilos.nutritionLabel}>Proteínas</Text>
+                      <Text style={estilos.nutritionPercent}>
+                        {macronutrientes.proteinas?.percentual || '--'}%
+                      </Text>
+                    </View>
+                    
+                    {/* Carboidratos */}
+                    <View style={estilos.nutritionItem}>
+                      <View style={estilos.nutritionIcon}>
+                        <MaterialCommunityIcons name="bread-slice" size={20} color={colors.accent.orange} />
+                      </View>
+                      <Text style={estilos.nutritionValue}>
+                        {macronutrientes.carboidratos?.gramas || macronutrientes.carboidratos || '--'}g
+                      </Text>
+                      <Text style={estilos.nutritionLabel}>Carboidratos</Text>
+                      <Text style={estilos.nutritionPercent}>
+                        {macronutrientes.carboidratos?.percentual || '--'}%
+                      </Text>
+                    </View>
+                    
+                    {/* Gorduras */}
+                    <View style={estilos.nutritionItem}>
+                      <View style={estilos.nutritionIcon}>
+                        <MaterialCommunityIcons name="oil" size={20} color={colors.accent.purple} />
+                      </View>
+                      <Text style={estilos.nutritionValue}>
+                        {macronutrientes.gorduras?.gramas || macronutrientes.gorduras || '--'}g
+                      </Text>
+                      <Text style={estilos.nutritionLabel}>Gorduras</Text>
+                      <Text style={estilos.nutritionPercent}>
+                        {macronutrientes.gorduras?.percentual || '--'}%
+                      </Text>
+                    </View>
                   </View>
-                  <Text style={estilos.nutritionValue}>
-                    {meta.metas_nutricionais.carboidratos?.gramas || '--'}g
-                  </Text>
-                  <Text style={estilos.nutritionLabel}>Carboidratos</Text>
-                  <Text style={estilos.nutritionPercent}>
-                    {meta.metas_nutricionais.carboidratos?.percentual || '--'}%
-                  </Text>
-                </View>
-                
-                {/* Gorduras */}
-                <View style={estilos.nutritionItem}>
-                  <View style={estilos.nutritionIcon}>
-                    <MaterialCommunityIcons name="oil" size={20} color={colors.accent.purple} />
-                  </View>
-                  <Text style={estilos.nutritionValue}>
-                    {meta.metas_nutricionais.gorduras?.gramas || '--'}g
-                  </Text>
-                  <Text style={estilos.nutritionLabel}>Gorduras</Text>
-                  <Text style={estilos.nutritionPercent}>
-                    {meta.metas_nutricionais.gorduras?.percentual || '--'}%
-                  </Text>
                 </View>
               </View>
-            </View>
-          </View>
-        ) : (
-          <View style={estilos.emptyState}>
-            <View style={estilos.emptyStateContent}>
-              <MaterialIcons name="restaurant-menu" size={48} color={colors.neutral[500]} />
-              <Text style={estilos.emptyStateTitle}>Complete seu perfil</Text>
-              <TouchableOpacity 
-                style={estilos.emptyStateButton}
-                onPress={() => navigation.navigate('Metas')}
-              >
-                <Text style={estilos.emptyStateButtonText}>Gerar Metas</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        )}
+            );
+          } else {
+            return (
+              <View style={estilos.emptyState}>
+                <View style={estilos.emptyStateContent}>
+                  <MaterialIcons name="restaurant-menu" size={48} color={colors.neutral[500]} />
+                  <Text style={estilos.emptyStateTitle}>Complete seu perfil</Text>
+                  <Text style={estilos.emptyStateText}>
+                    Configure suas metas nutricionais para ver informações detalhadas sobre proteínas, carboidratos e gorduras.
+                  </Text>
+                  <TouchableOpacity 
+                    style={estilos.emptyStateButton}
+                    onPress={() => navigation.navigate('Metas')}
+                  >
+                    <Text style={estilos.emptyStateButtonText}>Gerar Metas</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            );
+          }
+        })()}
 
         {/* Métricas de saúde com design moderno */}
         <View style={estilos.healthMetrics}>
@@ -627,6 +708,8 @@ export default function TelaPrincipal({ navigation }) {
             </TouchableOpacity>
           </View>
         </View>
+          </>
+        )}
 
       </ScrollView>
 
