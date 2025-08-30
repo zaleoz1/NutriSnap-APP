@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert, ScrollView, Dimensions, Modal, RefreshControl, ActivityIndicator } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons, MaterialIcons, FontAwesome5, MaterialCommunityIcons } from '@expo/vector-icons';
 import { usarAutenticacao } from '../services/AuthContext';
 import { buscarApi, buscarTreinos, buscarMetas } from '../services/api';
@@ -79,6 +80,42 @@ export default function TelaPrincipal({ navigation }) {
   const [planoTreino, setPlanoTreino] = useState(null);
   const [carregando, setCarregando] = useState(true);
   const [dadosCarregados, setDadosCarregados] = useState(false);
+  const [aguaConsumida, setAguaConsumida] = useState(0);
+  const [metaAgua, setMetaAgua] = useState(2000); // Meta padrão em ml
+
+  // Função para formatar data para busca na API
+  const formatarDataParaAPI = (data) => {
+    const ano = data.getFullYear();
+    const mes = String(data.getMonth() + 1).padStart(2, '0');
+    const dia = String(data.getDate()).padStart(2, '0');
+    return `${ano}-${mes}-${dia}`;
+  };
+
+  // Função para gerar chave única para armazenamento da água por data
+  const gerarChaveAgua = (data) => {
+    const dataFormatada = formatarDataParaAPI(data);
+    return `agua_consumida_${dataFormatada}`;
+  };
+
+  // Função para carregar quantidade de água do AsyncStorage
+  const carregarAguaDoStorage = async () => {
+    try {
+      const hoje = new Date();
+      const chave = gerarChaveAgua(hoje);
+      const aguaSalva = await AsyncStorage.getItem(chave);
+      if (aguaSalva && !isNaN(aguaSalva)) {
+        const quantidade = parseInt(aguaSalva);
+        setAguaConsumida(quantidade);
+        console.log('💧 Água carregada do storage:', quantidade, 'ml para', formatarDataParaAPI(hoje));
+        return quantidade;
+      }
+      return 0;
+    } catch (erro) {
+      console.error('❌ Erro ao carregar água do storage:', erro);
+      return 0;
+    }
+  };
+
   async function carregarDados() {
     try {
       setCarregando(true);
@@ -87,6 +124,28 @@ export default function TelaPrincipal({ navigation }) {
       const m = await buscarMetas(token);
       console.log('📊 Metas carregadas:', m);
       setMeta(m);
+      
+      // Extrair meta de água das metas nutricionais
+      if (m?.metas_nutricionais) {
+        try {
+          const metasNutricionais = typeof m.metas_nutricionais === 'string' 
+            ? JSON.parse(m.metas_nutricionais) 
+            : m.metas_nutricionais;
+
+          // Verificar se existe meta de água nos micronutrientes
+          if (metasNutricionais.micronutrientes && metasNutricionais.micronutrientes.agua) {
+            const aguaLitros = metasNutricionais.micronutrientes.agua.litros;
+            if (aguaLitros && !isNaN(aguaLitros)) {
+              // Converter litros para ml (1L = 1000ml)
+              const aguaMl = Math.round(aguaLitros * 1000);
+              setMetaAgua(aguaMl);
+              console.log('💧 Meta de água carregada das metas:', aguaMl, 'ml');
+            }
+          }
+        } catch (erro) {
+          console.error('❌ Erro ao processar metas nutricionais para água:', erro);
+        }
+      }
       
       // Carregar plano de treino
       const treinos = await buscarTreinos(token);
@@ -124,6 +183,10 @@ export default function TelaPrincipal({ navigation }) {
         console.warn('⚠️ Dados de refeições não são um array válido:', refeicoes);
         setConsumido(0);
       }
+
+      // Carregar dados de água do AsyncStorage
+      await carregarAguaDoStorage();
+      
     } catch (erro) {
       console.error('Erro ao carregar dados:', erro);
       // Não mostrar alerta para erros de carregamento inicial
@@ -569,24 +632,54 @@ export default function TelaPrincipal({ navigation }) {
             </TouchableOpacity>
             
             {/* Água */}
-            <View style={estilos.metricCard}>
+            <TouchableOpacity 
+              style={estilos.metricCard}
+              onPress={() => navigation.navigate('Diario')}
+              activeOpacity={0.8}
+            >
               <View style={estilos.metricHeader}>
                 <View style={estilos.metricIconContainer}>
-                  <MaterialCommunityIcons name="cup-water" size={22} color={colors.accent.cyan} />
+                  <MaterialCommunityIcons name="cup-water" size={22} color={colors.accent.blue} />
                 </View>
                 <Text style={estilos.metricTitle}>Hidratação</Text>
               </View>
               <Text style={estilos.metricValue}>
-                {meta?.metas_nutricionais?.agua?.litros ? `${meta.metas_nutricionais.agua.litros} L` : '2.0 L'}
+                {aguaConsumida > 0 ? `${(aguaConsumida / 1000).toFixed(1)} L` : '0.0 L'}
               </Text>
               <Text style={estilos.metricTarget}>
-                Meta: {meta?.metas_nutricionais?.agua?.litros ? `${meta.metas_nutricionais.agua.litros} L` : '2.0 L'}
+                Meta: {(metaAgua / 1000).toFixed(1)} L
               </Text>
-              <View style={estilos.metricProgress}>
-                <View style={[estilos.metricProgressFill, { width: '60%' }]} />
-                <View style={estilos.metricProgressGlow} />
-              </View>
-            </View>
+              {metaAgua > 0 && (() => {
+                const percentualAgua = Math.min(100, (aguaConsumida / metaAgua) * 100);
+                const statusAgua = percentualAgua < 50 ? 'baixo' : percentualAgua < 80 ? 'bom' : 'excelente';
+                const corProgresso = percentualAgua < 50 ? colors.warning : percentualAgua < 80 ? colors.accent.blue : colors.accent.green;
+                
+                return (
+                  <View style={estilos.waterProgressContainer}>
+                    <View style={estilos.waterProgressBar}>
+                      <View style={[estilos.waterProgressFill, { 
+                        width: `${percentualAgua}%`,
+                        backgroundColor: corProgresso
+                      }]} />
+                      <View style={[estilos.waterProgressGlow, { 
+                        backgroundColor: corProgresso + '40'
+                      }]} />
+                    </View>
+                    <View style={estilos.waterProgressInfo}>
+                      <Text style={[estilos.waterProgressText, { color: corProgresso }]}>
+                        {percentualAgua.toFixed(0)}% • {statusAgua}
+                      </Text>
+                      <Text style={estilos.waterProgressRemaining}>
+                        {Math.max(0, metaAgua - aguaConsumida) > 0 ? 
+                          `${Math.round((metaAgua - aguaConsumida) / 1000 * 10) / 10} L restantes` : 
+                          'Meta atingida! 🎉'
+                        }
+                      </Text>
+                    </View>
+                  </View>
+                );
+              })()}
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -1398,6 +1491,57 @@ const estilos = StyleSheet.create({
     height: '100%',
     backgroundColor: colors.accent.cyan + '40',
     borderRadius: borders.radius.full,
+  },
+
+  // Estilos específicos para a barra de progresso da água
+  waterProgressContainer: {
+    marginTop: spacing.sm,
+  },
+
+  waterProgressBar: {
+    height: 10,
+    backgroundColor: colors.neutral[700],
+    borderRadius: borders.radius.full,
+    overflow: 'hidden',
+    position: 'relative',
+    marginBottom: spacing.sm,
+  },
+
+  waterProgressFill: {
+    height: '100%',
+    backgroundColor: colors.accent.cyan,
+    borderRadius: borders.radius.full,
+    transition: 'width 0.3s ease-in-out',
+  },
+
+  waterProgressGlow: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    width: 20,
+    height: '100%',
+    backgroundColor: colors.accent.cyan + '40',
+    borderRadius: borders.radius.full,
+  },
+
+  waterProgressInfo: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+
+  waterProgressText: {
+    fontSize: typography.fontSize.xs,
+    fontWeight: typography.fontWeight.semibold,
+    textTransform: 'capitalize',
+  },
+
+  waterProgressRemaining: {
+    fontSize: typography.fontSize.xs,
+    color: colors.neutral[400],
+    fontWeight: typography.fontWeight.medium,
+    textAlign: 'right',
+    flex: 1,
   },
   
   weightTrend: {
