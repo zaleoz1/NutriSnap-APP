@@ -5,11 +5,11 @@ import fetch from 'node-fetch';
 
 const BASE_URL = 'http://localhost:3000';
 
-// Testa funcionalidades de autenticação da API
 async function testarAutenticacao() {
   console.log('🧪 Testando autenticação...\n');
 
   try {
+    // 1. Testar login
     console.log('1️⃣ Testando login...');
     const loginResponse = await fetch(`${BASE_URL}/api/autenticacao/entrar`, {
       method: 'POST',
@@ -31,6 +31,7 @@ async function testarAutenticacao() {
     console.log(`   Token: ${loginData.token.substring(0, 20)}...`);
     console.log(`   Usuário: ${loginData.usuario.nome}`);
 
+    // 2. Testar verificação de token
     console.log('\n2️⃣ Testando verificação de token...');
     const verifyResponse = await fetch(`${BASE_URL}/api/autenticacao/verificar`, {
       method: 'GET',
@@ -48,6 +49,7 @@ async function testarAutenticacao() {
     console.log('✅ Verificação bem-sucedida');
     console.log(`   Token válido: ${verifyData.valido}`);
 
+    // 3. Testar rota protegida (quiz)
     console.log('\n3️⃣ Testando rota protegida (quiz)...');
     const quizResponse = await fetch(`${BASE_URL}/api/quiz`, {
       method: 'POST',

@@ -7,11 +7,11 @@ import path from 'path';
 
 console.log('🚀 Configurando NutriSnap Backend...\n');
 
-// Configura o banco de dados e cria as tabelas
 async function configurarBanco() {
   let conexao;
   
   try {
+    // Conectar sem especificar banco para criar se não existir
     conexao = await mysql.createConnection({
       host: process.env.DB_HOST || 'localhost',
       user: process.env.DB_USER || 'root',
@@ -20,19 +20,23 @@ async function configurarBanco() {
 
     console.log('✅ Conectado ao MySQL');
 
+    // Ler schema SQL
     const schemaPath = path.join(process.cwd(), 'schema.sql');
     const schema = fs.readFileSync(schemaPath, 'utf8');
 
+    // Dividir o schema em instruções individuais
     const statements = schema
       .split(';')
       .map(stmt => stmt.trim())
       .filter(stmt => stmt.length > 0 && !stmt.startsWith('--'));
 
+    // Executar cada instrução separadamente
     for (const statement of statements) {
       if (statement.trim()) {
         try {
           await conexao.query(statement);
         } catch (err) {
+          // Ignorar erro se o banco já existe
           if (!err.message.includes('database exists')) {
             throw err;
           }
@@ -42,6 +46,7 @@ async function configurarBanco() {
     
     console.log('✅ Banco de dados "nutrisnap" criado/atualizado');
 
+    // Verificar se a coluna metas_nutricionais existe na tabela metas
     try {
       await conexao.query('USE nutrisnap');
       const [colunas] = await conexao.query('DESCRIBE metas');
@@ -58,9 +63,11 @@ async function configurarBanco() {
       console.log('⚠️ Erro ao verificar/atualizar tabela metas:', err.message);
     }
 
+    // Verificar tabelas
     const [tabelas] = await conexao.query('SHOW TABLES');
     console.log('📊 Tabelas criadas:', tabelas.map(t => Object.values(t)[0]).join(', '));
 
+    // Criar usuário de teste (opcional)
     const criarUsuarioTeste = process.argv.includes('--create-test-user');
     if (criarUsuarioTeste) {
       const bcrypt = await import('bcryptjs');
@@ -95,7 +102,6 @@ async function configurarBanco() {
   }
 }
 
-// Verifica e instala dependências se necessário
 async function verificarDependencias() {
   console.log('📦 Verificando dependências...');
   
@@ -110,6 +116,7 @@ async function verificarDependencias() {
     
     console.log(`✅ ${dependencias.length} dependências encontradas`);
     
+    // Verificar se node_modules existe
     if (!fs.existsSync('node_modules')) {
       console.log('📥 Instalando dependências...');
       const { execSync } = await import('child_process');
@@ -124,7 +131,6 @@ async function verificarDependencias() {
   }
 }
 
-// Verifica e cria arquivo de ambiente
 async function verificarArquivoEnv() {
   console.log('🔧 Verificando arquivo de ambiente...');
   
@@ -150,7 +156,6 @@ async function verificarArquivoEnv() {
   }
 }
 
-// Verifica configuração da chave Gemini
 async function verificarChaveGemini() {
   console.log('🔑 Verificando chave da API Gemini...');
   
@@ -168,7 +173,6 @@ async function verificarChaveGemini() {
   }
 }
 
-// Função principal que executa toda a configuração
 async function main() {
   try {
     await verificarDependencias();

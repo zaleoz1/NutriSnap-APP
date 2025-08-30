@@ -4,7 +4,7 @@ import { requerAutenticacao } from '../middleware/auth.js';
 
 const roteador = express.Router();
 
-// Busca metas atuais do usuário
+// Buscar metas atuais do usuário
 roteador.get('/', requerAutenticacao, async (req, res) => {
   try {
     const [linhas] = await bancoDados.query('SELECT * FROM metas WHERE id_usuario = ? ORDER BY id DESC LIMIT 1', [req.idUsuario]);
@@ -18,7 +18,7 @@ roteador.get('/', requerAutenticacao, async (req, res) => {
   }
 });
 
-// Salva metas do usuário
+// Salvar metas do usuário
 roteador.post('/', requerAutenticacao, async (req, res) => {
   try {
     const { peso_atual, peso_meta, dias, calorias_diarias } = req.body;
@@ -35,11 +35,12 @@ roteador.post('/', requerAutenticacao, async (req, res) => {
   }
 });
 
-// Gera metas nutricionais inteligentes baseadas no quiz
+// Gerar metas nutricionais inteligentes baseadas no quiz
 roteador.post('/gerar-ia', requerAutenticacao, async (req, res) => {
   try {
+    // Buscar dados do quiz do usuário
     const [quizData] = await bancoDados.query(
-      'SELECT * FROM meus_dados WHERE id_usuario = ?',
+      'SELECT * FROM quiz_respostas WHERE id_usuario = ?',
       [req.idUsuario]
     );
 
@@ -50,15 +51,18 @@ roteador.post('/gerar-ia', requerAutenticacao, async (req, res) => {
     }
 
     const dadosQuiz = quizData[0];
+    
+    // Gerar metas nutricionais baseadas nos dados do quiz
     const metasNutricionais = gerarMetasNutricionais(dadosQuiz);
     
+    // Salvar as metas geradas
     await bancoDados.query(
       'INSERT INTO metas (id_usuario, peso_atual, peso_meta, dias, calorias_diarias, metas_nutricionais) VALUES (?, ?, ?, ?, ?, ?)',
       [
         req.idUsuario, 
         dadosQuiz.peso_atual || 70, 
         dadosQuiz.peso_meta || 65, 
-        30,
+        30, // 30 dias por padrão
         metasNutricionais.calorias_diarias,
         JSON.stringify(metasNutricionais)
       ]
@@ -79,7 +83,7 @@ roteador.post('/gerar-ia', requerAutenticacao, async (req, res) => {
   }
 });
 
-// Gera metas nutricionais inteligentes baseadas nos dados do quiz
+// Função para gerar metas nutricionais inteligentes
 function gerarMetasNutricionais(dadosQuiz) {
   const {
     idade,
@@ -104,7 +108,7 @@ function gerarMetasNutricionais(dadosQuiz) {
     obstaculos
   } = dadosQuiz;
 
-  // Calcula TMB (Taxa Metabólica Basal) usando fórmula de Mifflin-St Jeor
+  // Calcular TMB (Taxa Metabólica Basal) usando fórmula de Mifflin-St Jeor
   let tmb;
   if (sexo === 'masculino') {
     tmb = 10 * peso_atual + 6.25 * altura * 100 - 5 * idade + 5;
@@ -112,6 +116,7 @@ function gerarMetasNutricionais(dadosQuiz) {
     tmb = 10 * peso_atual + 6.25 * altura * 100 - 5 * idade - 161;
   }
 
+  // Fator de atividade baseado no nível de atividade
   const fatoresAtividade = {
     'sedentario': 1.2,
     'leve': 1.375,
@@ -123,57 +128,67 @@ function gerarMetasNutricionais(dadosQuiz) {
   const fatorAtividade = fatoresAtividade[nivel_atividade] || 1.55;
   let caloriasManutencao = tmb * fatorAtividade;
 
+  // Ajustar calorias baseado no objetivo
   let calorias_diarias;
   let deficit_surplus;
   
   if (objetivo === 'emagrecer') {
-    deficit_surplus = -500;
+    deficit_surplus = -500; // Déficit de 500 calorias por dia
     calorias_diarias = Math.round(caloriasManutencao + deficit_surplus);
   } else if (objetivo === 'ganhar_massa') {
-    deficit_surplus = 300;
+    deficit_surplus = 300; // Superávit de 300 calorias por dia
     calorias_diarias = Math.round(caloriasManutencao + deficit_surplus);
   } else {
-    deficit_surplus = 0;
+    deficit_surplus = 0; // Manter peso
     calorias_diarias = Math.round(caloriasManutencao);
   }
 
+  // Calcular macronutrientes baseados no objetivo
   let proteinas_percentual, carboidratos_percentual, gorduras_percentual;
   
   if (objetivo === 'emagrecer') {
-    proteinas_percentual = 0.35;
-    carboidratos_percentual = 0.40;
-    gorduras_percentual = 0.25;
+    proteinas_percentual = 0.35; // 35% proteínas
+    carboidratos_percentual = 0.40; // 40% carboidratos
+    gorduras_percentual = 0.25; // 25% gorduras
   } else if (objetivo === 'ganhar_massa') {
-    proteinas_percentual = 0.30;
-    carboidratos_percentual = 0.50;
-    gorduras_percentual = 0.20;
+    proteinas_percentual = 0.30; // 30% proteínas
+    carboidratos_percentual = 0.50; // 50% carboidratos
+    gorduras_percentual = 0.20; // 20% gorduras
   } else {
-    proteinas_percentual = 0.25;
-    carboidratos_percentual = 0.55;
-    gorduras_percentual = 0.20;
+    proteinas_percentual = 0.25; // 25% proteínas
+    carboidratos_percentual = 0.55; // 55% carboidratos
+    gorduras_percentual = 0.20; // 20% gorduras
   }
 
+  // Calcular gramas de cada macronutriente
   const proteinas_gramas = Math.round((calorias_diarias * proteinas_percentual) / 4);
   const carboidratos_gramas = Math.round((calorias_diarias * carboidratos_percentual) / 4);
   const gorduras_gramas = Math.round((calorias_diarias * gorduras_percentual) / 9);
 
+  // Calcular fibras (14g por 1000 calorias)
   const fibras_gramas = Math.round((calorias_diarias / 1000) * 14);
 
+  // Calcular água baseada no peso e nível de atividade
   const agua_litros = Math.round((peso_atual * 0.033 + (nivel_atividade === 'ativo' ? 0.5 : 0)) * 100) / 100;
 
+  // Gerar recomendações de vitaminas e minerais baseadas no perfil
   const vitaminasMinerais = gerarRecomendacoesVitaminas(dadosQuiz);
 
+  // Gerar recomendações de horários de refeições
   const horariosRefeicoes = gerarHorariosRefeicoes(horario_preferido, duracao_treino);
 
+  // Gerar dicas personalizadas
   const dicasPersonalizadas = gerarDicasPersonalizadas(dadosQuiz, objetivo);
 
   return {
+    // Metas básicas
     peso_atual: peso_atual || 70,
     peso_meta: peso_meta || 65,
     dias: 30,
     calorias_diarias,
     deficit_surplus,
     
+    // Macronutrientes
     macronutrientes: {
       proteinas: {
         gramas: proteinas_gramas,
@@ -192,6 +207,7 @@ function gerarMetasNutricionais(dadosQuiz) {
       }
     },
     
+    // Micronutrientes
     micronutrientes: {
       fibras: {
         gramas: fibras_gramas,
@@ -204,6 +220,7 @@ function gerarMetasNutricionais(dadosQuiz) {
       ...vitaminasMinerais
     },
     
+    // Estratégias nutricionais
     estrategias: {
       frequencia_refeicoes: frequencia_treino === 'diario' ? 6 : 5,
       horarios: horariosRefeicoes,
@@ -212,14 +229,17 @@ function gerarMetasNutricionais(dadosQuiz) {
       hidratacao: `Beber ${agua_litros}L de água por dia`
     },
     
+    // Dicas personalizadas
     dicas: dicasPersonalizadas,
     
+    // Ajustes baseados em restrições
     ajustes: {
       restricoes_medicas: restricoes_medicas || {},
       preferencias: preferencias || {},
       habitos_alimentares: habitos_alimentares || {}
     },
     
+    // Metas semanais
     metas_semanais: {
       treinos: frequencia_treino === 'diario' ? 7 : parseInt(frequencia_treino.split('_')[0]),
       peso_semanal: objetivo === 'emagrecer' ? -0.5 : objetivo === 'ganhar_massa' ? 0.25 : 0,
@@ -227,6 +247,7 @@ function gerarMetasNutricionais(dadosQuiz) {
       refeicoes_planejadas: 21
     },
     
+    // Progresso esperado
     progresso_esperado: {
       primeiro_mes: {
         peso: objetivo === 'emagrecer' ? -2 : objetivo === 'ganhar_massa' ? 1 : 0,
@@ -240,12 +261,12 @@ function gerarMetasNutricionais(dadosQuiz) {
       }
     },
     
+    // Criado em
     criado_em: new Date().toISOString(),
     atualizado_em: new Date().toISOString()
   };
 }
 
-// Gera recomendações de vitaminas e minerais baseadas no perfil
 function gerarRecomendacoesVitaminas(dadosQuiz) {
   const { objetivo, nivel_atividade, dieta_atual, restricoes_medicas } = dadosQuiz;
   
@@ -287,9 +308,10 @@ function gerarRecomendacoesVitaminas(dadosQuiz) {
     }
   };
 
+  // Ajustes baseados em restrições
   if (restricoes_medicas && restricoes_medicas.vegetariano) {
     recomendacoes.vitamina_b12.fontes = ['Suplementos', 'Alimentos fortificados'];
-    recomendacoes.ferro.quantidade = '32 mg/dia';
+    recomendacoes.ferro.quantidade = '32 mg/dia'; // Maior necessidade para vegetarianos
   }
 
   if (restricoes_medicas && restricoes_medicas.lactose) {
@@ -299,7 +321,6 @@ function gerarRecomendacoesVitaminas(dadosQuiz) {
   return recomendacoes;
 }
 
-// Gera horários de refeições baseados na preferência do usuário
 function gerarHorariosRefeicoes(horarioPreferido, duracaoTreino) {
   const horarios = {
     'manha': {
@@ -331,7 +352,6 @@ function gerarHorariosRefeicoes(horarioPreferido, duracaoTreino) {
   return horarios[horarioPreferido] || horarios.manha;
 }
 
-// Gera dicas personalizadas baseadas no objetivo e perfil do usuário
 function gerarDicasPersonalizadas(dadosQuiz, objetivo) {
   const dicas = [];
 
@@ -361,12 +381,14 @@ function gerarDicasPersonalizadas(dadosQuiz, objetivo) {
     );
   }
 
+  // Dicas baseadas no nível de atividade
   if (dadosQuiz.nivel_atividade === 'sedentario') {
     dicas.push('Comece com atividades leves e aumente gradualmente');
   } else if (dadosQuiz.nivel_atividade === 'muito_ativo') {
     dicas.push('Atenção à recuperação e descanso adequado');
   }
 
+  // Dicas baseadas em hábitos alimentares
   if (dadosQuiz.habitos_alimentares && dadosQuiz.habitos_alimentares.lanches) {
     dicas.push('Escolha lanches saudáveis como frutas, castanhas ou iogurte');
   }

@@ -4,7 +4,7 @@ import { requerAutenticacao } from '../middleware/auth.js';
 
 const roteador = express.Router();
 
-// Analisa imagem de alimento via Gemini e retorna informações nutricionais
+// Proxy seguro para análise de imagem via Gemini (mantém a chave no backend)
 roteador.post('/', requerAutenticacao, async (req, res) => {
   const { dadosImagemBase64 } = req.body;
   if (!dadosImagemBase64) return res.status(400).json({ mensagem: 'Imagem ausente' });
@@ -15,6 +15,7 @@ roteador.post('/', requerAutenticacao, async (req, res) => {
 
     const urlApi = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${chave}`;
     
+    // Prompt melhorado para incluir informações nutricionais detalhadas
     const prompt = `Analise esta imagem de uma refeição. Identifique cada item e forneça informações nutricionais completas.
 
 Para cada alimento identificado, estime:
@@ -60,6 +61,7 @@ IMPORTANTE: Sempre inclua todos os campos nutricionais para cada item. Se não c
     try {
       dados = JSON.parse(limpo);
     } catch {
+      // Tenta extrair JSON de dentro do texto
       const match = limpo.match(/{[\s\S]+}/);
       if (match) {
         try {
@@ -74,6 +76,7 @@ IMPORTANTE: Sempre inclua todos os campos nutricionais para cada item. Se não c
 
     if (!dados) return res.status(500).json({ mensagem: 'Resposta inválida do modelo' });
 
+    // Validar e normalizar dados nutricionais
     if (dados.itens && Array.isArray(dados.itens)) {
       dados.itens = dados.itens.map(item => ({
         nome: item.nome || 'Alimento não identificado',
@@ -83,16 +86,19 @@ IMPORTANTE: Sempre inclua todos os campos nutricionais para cada item. Se não c
         gorduras: parseFloat(item.gorduras) || 0
       }));
 
+      // Calcular totais sempre (mesmo se fornecidos pelo modelo)
       const caloriasTotais = dados.itens.reduce((soma, item) => soma + (item.calorias || 0), 0);
       const proteinasTotais = dados.itens.reduce((soma, item) => soma + (item.proteinas || 0), 0);
       const carboidratosTotais = dados.itens.reduce((soma, item) => soma + (item.carboidratos || 0), 0);
       const gordurasTotais = dados.itens.reduce((soma, item) => soma + (item.gorduras || 0), 0);
 
+      // Garantir que os totais estejam sempre presentes e corretos
       dados.caloriasTotais = caloriasTotais;
       dados.proteinasTotais = proteinasTotais;
       dados.carboidratosTotais = carboidratosTotais;
       dados.gordurasTotais = gordurasTotais;
 
+      // Log para debug
       console.log('🍎 Itens processados:', dados.itens);
       console.log('📊 Totais calculados:', {
         calorias: caloriasTotais,
@@ -102,6 +108,7 @@ IMPORTANTE: Sempre inclua todos os campos nutricionais para cada item. Se não c
       });
     }
 
+    // Log final dos dados enviados
     console.log('📤 Dados enviados para o frontend:', dados);
 
     res.json(dados);

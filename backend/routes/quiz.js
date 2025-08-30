@@ -4,11 +4,11 @@ import { requerAutenticacao } from '../middleware/auth.js';
 
 const roteador = express.Router();
 
-// Busca respostas do quiz do usuário
+// Buscar respostas do quiz do usuário
 roteador.get('/', requerAutenticacao, async (req, res) => {
   try {
     const [linhas] = await bancoDados.query(
-      'SELECT * FROM meus_dados WHERE id_usuario = ?',
+      'SELECT * FROM quiz_respostas WHERE id_usuario = ?',
       [req.idUsuario]
     );
     
@@ -26,7 +26,7 @@ roteador.get('/', requerAutenticacao, async (req, res) => {
   }
 });
 
-// Salva ou atualiza respostas do quiz
+// Salvar ou atualizar respostas do quiz
 roteador.post('/', requerAutenticacao, async (req, res) => {
   try {
     const {
@@ -52,8 +52,9 @@ roteador.post('/', requerAutenticacao, async (req, res) => {
       obstaculos
     } = req.body;
 
+    // Verificar se já existe resposta para este usuário
     const [existentes] = await bancoDados.query(
-      'SELECT id FROM meus_dados WHERE id_usuario = ?',
+      'SELECT id FROM quiz_respostas WHERE id_usuario = ?',
       [req.idUsuario]
     );
 
@@ -62,6 +63,7 @@ roteador.post('/', requerAutenticacao, async (req, res) => {
     if (existentes.length > 0) {
       console.log(`📝 Fazendo UPDATE do quiz existente para usuário ${req.idUsuario}`);
       
+      // ✅ CORREÇÃO: Garantir que campos vazios sejam tratados como NULL
       const dadosParaAtualizar = [
         idade || null, 
         sexo || null, 
@@ -86,8 +88,9 @@ roteador.post('/', requerAutenticacao, async (req, res) => {
         req.idUsuario
       ];
 
+      // Atualizar resposta existente
       await bancoDados.query(`
-        UPDATE meus_dados SET
+        UPDATE quiz_respostas SET
           idade = ?, sexo = ?, altura = ?, peso_atual = ?, peso_meta = ?,
           objetivo = ?, nivel_atividade = ?, frequencia_treino = ?, acesso_academia = ?, dieta_atual = ?,
           preferencias = ?, habitos_alimentares = ?, restricoes_medicas = ?,
@@ -102,6 +105,7 @@ roteador.post('/', requerAutenticacao, async (req, res) => {
     } else {
       console.log(`🆕 Fazendo INSERT de novo quiz para usuário ${req.idUsuario}`);
       
+      // ✅ CORREÇÃO: Garantir que campos vazios sejam tratados como NULL
       const dadosParaInserir = [
         req.idUsuario, 
         idade || null, 
@@ -126,8 +130,9 @@ roteador.post('/', requerAutenticacao, async (req, res) => {
         JSON.stringify(obstaculos || {})
       ];
 
+      // Inserir nova resposta
       await bancoDados.query(`
-        INSERT INTO meus_dados (
+        INSERT INTO quiz_respostas (
           id_usuario, idade, sexo, altura, peso_atual, peso_meta,
           objetivo, nivel_atividade, frequencia_treino, acesso_academia, dieta_atual,
           preferencias, habitos_alimentares, restricoes_medicas,
@@ -148,11 +153,11 @@ roteador.post('/', requerAutenticacao, async (req, res) => {
   }
 });
 
-// Deleta respostas do quiz
+// Deletar respostas do quiz
 roteador.delete('/', requerAutenticacao, async (req, res) => {
   try {
     await bancoDados.query(
-      'DELETE FROM meus_dados WHERE id_usuario = ?',
+      'DELETE FROM quiz_respostas WHERE id_usuario = ?',
       [req.idUsuario]
     );
     

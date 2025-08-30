@@ -1,283 +1,787 @@
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  ScrollView,
-  Alert,
-  StyleSheet,
-  KeyboardAvoidingView,
-  Platform
-} from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { registrarUsuario } from '../services/api';
-import { colors, spacing, typography } from '../styles/globalStyles';
+import React, { useState, useRef, useEffect } from 'react';
+import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet, StatusBar, KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator, Dimensions, Animated } from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
+import { buscarApi, obterDetalhesErro } from '../services/api';
+import { usarAutenticacao } from '../services/AuthContext';
+import { typography, spacing, borders, shadows } from '../styles/globalStyles';
 
-// Tela de cadastro de novos usuários
+const { height } = Dimensions.get('window');
+
 export default function TelaRegistro({ navigation }) {
+  const { conectado, entrar } = usarAutenticacao();
   const [nome, setNome] = useState('');
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [confirmarSenha, setConfirmarSenha] = useState('');
+  const [nomeFocado, setNomeFocado] = useState(false);
+  const [emailFocado, setEmailFocado] = useState(false);
+  const [senhaFocada, setSenhaFocada] = useState(false);
+  const [confirmarSenhaFocada, setConfirmarSenhaFocada] = useState(false);
   const [carregando, setCarregando] = useState(false);
-  const [erros, setErros] = useState({});
+  const [mostrarSenha, setMostrarSenha] = useState(false);
+  const [mostrarConfirmarSenha, setMostrarConfirmarSenha] = useState(false);
+
+  // Animações
+  const animacaoFade = useRef(new Animated.Value(0)).current;
+  const animacaoDeslizar = useRef(new Animated.Value(50)).current;
+  const animacaoLogo = useRef(new Animated.Value(0)).current;
+  const animacaoFormulario = useRef(new Animated.Value(30)).current;
+  const animacaoBotao = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(animacaoFade, {
+        toValue: 1,
+        duration: 1000,
+        useNativeDriver: true,
+      }),
+      Animated.spring(animacaoDeslizar, {
+        toValue: 0,
+        tension: 50,
+        friction: 8,
+        useNativeDriver: true,
+      }),
+      Animated.spring(animacaoLogo, {
+        toValue: 1,
+        tension: 80,
+        friction: 6,
+        useNativeDriver: true,
+      }),
+      Animated.spring(animacaoFormulario, {
+        toValue: 0,
+        tension: 60,
+        friction: 8,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    setTimeout(() => {
+      Animated.spring(animacaoBotao, {
+        toValue: 1,
+        tension: 100,
+        friction: 8,
+        useNativeDriver: true,
+      }).start();
+    }, 800);
+  }, []);
 
   const validarNome = (nome) => {
-    if (nome.length < 2) return 'Nome deve ter pelo menos 2 caracteres';
-    if (!/^[a-zA-ZÀ-ÿ\s]+$/.test(nome)) return 'Nome deve conter apenas letras e espaços';
-    return null;
+    const nomeLimpo = nome.trim();
+    if (nomeLimpo.length < 2 || nomeLimpo.length > 100) return false;
+    const regex = /^[a-zA-ZÀ-ÿ\s]+$/;
+    return regex.test(nomeLimpo);
   };
 
   const validarEmail = (email) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) return 'Email deve ter formato válido';
-    return null;
+    const emailLimpo = email.trim().toLowerCase();
+    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return regex.test(emailLimpo);
   };
 
   const validarSenha = (senha) => {
-    if (senha.length < 6) return 'Senha deve ter pelo menos 6 caracteres';
-    if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(senha)) {
-      return 'Senha deve conter pelo menos uma letra maiúscula, uma minúscula e um número';
-    }
-    return null;
+    if (senha.length < 6 || senha.length > 255) return false;
+    const temMaiuscula = /[A-Z]/.test(senha);
+    const temMinuscula = /[a-z]/.test(senha);
+    const temNumero = /\d/.test(senha);
+    return temMaiuscula && temMinuscula && temNumero;
   };
 
   const validarFormulario = () => {
-    const novosErros = {};
-
-    const erroNome = validarNome(nome);
-    if (erroNome) novosErros.nome = erroNome;
-
-    const erroEmail = validarEmail(email);
-    if (erroEmail) novosErros.email = erroEmail;
-
-    const erroSenha = validarSenha(senha);
-    if (erroSenha) novosErros.senha = erroSenha;
-
-    if (senha !== confirmarSenha) {
-      novosErros.confirmarSenha = 'Senhas não coincidem';
+    if (!nome.trim()) {
+      Alert.alert('Campo obrigatório', 'Por favor, insira seu nome completo');
+      return false;
     }
 
-    setErros(novosErros);
-    return Object.keys(novosErros).length === 0;
+    if (!validarNome(nome)) {
+      Alert.alert('Nome inválido', 'Nome deve ter entre 2 e 100 caracteres e conter apenas letras e espaços');
+      return false;
+    }
+
+    if (!email.trim()) {
+      Alert.alert('Campo obrigatório', 'Por favor, insira seu email');
+      return false;
+    }
+
+    if (!validarEmail(email)) {
+      Alert.alert('Email inválido', 'Por favor, insira um email válido');
+      return false;
+    }
+
+    if (!senha) {
+      Alert.alert('Campo obrigatório', 'Por favor, insira uma senha');
+      return false;
+    }
+
+    if (!validarSenha(senha)) {
+      Alert.alert('Senha inválida', 'Senha deve ter entre 6 e 255 caracteres, com pelo menos uma letra maiúscula, uma minúscula e um número');
+      return false;
+    }
+
+    if (senha !== confirmarSenha) {
+      Alert.alert('Senhas não coincidem', 'A confirmação de senha deve ser igual à senha');
+      return false;
+    }
+
+    return true;
   };
 
   async function lidarComRegistro() {
     if (!validarFormulario()) return;
 
-    setCarregando(true);
-    try {
-      await registrarUsuario({ nome, email, senha });
-      
+    if (!conectado) {
       Alert.alert(
-        'Sucesso!',
-        'Conta criada com sucesso! Faça login para continuar.',
-        [
-          {
-            text: 'OK',
-            onPress: () => navigation.navigate('Login')
-          }
-        ]
+        'Sem conexão', 
+        'Não foi possível conectar ao servidor. Verifique sua internet e tente novamente.',
+        [{ text: 'OK' }]
       );
+      return;
+    }
+
+    setCarregando(true);
+
+    try {
+      await buscarApi('/api/autenticacao/registrar', { 
+        method: 'POST', 
+        body: { 
+          nome: nome.trim(),
+          email: email.trim().toLowerCase(), 
+          senha 
+        } 
+      });
+      
+      // Fazer login automático após o cadastro
+      console.log('🔍 Fazendo login automático após cadastro...');
+      
+      try {
+        // Aguardar um pouco para o servidor processar o cadastro
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        const dadosLogin = await buscarApi('/api/autenticacao/entrar', { 
+          method: 'POST', 
+          body: { 
+            email: email.trim().toLowerCase(), 
+            senha 
+          } 
+        });
+
+        // Fazer login no contexto de autenticação
+        await entrar(dadosLogin.token, dadosLogin.usuario);
+        console.log('✅ Login automático bem-sucedido');
+        
+        Alert.alert(
+          'Conta criada!', 
+          'Sua conta foi criada com sucesso! Agora vamos configurar seu perfil para personalizar sua experiência.',
+          [
+            { 
+              text: 'Configurar Perfil', 
+              onPress: () => {
+                setNome('');
+                setEmail('');
+                setSenha('');
+                setConfirmarSenha('');
+                // Navegar para o Quiz com parâmetro indicando que veio do cadastro
+                // Agora o usuário tem token válido
+                navigation.navigate('Quiiz', { fromRegistration: true });
+              }
+            }
+          ]
+        );
+        
+      } catch (erroLogin) {
+        console.log('⚠️ Login automático falhou:', erroLogin.message);
+        
+        // Se o login automático falhar, oferecer opção de ir para login
+        Alert.alert(
+          'Conta criada!', 
+          'Sua conta foi criada com sucesso! Porém, houve um problema no login automático. Você pode fazer login manualmente.',
+          [
+            { 
+              text: 'Fazer Login', 
+              onPress: () => {
+                setNome('');
+                setEmail('');
+                setSenha('');
+                setConfirmarSenha('');
+                // Navegar para a tela de login
+                navigation.navigate('Login');
+              }
+            },
+            { 
+              text: 'Tentar Novamente', 
+              onPress: () => {
+                // Tentar novamente o processo completo
+                lidarComRegistro();
+              }
+            }
+          ]
+        );
+      }
+      
     } catch (erro) {
       let mensagem = 'Erro ao criar conta. Tente novamente.';
       
       if (erro.status === 409) {
         mensagem = 'Este email já está cadastrado. Use outro email ou faça login.';
-      } else if (erro.status === 400 && erro.response) {
-        try {
-          const dados = await erro.response.json();
-          if (dados.detalhes && dados.detalhes.length > 0) {
-            mensagem = dados.detalhes.join('\n');
-          }
-        } catch {
-          mensagem = erro.message;
-        }
+      } else if (erro.status === 400) {
+        mensagem = 'Dados inválidos. Verifique as informações inseridas.';
+      } else if (erro.status === 500) {
+        mensagem = 'Erro interno do servidor. Tente novamente mais tarde.';
+      } else if (erro.message) {
+        mensagem = erro.message;
       }
+
+      const detalhes = obterDetalhesErro(erro);
+      if (detalhes && detalhes !== mensagem) {
+        mensagem += `\n\nDetalhes: ${detalhes}`;
+      }
+
+      Alert.alert('Erro no Registro', mensagem);
       
-      Alert.alert('Erro', mensagem);
     } finally {
       setCarregando(false);
     }
   }
 
   return (
-    <KeyboardAvoidingView 
-      style={styles.container} 
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
-      <LinearGradient
-        colors={[colors.primary[600], colors.primary[800]]}
-        style={styles.header}
+    <View style={estilos.container}>
+      <StatusBar barStyle="light-content" backgroundColor="#0A0A0A" />
+      
+      <View style={estilos.containerFundo}>
+        <View style={estilos.circuloGradiente1} />
+        <View style={estilos.circuloGradiente2} />
+        <View style={estilos.circuloGradiente3} />
+      </View>
+
+      <KeyboardAvoidingView 
+        style={estilos.containerTeclado} 
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        <Text style={styles.titulo}>Criar Conta</Text>
-        <Text style={styles.subtitulo}>Comece sua jornada de saúde hoje</Text>
-      </LinearGradient>
-
-      <ScrollView style={styles.formulario} showsVerticalScrollIndicator={false}>
-        <View style={styles.campo}>
-          <Text style={styles.label}>Nome Completo</Text>
-          <TextInput
-            style={[styles.input, erros.nome && styles.inputErro]}
-            value={nome}
-            onChangeText={setNome}
-            placeholder="Digite seu nome completo"
-            placeholderTextColor={colors.neutral[400]}
-            autoCapitalize="words"
-            autoCorrect={false}
-          />
-          {erros.nome && <Text style={styles.erro}>{erros.nome}</Text>}
-        </View>
-
-        <View style={styles.campo}>
-          <Text style={styles.label}>Email</Text>
-          <TextInput
-            style={[styles.input, erros.email && styles.inputErro]}
-            value={email}
-            onChangeText={setEmail}
-            placeholder="Digite seu email"
-            placeholderTextColor={colors.neutral[400]}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            autoCorrect={false}
-          />
-          {erros.email && <Text style={styles.erro}>{erros.email}</Text>}
-        </View>
-
-        <View style={styles.campo}>
-          <Text style={styles.label}>Senha</Text>
-          <TextInput
-            style={[styles.input, erros.senha && styles.inputErro]}
-            value={senha}
-            onChangeText={setSenha}
-            placeholder="Digite sua senha"
-            placeholderTextColor={colors.neutral[400]}
-            secureTextEntry
-            autoCapitalize="none"
-          />
-          {erros.senha && <Text style={styles.erro}>{erros.senha}</Text>}
-        </View>
-
-        <View style={styles.campo}>
-          <Text style={styles.label}>Confirmar Senha</Text>
-          <TextInput
-            style={[styles.input, erros.confirmarSenha && styles.inputErro]}
-            value={confirmarSenha}
-            onChangeText={setConfirmarSenha}
-            placeholder="Confirme sua senha"
-            placeholderTextColor={colors.neutral[400]}
-            secureTextEntry
-            autoCapitalize="none"
-          />
-          {erros.confirmarSenha && <Text style={styles.erro}>{erros.confirmarSenha}</Text>}
-        </View>
-
-        <TouchableOpacity
-          style={[styles.botao, carregando && styles.botaoDesabilitado]}
-          onPress={lidarComRegistro}
-          disabled={carregando}
+        <ScrollView 
+          contentContainerStyle={estilos.conteudoRolagem}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
         >
-          <Text style={styles.botaoTexto}>
-            {carregando ? 'Criando conta...' : 'Criar Conta'}
-          </Text>
-        </TouchableOpacity>
+          <Animated.View 
+            style={[
+              estilos.cabecalho,
+              {
+                opacity: animacaoFade,
+                transform: [{ translateY: animacaoDeslizar }]
+              }
+            ]}
+          >
+            <Animated.View 
+              style={[
+                estilos.containerLogo,
+                {
+                  transform: [{ scale: animacaoLogo }]
+                }
+              ]}
+            >
+              <View style={estilos.brilhoLogo} />
+              <View style={estilos.circuloLogo}>
+                <MaterialIcons name="restaurant" size={40} color="#00C9FF" />
+              </View>
+              <Text style={estilos.textoLogo}>NutriSnap</Text>
+            </Animated.View>
+            
+            <Text style={estilos.textoBoasVindas}>Junte-se a nós!</Text>
+            <Text style={estilos.textoSubtitulo}>Crie sua conta e comece sua jornada para uma vida mais saudável</Text>
+            
+            <View style={estilos.statusConexao}>
+              <View style={[
+                estilos.pontoConexao, 
+                { backgroundColor: conectado ? '#00C9FF' : '#FF6B6B' }
+              ]} />
+              <Text style={[
+                estilos.textoConexao,
+                { color: conectado ? '#00C9FF' : '#FF6B6B' }
+              ]}>
+                {conectado ? 'Conectado ao servidor' : 'Servidor não acessível'}
+              </Text>
+            </View>
+          </Animated.View>
 
-        <TouchableOpacity
-          style={styles.link}
-          onPress={() => navigation.navigate('Login')}
-        >
-          <Text style={styles.linkTexto}>
-            Já tem uma conta? <Text style={styles.linkDestaque}>Faça login</Text>
-          </Text>
-        </TouchableOpacity>
-      </ScrollView>
-    </KeyboardAvoidingView>
+          <Animated.View 
+            style={[
+              estilos.containerFormulario,
+              {
+                opacity: animacaoFade,
+                transform: [{ translateY: animacaoFormulario }]
+              }
+            ]}
+          >
+            <View style={estilos.grupoEntrada}>
+              <Text style={estilos.rotuloEntrada}>Nome completo</Text>
+              <View style={estilos.involucroEntrada}>
+                <TextInput
+                  style={[
+                    estilos.entrada,
+                    nomeFocado && estilos.entradaFocada,
+                    nome.trim() && !validarNome(nome) && estilos.entradaErro
+                  ]}
+                  placeholder="Seu nome completo"
+                  placeholderTextColor="rgba(255, 255, 255, 0.5)"
+                  value={nome}
+                  onChangeText={setNome}
+                  onFocus={() => setNomeFocado(true)}
+                  onBlur={() => setNomeFocado(false)}
+                  autoCapitalize="words"
+                  autoCorrect={false}
+                  editable={!carregando}
+                />
+                <MaterialIcons 
+                  name="person" 
+                  size={20} 
+                  color={nomeFocado ? "#00C9FF" : "rgba(255, 255, 255, 0.6)"} 
+                  style={estilos.iconeEntrada}
+                />
+              </View>
+              {nome.trim() && !validarNome(nome) && (
+                <Text style={estilos.textoErro}>Nome deve ter entre 2 e 100 caracteres</Text>
+              )}
+            </View>
+
+            <View style={estilos.grupoEntrada}>
+              <Text style={estilos.rotuloEntrada}>Email</Text>
+              <View style={estilos.involucroEntrada}>
+                <TextInput
+                  style={[
+                    estilos.entrada,
+                    emailFocado && estilos.entradaFocada,
+                    email.trim() && !validarEmail(email) && estilos.entradaErro
+                  ]}
+                  placeholder="seu@email.com"
+                  placeholderTextColor="rgba(255, 255, 255, 0.5)"
+                  value={email}
+                  onChangeText={setEmail}
+                  onFocus={() => setEmailFocado(true)}
+                  onBlur={() => setEmailFocado(false)}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  editable={!carregando}
+                />
+                <MaterialIcons 
+                  name="email" 
+                  size={20} 
+                  color={emailFocado ? "#00C9FF" : "rgba(255, 255, 255, 0.6)"} 
+                  style={estilos.iconeEntrada}
+                />
+              </View>
+              {email.trim() && !validarEmail(email) && (
+                <Text style={estilos.textoErro}>Email deve ter formato válido</Text>
+              )}
+            </View>
+
+            <View style={estilos.grupoEntrada}>
+              <Text style={estilos.rotuloEntrada}>Senha</Text>
+              <View style={estilos.involucroEntrada}>
+                <TextInput
+                  style={[
+                    estilos.entrada,
+                    senhaFocada && estilos.entradaFocada,
+                    senha && !validarSenha(senha) && estilos.entradaErro
+                  ]}
+                  placeholder="••••••••"
+                  placeholderTextColor="rgba(255, 255, 255, 0.5)"
+                  value={senha}
+                  onChangeText={setSenha}
+                  onFocus={() => setSenhaFocada(true)}
+                  onBlur={() => setSenhaFocada(false)}
+                  secureTextEntry={!mostrarSenha}
+                  autoCapitalize="none"
+                  editable={!carregando}
+                />
+                <TouchableOpacity 
+                  onPress={() => setMostrarSenha(!mostrarSenha)}
+                  style={estilos.botaoIcone}
+                  disabled={carregando}
+                >
+                  <MaterialIcons 
+                    name={mostrarSenha ? "visibility" : "visibility-off"} 
+                    size={20} 
+                    color={senhaFocada ? "#00C9FF" : "rgba(255, 255, 255, 0.6)"} 
+                  />
+                </TouchableOpacity>
+              </View>
+              {senha && !validarSenha(senha) && (
+                <Text style={estilos.textoErro}>Mínimo 6 caracteres, com maiúscula, minúscula e número</Text>
+              )}
+            </View>
+
+            <View style={estilos.grupoEntrada}>
+              <Text style={estilos.rotuloEntrada}>Confirmar senha</Text>
+              <View style={estilos.involucroEntrada}>
+                <TextInput
+                  style={[
+                    estilos.entrada,
+                    confirmarSenhaFocada && estilos.entradaFocada,
+                    confirmarSenha && senha !== confirmarSenha && estilos.entradaErro
+                  ]}
+                  placeholder="••••••••"
+                  placeholderTextColor="rgba(255, 255, 255, 0.5)"
+                  value={confirmarSenha}
+                  onChangeText={setConfirmarSenha}
+                  onFocus={() => setConfirmarSenhaFocada(true)}
+                  onBlur={() => setConfirmarSenhaFocada(false)}
+                  secureTextEntry={!mostrarConfirmarSenha}
+                  autoCapitalize="none"
+                  editable={!carregando}
+                />
+                <TouchableOpacity 
+                  onPress={() => setMostrarConfirmarSenha(!mostrarConfirmarSenha)}
+                  style={estilos.botaoIcone}
+                  disabled={carregando}
+                >
+                  <MaterialIcons 
+                    name={mostrarConfirmarSenha ? "visibility" : "visibility-off"} 
+                    size={20} 
+                    color={confirmarSenhaFocada ? "#00C9FF" : "rgba(255, 255, 255, 0.6)"} 
+                  />
+                </TouchableOpacity>
+              </View>
+              {confirmarSenha && senha !== confirmarSenha && (
+                <Text style={estilos.textoErro}>As senhas não coincidem</Text>
+              )}
+            </View>
+
+            <Animated.View
+              style={{
+                opacity: animacaoBotao,
+                transform: [{ scale: animacaoBotao }]
+              }}
+            >
+              <TouchableOpacity 
+                onPress={lidarComRegistro} 
+                style={[
+                  estilos.botaoRegistro,
+                  carregando && estilos.botaoDesabilitado
+                ]}
+                disabled={carregando || !conectado}
+                activeOpacity={0.9}
+              >
+                <View style={estilos.gradienteBotao}>
+                  {carregando ? (
+                    <View style={estilos.botaoComCarregamento}>
+                      <ActivityIndicator color="#FFFFFF" size="small" />
+                      <Text style={estilos.textoBotaoRegistro}>Criando conta...</Text>
+                    </View>
+                  ) : (
+                    <>
+                      <Text style={estilos.textoBotaoRegistro}>Criar Conta</Text>
+                      <MaterialIcons name="person-add" size={20} color="#FFFFFF" />
+                    </>
+                  )}
+                </View>
+              </TouchableOpacity>
+            </Animated.View>
+          </Animated.View>
+
+          <Animated.View 
+            style={[
+              estilos.containerNavegacao,
+              {
+                opacity: animacaoFade,
+                transform: [{ translateY: animacaoDeslizar }]
+              }
+            ]}
+          >
+            <TouchableOpacity 
+              onPress={() => navigation.goBack()}
+              style={estilos.linkNavegacao}
+              disabled={carregando}
+            >
+              <Text style={estilos.textoLinkNavegacao}>Já tem conta? Fazer login</Text>
+            </TouchableOpacity>
+          </Animated.View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </View>
   );
 }
 
-const styles = StyleSheet.create({
+const estilos = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.neutral[50],
+    backgroundColor: '#0A0A0A',
   },
-  header: {
-    paddingTop: 60,
-    paddingBottom: 40,
-    paddingHorizontal: spacing.lg,
-    alignItems: 'center',
+
+  containerFundo: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
   },
-  titulo: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: colors.white,
-    marginBottom: spacing.sm,
+
+  circuloGradiente1: {
+    position: 'absolute',
+    top: -100,
+    right: -100,
+    width: 300,
+    height: 300,
+    borderRadius: 150,
+    backgroundColor: 'rgba(0, 201, 255, 0.1)',
   },
-  subtitulo: {
-    fontSize: 16,
-    color: colors.white,
-    textAlign: 'center',
-    opacity: 0.9,
+
+  circuloGradiente2: {
+    position: 'absolute',
+    bottom: -150,
+    left: -150,
+    width: 400,
+    height: 400,
+    borderRadius: 200,
+    backgroundColor: 'rgba(255, 107, 107, 0.08)',
   },
-  formulario: {
+
+  circuloGradiente3: {
+    position: 'absolute',
+    top: height * 0.4,
+    right: -80,
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    backgroundColor: 'rgba(255, 209, 61, 0.06)',
+  },
+
+  containerTeclado: {
     flex: 1,
+  },
+
+  conteudoRolagem: {
+    flexGrow: 1,
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.xl,
   },
-  campo: {
+  
+  cabecalho: {
+    alignItems: 'center',
+    paddingTop: height * 0.08,
+    paddingBottom: spacing.xl,
+  },
+  
+  containerLogo: {
+    alignItems: 'center',
     marginBottom: spacing.lg,
+    position: 'relative',
   },
-  label: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.neutral[700],
+
+  brilhoLogo: {
+    position: 'absolute',
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: 'rgba(0, 201, 255, 0.2)',
+    zIndex: -1,
+  },
+  
+  circuloLogo: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: 'rgba(0, 201, 255, 0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.md,
+    borderWidth: 2,
+    borderColor: 'rgba(0, 201, 255, 0.3)',
+    ...shadows.lg,
+  },
+  
+  textoLogo: {
+    fontSize: typography.fontSize['3xl'],
+    fontWeight: typography.fontWeight.black,
+    color: '#FFFFFF',
+    letterSpacing: -1,
+    textShadowColor: 'rgba(0, 0, 0, 0.8)',
+    textShadowOffset: { width: 0, height: 4 },
+    textShadowRadius: 12,
+  },
+  
+  textoBoasVindas: {
+    fontSize: typography.fontSize['2xl'],
+    fontWeight: typography.fontWeight.bold,
+    color: '#FFFFFF',
+    textAlign: 'center',
     marginBottom: spacing.sm,
+    textShadowColor: 'rgba(0, 0, 0, 0.6)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 8,
   },
-  input: {
-    backgroundColor: colors.white,
+  
+  textoSubtitulo: {
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.medium,
+    color: 'rgba(255, 255, 255, 0.8)',
+    textAlign: 'center',
+    lineHeight: typography.lineHeight.normal,
+    marginBottom: spacing.md,
+    textShadowColor: 'rgba(0, 0, 0, 0.5)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 4,
+  },
+  
+  statusConexao: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: borders.radius.full,
     borderWidth: 1,
-    borderColor: colors.neutral[300],
-    borderRadius: 12,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-    fontSize: 16,
-    color: colors.neutral[800],
+    borderColor: 'rgba(255, 255, 255, 0.1)',
   },
-  inputErro: {
-    borderColor: colors.error[500],
+  
+  pontoConexao: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
-  erro: {
-    color: colors.error[500],
-    fontSize: 14,
-    marginTop: spacing.xs,
-    marginLeft: spacing.sm,
+  
+  textoConexao: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
+    textShadowColor: 'rgba(0, 0, 0, 0.5)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
   },
-  botao: {
-    backgroundColor: colors.primary[600],
-    borderRadius: 12,
-    paddingVertical: spacing.md,
-    alignItems: 'center',
-    marginTop: spacing.lg,
-    marginBottom: spacing.lg,
-  },
-  botaoDesabilitado: {
-    backgroundColor: colors.neutral[400],
-  },
-  botaoTexto: {
-    color: colors.white,
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  link: {
-    alignItems: 'center',
+  
+  containerFormulario: {
+    gap: spacing.lg,
     marginBottom: spacing.xl,
   },
-  linkTexto: {
-    fontSize: 16,
-    color: colors.neutral[600],
+  
+  grupoEntrada: {
+    gap: spacing.sm,
   },
-  linkDestaque: {
-    color: colors.primary[600],
-    fontWeight: '600',
+  
+  rotuloEntrada: {
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.semibold,
+    color: '#FFFFFF',
+    marginLeft: spacing.sm,
+    textShadowColor: 'rgba(0, 0, 0, 0.5)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
+  },
+
+  involucroEntrada: {
+    position: 'relative',
+  },
+  
+  entrada: {
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderRadius: borders.radius.xl,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    paddingRight: spacing.xl + 20,
+    borderWidth: borders.width.thin,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+    fontSize: typography.fontSize.base,
+    color: '#FFFFFF',
+    ...shadows.base,
+  },
+
+  iconeEntrada: {
+    position: 'absolute',
+    right: spacing.lg,
+    top: '50%',
+    marginTop: -10,
+  },
+
+  botaoIcone: {
+    position: 'absolute',
+    right: spacing.lg,
+    top: '50%',
+    marginTop: -10,
+    padding: spacing.xs,
+  },
+  
+  entradaFocada: {
+    borderColor: '#00C9FF',
+    borderWidth: borders.width.base,
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+    ...shadows.lg,
+  },
+  
+  entradaErro: {
+    borderColor: '#FF6B6B',
+    borderWidth: borders.width.base,
+    backgroundColor: 'rgba(255, 107, 107, 0.1)',
+  },
+  
+  textoErro: {
+    fontSize: typography.fontSize.sm,
+    color: '#FF6B6B',
+    marginLeft: spacing.sm,
+    fontStyle: 'italic',
+    textShadowColor: 'rgba(0, 0, 0, 0.5)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
+  },
+  
+  botaoRegistro: {
+    borderRadius: borders.radius.full,
+    overflow: 'hidden',
+    marginTop: spacing.md,
+    ...shadows.xl,
+    elevation: 15,
+  },
+
+  gradienteBotao: {
+    paddingVertical: spacing.lg,
+    paddingHorizontal: spacing['2xl'],
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+    gap: spacing.md,
+    backgroundColor: '#00C9FF',
+  },
+  
+  botaoDesabilitado: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    ...shadows.sm,
+  },
+  
+  botaoComCarregamento: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  
+  textoBotaoRegistro: {
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.bold,
+    color: '#FFFFFF',
+    letterSpacing: 0.5,
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
+  },
+  
+  containerNavegacao: {
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingBottom: spacing.xl,
+  },
+  
+  linkNavegacao: {
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.lg, 
+    borderRadius: borders.radius.full,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  
+  textoLinkNavegacao: {
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.semibold,
+    color: '#00C9FF',
+    textDecorationLine: 'none',
+    textShadowColor: 'rgba(0, 0, 0, 0.5)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
   },
 });

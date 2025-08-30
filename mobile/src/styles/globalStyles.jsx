@@ -1,83 +1,46 @@
 import { StyleSheet } from 'react-native';
 
-// Sistema de design unificado para o NutriSnap
+// Cores do sistema
 export const colors = {
   primary: {
-    50: '#f0f9ff',
-    100: '#e0f2fe',
-    200: '#bae6fd',
-    300: '#7dd3fc',
-    400: '#38bdf8',
-    500: '#0ea5e9',
-    600: '#0284c7',
-    700: '#0369a1',
-    800: '#075985',
-    900: '#0c4a6e',
-  },
-  secondary: {
-    50: '#fdf4ff',
-    100: '#fae8ff',
-    200: '#f5d0fe',
-    300: '#f0abfc',
-    400: '#e879f9',
-    500: '#d946ef',
-    600: '#c026d3',
-    700: '#a21caf',
-    800: '#86198f',
-    900: '#701a75',
-  },
-  success: {
-    50: '#f0fdf4',
-    100: '#dcfce7',
-    200: '#bbf7d0',
-    300: '#86efac',
-    400: '#4ade80',
-    500: '#22c55e',
-    600: '#16a34a',
-    700: '#15803d',
-    800: '#166534',
-    900: '#14532d',
-  },
-  warning: {
-    50: '#fffbeb',
-    100: '#fef3c7',
-    200: '#fde68a',
-    300: '#fcd34d',
-    400: '#fbbf24',
-    500: '#f59e0b',
-    600: '#d97706',
-    700: '#b45309',
-    800: '#92400e',
-    900: '#78350f',
-  },
-  error: {
-    50: '#fef2f2',
-    100: '#fee2e2',
-    200: '#fecaca',
-    300: '#fca5a5',
-    400: '#f87171',
-    500: '#ef4444',
-    600: '#dc2626',
-    700: '#b91c1c',
-    800: '#991b1b',
-    900: '#7f1d1d',
+    50: '#eff6ff',
+    100: '#dbeafe',
+    200: '#bfdbfe',
+    300: '#93c5fd',
+    400: '#60a5fa',
+    500: '#3b82f6',
+    600: '#2563eb',
+    700: '#1d4ed8',
+    800: '#1e40af',
+    900: '#1e3a8a',
   },
   neutral: {
-    50: '#fafafa',
-    100: '#f5f5f5',
-    200: '#e5e5e5',
-    300: '#d4d4d4',
-    400: '#a3a3a3',
-    500: '#737373',
-    600: '#525252',
-    700: '#404040',
-    800: '#262626',
-    900: '#171717',
+    50: '#f9fafb',
+    100: '#f3f4f6',
+    200: '#e5e7eb',
+    300: '#d1d5db',
+    400: '#9ca3af',
+    500: '#6b7280',
+    600: '#4b5563',
+    700: '#374151',
+    800: '#1f2937',
+    900: '#111827',
   },
-  white: '#ffffff',
-  black: '#000000',
+  success: '#10b981',
+  error: '#ef4444',
+  warning: '#f59e0b',
+  accent: {
+    blue: '#3b82f6',
+    green: '#10b981',
+    yellow: '#f59e0b',
+    orange: '#f97316',
+    red: '#ef4444',
+    purple: '#8b5cf6',
+    pink: '#ec4899',
+  },
 };
 
+// Tipografia
 export const typography = {
   fontSize: {
     xs: 12,
@@ -92,8 +55,6 @@ export const typography = {
     '6xl': 60,
   },
   fontWeight: {
-    thin: '100',
-    light: '300',
     normal: '400',
     medium: '500',
     semibold: '600',
@@ -102,12 +63,16 @@ export const typography = {
     black: '900',
   },
   lineHeight: {
+    none: 1,
     tight: 1.25,
+    snug: 1.375,
     normal: 1.5,
-    relaxed: 1.75,
+    relaxed: 1.625,
+    loose: 2,
   },
 };
 
+// Espaçamento
 export const spacing = {
   xs: 4,
   sm: 8,
@@ -117,16 +82,20 @@ export const spacing = {
   '2xl': 48,
   '3xl': 64,
   '4xl': 96,
+  '5xl': 128,
 };
 
+// Bordas
 export const borders = {
   radius: {
     none: 0,
     sm: 4,
-    base: 8,
-    md: 12,
-    lg: 16,
-    xl: 24,
+    base: 6,
+    md: 8,
+    lg: 12,
+    xl: 16,
+    '2xl': 24,
+    '3xl': 32,
     full: 9999,
   },
   width: {
@@ -137,110 +106,222 @@ export const borders = {
   },
 };
 
+// Sombras
 export const shadows = {
   sm: {
-    shadowColor: colors.black,
+    shadowColor: colors.neutral[900],
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 2,
     elevation: 1,
   },
   base: {
-    shadowColor: colors.black,
-    shadowOffset: { width: 0, height: 2 },
+    shadowColor: colors.neutral[900],
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    shadowRadius: 6,
+    elevation: 3,
   },
   lg: {
-    shadowColor: colors.black,
-    shadowOffset: { width: 0, height: 4 },
+    shadowColor: colors.neutral[900],
+    shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowRadius: 15,
+    elevation: 8,
   },
   xl: {
-    shadowColor: colors.black,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.2,
-    shadowRadius: 16,
-    elevation: 8,
+    shadowColor: colors.neutral[900],
+    shadowOffset: { width: 0, height: 20 },
+    shadowOpacity: 0.25,
+    shadowRadius: 25,
+    elevation: 12,
   },
 };
 
+// Estilos de componentes comuns
 export const componentStyles = {
   card: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.neutral[50],
     borderRadius: borders.radius.lg,
     padding: spacing.lg,
     ...shadows.base,
+    borderWidth: borders.width.thin,
+    borderColor: colors.neutral[200],
   },
   button: {
     primary: {
       backgroundColor: colors.primary[600],
-      borderRadius: borders.radius.md,
+      borderRadius: borders.radius.lg,
       paddingVertical: spacing.md,
       paddingHorizontal: spacing.lg,
       alignItems: 'center',
       justifyContent: 'center',
+      ...shadows.base,
     },
     secondary: {
       backgroundColor: colors.neutral[100],
-      borderWidth: borders.width.base,
-      borderColor: colors.neutral[300],
-      borderRadius: borders.radius.md,
+      borderRadius: borders.radius.lg,
       paddingVertical: spacing.md,
       paddingHorizontal: spacing.lg,
       alignItems: 'center',
       justifyContent: 'center',
+      borderWidth: borders.width.thin,
+      borderColor: colors.neutral[300],
+      ...shadows.sm,
+    },
+    outline: {
+      backgroundColor: 'transparent',
+      borderRadius: borders.radius.lg,
+      paddingVertical: spacing.md,
+      paddingHorizontal: spacing.lg,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: borders.width.base,
+      borderColor: colors.primary[600],
+    },
+    disabled: {
+      backgroundColor: colors.neutral[400],
+      borderRadius: borders.radius.lg,
+      paddingVertical: spacing.md,
+      paddingHorizontal: spacing.lg,
+      alignItems: 'center',
+      justifyContent: 'center',
+      opacity: 0.6,
     },
   },
   input: {
-    backgroundColor: colors.white,
-    borderWidth: borders.width.base,
+    backgroundColor: colors.neutral[50],
+    borderRadius: borders.radius.lg,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    borderWidth: borders.width.thin,
     borderColor: colors.neutral[300],
-    borderRadius: borders.radius.md,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
     fontSize: typography.fontSize.base,
+    color: colors.neutral[900],
+    ...shadows.sm,
+  },
+  text: {
+    heading: {
+      fontSize: typography.fontSize['2xl'],
+      fontWeight: typography.fontWeight.bold,
+      color: colors.neutral[900],
+      lineHeight: typography.lineHeight.tight,
+    },
+    subheading: {
+      fontSize: typography.fontSize.xl,
+      fontWeight: typography.fontWeight.semibold,
+      color: colors.neutral[700],
+      lineHeight: typography.lineHeight.normal,
+    },
+    body: {
+      fontSize: typography.fontSize.base,
+      fontWeight: typography.fontWeight.normal,
+      color: colors.neutral[600],
+      lineHeight: typography.lineHeight.relaxed,
+    },
+    caption: {
+      fontSize: typography.fontSize.sm,
+      fontWeight: typography.fontWeight.medium,
+      color: colors.neutral[500],
+      lineHeight: typography.lineHeight.normal,
+    },
   },
 };
 
-export const responsive = {
-  isSmallDevice: () => {
-    const { width } = require('react-native').Dimensions.get('window');
-    return width < 375;
-  },
-  isMediumDevice: () => {
-    const { width } = require('react-native').Dimensions.get('window');
-    return width >= 375 && width < 768;
-  },
-  isLargeDevice: () => {
-    const { width } = require('react-native').Dimensions.get('window');
-    return width >= 768;
-  },
+// Função para criar estilos responsivos
+export const createResponsiveStyles = (baseStyles, breakpoints = {}) => {
+  return StyleSheet.create(baseStyles);
 };
 
+// Tamanhos de ícones
 export const iconSizes = {
-  xs: 16,
-  sm: 20,
-  base: 24,
-  lg: 32,
-  xl: 40,
-  '2xl': 48,
+  xs: 12,
+  sm: 16,
+  base: 20,
+  lg: 24,
+  xl: 32,
+  '2xl': 40,
+  '3xl': 48,
+  '4xl': 56,
+  '5xl': 64,
 };
 
+// Configurações de ícones
 export const iconConfig = {
-  color: colors.neutral[600],
-  size: iconSizes.base,
+  defaultColor: colors.neutral[600],
+  primaryColor: colors.primary[600],
+  successColor: colors.success,
+  errorColor: colors.error,
+  warningColor: colors.warning,
 };
 
+// Estados de botões
 export const buttonStates = {
+  loading: {
+    opacity: 0.7,
+    backgroundColor: colors.neutral[400],
+  },
+  disabled: {
+    opacity: 0.5,
+    backgroundColor: colors.neutral[300],
+  },
   pressed: {
     opacity: 0.8,
     transform: [{ scale: 0.98 }],
   },
-  disabled: {
-    opacity: 0.5,
+};
+
+// Estilos específicos para planos de treino
+export const workoutStyles = {
+  intensity: {
+    baixa: {
+      color: colors.success,
+      backgroundColor: colors.success + '15',
+    },
+    média: {
+      color: colors.warning,
+      backgroundColor: colors.warning + '15',
+    },
+    alta: {
+      color: colors.accent.orange,
+      backgroundColor: colors.accent.orange + '15',
+    },
+    máxima: {
+      color: colors.error,
+      backgroundColor: colors.error + '15',
+    },
   },
+  type: {
+    cardio: {
+      icon: 'directions-run',
+      color: colors.accent.blue,
+    },
+    força: {
+      icon: 'fitness-center',
+      color: colors.accent.purple,
+    },
+    funcional: {
+      icon: 'sports-soccer',
+      color: colors.accent.green,
+    },
+    flexibilidade: {
+      icon: 'accessibility',
+      color: colors.accent.pink,
+    },
+  },
+};
+
+// Exportar tudo
+export default {
+  colors,
+  typography,
+  spacing,
+  borders,
+  shadows,
+  componentStyles,
+  createResponsiveStyles,
+  iconSizes,
+  iconConfig,
+  buttonStates,
+  workoutStyles,
 };

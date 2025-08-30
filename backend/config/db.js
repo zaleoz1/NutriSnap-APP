@@ -13,7 +13,7 @@ const bancoDados = mysql.createPool({
   reconnect: true
 });
 
-// Testa a conexão com o banco de dados
+// Teste de conexão
 async function testarConexao() {
   try {
     const conexao = await bancoDados.getConnection();
@@ -29,6 +29,7 @@ async function testarConexao() {
     console.log('   3. Verifique se o banco "nutrisnap" existe');
     console.log('   4. Execute: mysql -u root -p < schema.sql');
     
+    // Em desenvolvimento, não encerrar o processo
     if (process.env.NODE_ENV === 'production') {
       process.exit(1);
     }

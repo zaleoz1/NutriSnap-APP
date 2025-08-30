@@ -38,7 +38,7 @@ CREATE TABLE IF NOT EXISTS treinos (
   FOREIGN KEY (id_usuario) REFERENCES usuarios(id) ON DELETE CASCADE
 );
 
-CREATE TABLE IF NOT EXISTS meus_dados (
+CREATE TABLE IF NOT EXISTS quiz_respostas (
   id INT AUTO_INCREMENT PRIMARY KEY,
   id_usuario INT NOT NULL,
   idade INT,

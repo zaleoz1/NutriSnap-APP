@@ -4,21 +4,23 @@ import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import rotasAutenticacao from './routes/auth.js';
-import rotasRefeicoes from './routes/refeicoes.js';
-import rotasMetas from './routes/metas.js';
+import rotasRefeicoes from './routes/meals.js';
+import rotasMetas from './routes/goals.js';
 import rotasTreinos from './routes/workouts.js';
 import rotasAnalise from './routes/analyze.js';
-import rotasQuiz from './routes/meusdados.js';
+import rotasQuiz from './routes/quiz.js';
 import rotasUsuarios from './routes/usuarios.js';
 import bancoDados from './config/db.js';
 
 const aplicacao = express();
 
+// Configurações de segurança
 aplicacao.use(helmet({
-  contentSecurityPolicy: false,
+  contentSecurityPolicy: false, // Desabilitar para desenvolvimento
   crossOriginEmbedderPolicy: false
 }));
 
+// Configuração CORS
 aplicacao.use(cors({
   origin: process.env.NODE_ENV === 'production' 
     ? ['https://seu-dominio.com'] 
@@ -28,12 +30,14 @@ aplicacao.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
+// Middleware de parsing
 aplicacao.use(express.json({ limit: '10mb' }));
 aplicacao.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+// Limitação de taxa
 const limitador = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 100,
+  windowMs: 15 * 60 * 1000, // 15 minutos
+  max: 100, // limite por IP
   message: {
     mensagem: 'Muitas requisições deste IP. Tente novamente em 15 minutos.',
     codigo: 'RATE_LIMIT_EXCEEDED'
@@ -44,6 +48,7 @@ const limitador = rateLimit({
 
 aplicacao.use('/api/', limitador);
 
+// Middleware de logging
 aplicacao.use((req, res, next) => {
   const timestamp = new Date().toISOString();
   const authorization = req.headers.authorization ? 
@@ -56,7 +61,7 @@ aplicacao.use((req, res, next) => {
   next();
 });
 
-// Rota raiz com informações da API
+// Rota raiz
 aplicacao.get('/', (req, res) => {
   res.json({ 
     mensagem: 'NutriSnap Backend API', 
@@ -77,7 +82,7 @@ aplicacao.get('/', (req, res) => {
   });
 });
 
-// Verificação de saúde do servidor e banco de dados
+// Verificação de saúde
 aplicacao.get('/api/saude', async (req, res) => {
   try {
     const [resultado] = await bancoDados.query('SELECT 1 as teste');
@@ -101,6 +106,7 @@ aplicacao.get('/api/saude', async (req, res) => {
   }
 });
 
+// Rotas da API
 aplicacao.use('/api/autenticacao', rotasAutenticacao);
 aplicacao.use('/api/usuarios', rotasUsuarios);
 aplicacao.use('/api/refeicoes', rotasRefeicoes);
@@ -109,6 +115,7 @@ aplicacao.use('/api/treinos', rotasTreinos);
 aplicacao.use('/api/analise', rotasAnalise);
 aplicacao.use('/api/quiz', rotasQuiz);
 
+// Middleware de tratamento de erros 404
 aplicacao.use('*', (req, res) => {
   res.status(404).json({
     mensagem: 'Rota não encontrada',
@@ -118,6 +125,7 @@ aplicacao.use('*', (req, res) => {
   });
 });
 
+// Middleware de tratamento de erros globais
 aplicacao.use((erro, req, res, next) => {
   console.error('❌ Erro não tratado:', erro);
   
@@ -129,9 +137,11 @@ aplicacao.use((erro, req, res, next) => {
   });
 });
 
+// Configurações do servidor
 const PORTA = process.env.PORT || 3000;
 const HOST = process.env.HOST || '0.0.0.0';
 
+// Inicializar servidor
 const servidor = aplicacao.listen(PORTA, HOST, () => {
   console.log('🚀 NutriSnap Backend iniciado!');
   console.log(`✅ Servidor rodando em http://${HOST}:${PORTA}`);
@@ -141,6 +151,7 @@ const servidor = aplicacao.listen(PORTA, HOST, () => {
   console.log(`⏰ Iniciado em: ${new Date().toLocaleString('pt-BR')}`);
 });
 
+// Tratamento de encerramento gracioso
 process.on('SIGTERM', () => {
   console.log('🛑 Recebido SIGTERM, encerrando servidor...');
   servidor.close(() => {
@@ -157,6 +168,7 @@ process.on('SIGINT', () => {
   });
 });
 
+// Tratamento de erros não capturados
 process.on('uncaughtException', (erro) => {
   console.error('❌ Erro não capturado:', erro);
   process.exit(1);

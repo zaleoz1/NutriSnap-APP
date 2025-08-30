@@ -1,57 +1,48 @@
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import SplashScreen from './src/Telas/Splash';
+import WelcomeScreen from './src/Telas/Welcome';
+import OnboardingScreen from './src/Telas/Quiiz';
+import LoginScreen from './src/Telas/Login';
+import RegisterScreen from './src/Telas/Cadastro';
+import HomeScreen from './src/Telas/Painel';
+import DashboardScreen from './src/Telas/Dashboard';
+import BMIScreen from './src/Telas/IMC';
+import GoalScreen from './src/Telas/Metas';
+import WorkoutPlanScreen from './src/Telas/PlanodeTreino';
+import MealsScreen from './src/Telas/Refeicoes';
+import DiarioScreen from './src/Telas/Diario';
+import ConfiguracoesScreen from './src/Telas/Configuracoes';
+import MeusDadosScreen from './src/Telas/MeusDados';
 import { ProvedorAutenticacao } from './src/services/AuthContext';
-import NavigationHandler from './src/components/NavigationHandler';
-
-// Telas de autenticação
-import TelaSplash from './src/Telas/Splash';
-import TelaBoasVindas from './src/Telas/Welcome';
-import TelaLogin from './src/Telas/Login';
-import TelaCadastro from './src/Telas/Cadastro';
-
-// Telas principais
-import TelaPrincipal from './src/Telas/Painel';
-import TelaDashboard from './src/Telas/Dashboard';
-import TelaDiario from './src/Telas/Diario';
-import TelaRefeicoes from './src/Telas/Refeicoes';
-import TelaMetas from './src/Telas/Metas';
-import TelaTreinos from './src/Telas/PlanodeTreino';
-import TelaMeusDados from './src/Telas/MeusDados';
-import TelaIMC from './src/Telas/IMC';
-import TelaQuiz from './src/Telas/Quiiz';
-import TelaConfiguracoes from './src/Telas/Configuracoes';
 
 const Stack = createNativeStackNavigator();
 
 export default function App() {
   return (
-    <ProvedorAutenticacao>
-      <NavigationContainer>
-        <Stack.Navigator
-          initialRouteName="Splash"
-          screenOptions={{
-            headerShown: false,
-            animation: 'fade',
-          }}
-        >
-          <Stack.Screen name="Splash" component={TelaSplash} />
-          <Stack.Screen name="Welcome" component={TelaBoasVindas} />
-          <Stack.Screen name="Login" component={TelaLogin} />
-          <Stack.Screen name="Cadastro" component={TelaCadastro} />
-          <Stack.Screen name="Principal" component={TelaPrincipal} />
-          <Stack.Screen name="Dashboard" component={TelaDashboard} />
-          <Stack.Screen name="Diario" component={TelaDiario} />
-          <Stack.Screen name="Refeicoes" component={TelaRefeicoes} />
-          <Stack.Screen name="Metas" component={TelaMetas} />
-          <Stack.Screen name="Treinos" component={TelaTreinos} />
-          <Stack.Screen name="MeusDados" component={TelaMeusDados} />
-          <Stack.Screen name="IMC" component={TelaIMC} />
-          <Stack.Screen name="Quiiz" component={TelaQuiz} />
-          <Stack.Screen name="Configuracoes" component={TelaConfiguracoes} />
-        </Stack.Navigator>
-        <NavigationHandler />
-      </NavigationContainer>
-    </ProvedorAutenticacao>
+    <SafeAreaProvider>
+      <ProvedorAutenticacao>
+        <NavigationContainer>
+          <Stack.Navigator initialRouteName="Splash">
+            <Stack.Screen name="Splash" component={SplashScreen} options={{ headerShown: false }} />
+            <Stack.Screen name="Welcome" component={WelcomeScreen} options={{ headerShown: false }} />
+            <Stack.Screen name="Quiiz" component={OnboardingScreen} options={{ headerShown: false }} />
+            <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
+            <Stack.Screen name="Register" component={RegisterScreen} options={{ headerShown: false }} />
+            <Stack.Screen name="Principal" component={HomeScreen} options={{ headerShown: false }} />
+            <Stack.Screen name="Dashboard" component={DashboardScreen} options={{ headerShown: false }} />
+            <Stack.Screen name="IMC" component={BMIScreen} options={{ headerShown: false }} />
+            <Stack.Screen name="Metas" component={GoalScreen} options={{ headerShown: false }} />
+            <Stack.Screen name="PlanoTreino" component={WorkoutPlanScreen} options={{ headerShown: false }} />
+            <Stack.Screen name="Refeicoes" component={MealsScreen} options={{ headerShown: false }} />
+            <Stack.Screen name="Diario" component={DiarioScreen} options={{ headerShown: false }} />
+            <Stack.Screen name="MeusDados" component={MeusDadosScreen} options={{ headerShown: false }} />
+            <Stack.Screen name="Configuracoes" component={ConfiguracoesScreen} options={{ headerShown: false }} />
+          </Stack.Navigator>
+        </NavigationContainer>
+      </ProvedorAutenticacao>
+    </SafeAreaProvider>
   );
 }

@@ -1,103 +1,75 @@
-import { MaterialIcons } from '@expo/vector-icons';
+import { MaterialIcons, Ionicons, FontAwesome5, MaterialCommunityIcons, AntDesign } from '@expo/vector-icons';
+import { iconSizes, iconConfig } from '../styles/globalStyles';
 
-// Mapeamento de ícones para diferentes funcionalidades
+// Mapeamento de ícones comuns para facilitar o uso
 export const iconMap = {
   // Navegação
-  home: 'home',
-  dashboard: 'dashboard',
-  profile: 'person',
-  settings: 'settings',
+  dashboard: { component: MaterialIcons, name: 'dashboard' },
+  book: { component: MaterialIcons, name: 'book' },
+  restaurant: { component: MaterialIcons, name: 'restaurant' },
+  trending: { component: MaterialIcons, name: 'trending-up' },
+  settings: { component: MaterialIcons, name: 'settings' },
+  more: { component: MaterialIcons, name: 'more-horiz' },
   
-  // Nutrição
-  food: 'restaurant',
-  nutrition: 'local-dining',
-  water: 'local-drink',
-  calories: 'whatshot',
+  // Ações
+  add: { component: Ionicons, name: 'add' },
+  edit: { component: MaterialIcons, name: 'edit' },
+  delete: { component: MaterialIcons, name: 'delete' },
+  save: { component: MaterialIcons, name: 'save' },
+  search: { component: MaterialIcons, name: 'search' },
+  camera: { component: MaterialIcons, name: 'camera-alt' },
   
-  // Exercícios
-  workout: 'fitness-center',
-  cardio: 'directions-run',
-  strength: 'fitness-center',
-  yoga: 'self-improvement',
+  // Status
+  notifications: { component: Ionicons, name: 'notifications' },
+  flag: { component: MaterialIcons, name: 'flag' },
+  fire: { component: MaterialIcons, name: 'local-fire-department' },
+  time: { component: MaterialIcons, name: 'access-time' },
+  check: { component: MaterialIcons, name: 'check' },
+  close: { component: MaterialIcons, name: 'close' },
   
-  // Metas
-  goal: 'flag',
-  target: 'gps-fixed',
-  progress: 'trending-up',
-  achievement: 'emoji-events',
+  // Categorias
+  analytics: { component: MaterialIcons, name: 'analytics' },
+  fitness: { component: MaterialIcons, name: 'fitness-center' },
+  car: { component: MaterialIcons, name: 'directions-car' },
+  shoe: { component: FontAwesome5, name: 'shoe-prints' },
+  qrCode: { component: MaterialIcons, name: 'qr-code-scanner' },
   
-  // Saúde
-  health: 'favorite',
-  bmi: 'monitor-weight',
-  heart: 'favorite-border',
-  sleep: 'bedtime',
+  // Direções
+  arrowBack: { component: Ionicons, name: 'arrow-back' },
+  arrowForward: { component: Ionicons, name: 'arrow-forward' },
+  arrowUp: { component: Ionicons, name: 'arrow-up' },
+  arrowDown: { component: Ionicons, name: 'arrow-down' },
   
-  // Utilitários
-  add: 'add',
-  edit: 'edit',
-  delete: 'delete',
-  search: 'search',
-  camera: 'camera-alt',
-  gallery: 'photo-library',
-  share: 'share',
-  download: 'download',
-  upload: 'upload',
-  close: 'close',
-  check: 'check',
-  warning: 'warning',
-  error: 'error',
-  info: 'info',
-  
-  // Tempo
-  time: 'access-time',
-  date: 'event',
-  calendar: 'calendar-today',
-  clock: 'schedule',
-  
-  // Comunicação
-  message: 'message',
-  notification: 'notifications',
-  email: 'email',
-  phone: 'phone',
-  
-  // Financeiro
-  payment: 'payment',
-  wallet: 'account-balance-wallet',
-  credit: 'credit-card',
-  money: 'attach-money',
+  // Outros
+  user: { component: Ionicons, name: 'person' },
+  home: { component: Ionicons, name: 'home' },
+  heart: { component: Ionicons, name: 'heart' },
+  star: { component: Ionicons, name: 'star' },
 };
 
-// Função para renderizar ícone com configurações padrão
-export const renderIcon = (iconName, size = 24, color = '#666') => {
-  const iconKey = iconMap[iconName] || iconName;
+// Função para renderizar ícones de forma consistente
+export function renderIcon(iconKey, size = iconSizes.base, color = iconConfig.defaultColor, style = {}) {
+  const iconData = iconMap[iconKey];
+  if (!iconData) {
+    console.warn(`Ícone não encontrado: ${iconKey}`);
+    return null;
+  }
   
-  return (
-    <MaterialIcons
-      name={iconKey}
-      size={size}
-      color={color}
-    />
-  );
-};
+  const IconComponent = iconData.component;
+  return <IconComponent name={iconData.name} size={size} color={color} style={style} />;
+}
 
-// Função para renderizar ícone com estilo específico
-export const renderStyledIcon = (iconName, style = {}) => {
-  const iconKey = iconMap[iconName] || iconName;
-  
-  return (
-    <MaterialIcons
-      name={iconKey}
-      style={style}
-    />
-  );
-};
+// Função para obter componente de ícone
+export function getIconComponent(iconKey) {
+  const iconData = iconMap[iconKey];
+  return iconData ? iconData.component : MaterialIcons;
+}
 
 // Função para obter nome do ícone
-export const getIconName = (iconKey) => {
-  return iconMap[iconKey] || iconKey;
-};
+export function getIconName(iconKey) {
+  const iconData = iconMap[iconKey];
+  return iconData ? iconData.name : 'help';
+}
 
-// Função para verificar se ícone existe
-export const iconExists = (iconName) => {
-  return iconMap.hasOwnProperty(iconName);
-};
+// Exportar componentes individuais para uso direto
+export { MaterialIcons, Ionicons, FontAwesome5, MaterialCommunityIcons, AntDesign };

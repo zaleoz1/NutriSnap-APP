@@ -1,26 +1,31 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+// Configuração da API
 export const URL_BASE = 'http://192.168.0.135:3000';
 
-// Função principal para fazer requisições à API
+// Função para buscar dados da API
 export async function buscarApi(endpoint, opcoes = {}) {
   try {
     const { method = 'GET', token, body, headers = {} } = opcoes;
     
+    // Configurar headers
     const headersConfig = {
       'Content-Type': 'application/json',
       ...headers
     };
     
+    // Adicionar token de autenticação se fornecido
     if (token) {
       headersConfig.Authorization = `Bearer ${token}`;
     }
     
+    // Configurar opções da requisição
     const config = {
       method,
       headers: headersConfig,
     };
     
+    // Adicionar body para métodos POST, PUT, PATCH
     if (body && ['POST', 'PUT', 'PATCH'].includes(method)) {
       config.body = JSON.stringify(body);
     }
@@ -28,10 +33,12 @@ export async function buscarApi(endpoint, opcoes = {}) {
     console.log(`🌐 API Request: ${method} ${URL_BASE}${endpoint}`);
     if (body) console.log('📦 Body:', body);
     
+    // Fazer a requisição
     const resposta = await fetch(`${URL_BASE}${endpoint}`, config);
     
     console.log(`📡 API Response: ${resposta.status} ${resposta.statusText}`);
     
+    // Verificar se a resposta é ok
     if (!resposta.ok) {
       let mensagemErro = 'Erro na requisição';
       
@@ -48,6 +55,7 @@ export async function buscarApi(endpoint, opcoes = {}) {
       throw erro;
     }
     
+    // Tentar fazer parse da resposta como JSON
     try {
       const dados = await resposta.json();
       console.log('✅ API Success:', dados);
@@ -60,6 +68,7 @@ export async function buscarApi(endpoint, opcoes = {}) {
   } catch (erro) {
     console.error('❌ API Error:', erro);
     
+    // Se for erro de rede, adicionar contexto
     if (erro.name === 'TypeError' && erro.message.includes('fetch')) {
       erro.message = 'Erro de conexão. Verifique sua internet e tente novamente.';
     }
@@ -68,7 +77,7 @@ export async function buscarApi(endpoint, opcoes = {}) {
   }
 }
 
-// Funções de autenticação
+// Funções específicas para autenticação
 export async function registrarUsuario(dados) {
   return buscarApi('/api/autenticacao/registrar', {
     method: 'POST',
@@ -90,7 +99,7 @@ export async function verificarToken(token) {
   });
 }
 
-// Funções para gerenciar usuários
+// Funções para usuários
 export async function buscarPerfilUsuario(token) {
   return buscarApi('/api/usuarios/perfil', {
     method: 'GET',
@@ -106,7 +115,7 @@ export async function atualizarPerfilUsuario(token, dados) {
   });
 }
 
-// Funções para gerenciar quiz
+// Funções para quiz
 export async function buscarQuizUsuario(token) {
   return buscarApi('/api/quiz', {
     method: 'GET',
@@ -129,7 +138,7 @@ export async function deletarQuizUsuario(token) {
   });
 }
 
-// Funções para gerenciar refeições
+// Funções para refeições
 export async function buscarRefeicoes(token) {
   return buscarApi('/api/refeicoes', {
     method: 'GET',
@@ -152,7 +161,7 @@ export async function deletarRefeicao(token, id) {
   });
 }
 
-// Funções para gerenciar metas
+// Funções para metas
 export async function buscarMetas(token) {
   return buscarApi('/api/metas', {
     method: 'GET',
@@ -168,7 +177,7 @@ export async function salvarMetas(token, dados) {
   });
 }
 
-// Gera metas nutricionais personalizadas usando IA
+// Nova função para gerar metas nutricionais com IA
 export async function gerarMetasNutricionais(token) {
   return buscarApi('/api/metas/gerar-ia', {
     method: 'POST',
@@ -177,7 +186,7 @@ export async function gerarMetasNutricionais(token) {
   });
 }
 
-// Funções para gerenciar treinos
+// Funções para treinos
 export async function buscarTreinos(token) {
   return buscarApi('/api/treinos', {
     method: 'GET',
@@ -209,7 +218,7 @@ export async function gerarPlanoTreino(token) {
   });
 }
 
-// Analisa imagem de alimento via IA
+// Funções para análise de imagens
 export async function analisarImagem(token, dadosImagem) {
   return buscarApi('/api/analise', {
     method: 'POST',
@@ -218,14 +227,14 @@ export async function analisarImagem(token, dadosImagem) {
   });
 }
 
-// Verifica saúde da API
+// Função para verificar saúde da API
 export async function verificarSaudeAPI() {
   return buscarApi('/api/saude', {
     method: 'GET'
   });
 }
 
-// Limpa dados locais do AsyncStorage
+// Função para limpar dados locais
 export async function limparDadosLocais() {
   try {
     await AsyncStorage.multiRemove([
@@ -242,7 +251,7 @@ export async function limparDadosLocais() {
   }
 }
 
-// Realiza logout limpando dados locais
+// Função para fazer logout
 export async function fazerLogout() {
   try {
     await limparDadosLocais();
@@ -252,7 +261,7 @@ export async function fazerLogout() {
   }
 }
 
-// Testa conectividade com o servidor
+// Função para testar conectividade
 export async function testarConectividade() {
   try {
     const resposta = await verificarSaudeAPI();
@@ -268,7 +277,7 @@ export async function testarConectividade() {
   }
 }
 
-// Reautentica usuário verificando token atual
+// Função para reautenticar usuário
 export async function reautenticarUsuario(tokenAtual) {
   try {
     const dados = await verificarToken(tokenAtual);
@@ -289,4 +298,5 @@ export async function reautenticarUsuario(tokenAtual) {
   }
 }
 
+// Função de compatibilidade para manter código existente funcionando
 export const testarConexao = testarConectividade;
