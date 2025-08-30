@@ -531,14 +531,18 @@ export default function TelaPrincipal({ navigation }) {
                     />
                   </View>
                   <Text style={estilos.trendText}>
-                    {diferencaPeso > 0 ? `-${diferencaPeso.toFixed(1)} kg` : `+${Math.abs(diferencaPeso).toFixed(1)} kg`} para meta
+                    {diferencaPeso > 0 ? `-${diferencaPeso.toFixed(1)} kg` : `+${Math.abs(diferencaPeso).toFixed(1)} kg`} para meta de peso
                   </Text>
                 </View>
               )}
             </View>
             
             {/* Exercício */}
-            <View style={estilos.metricCard}>
+            <TouchableOpacity 
+              style={estilos.metricCard}
+              onPress={() => navigation.navigate('PlanoTreino')}
+              activeOpacity={0.8}
+            >
               <View style={estilos.metricHeader}>
                 <View style={estilos.metricIconContainer}>
                   <MaterialIcons name="local-fire-department" size={22} color={colors.accent.orange} />
@@ -553,17 +557,16 @@ export default function TelaPrincipal({ navigation }) {
               </Text>
               {totalTreinos > 0 && (
                 <View style={estilos.metricProgress}>
-                  <View style={[estilos.metricProgressFill, { width: `${percentualTreinos}%` }]} />
-                  <View style={estilos.metricProgressGlow} />
+                  <View style={[estilos.metricProgressFill, { 
+                    width: `${percentualTreinos}%`,
+                    backgroundColor: colors.accent.orange
+                  }]} />
+                  <View style={[estilos.metricProgressGlow, { 
+                    backgroundColor: colors.accent.orange + '40'
+                  }]} />
                 </View>
               )}
-              <TouchableOpacity 
-                style={estilos.addButton}
-                onPress={() => navigation.navigate('PlanoTreino')}
-              >
-                <Ionicons name="add" size={22} color={colors.neutral[50]} />
-              </TouchableOpacity>
-            </View>
+            </TouchableOpacity>
             
             {/* Água */}
             <View style={estilos.metricCard}>
@@ -1373,11 +1376,12 @@ const estilos = StyleSheet.create({
   },
   
   metricProgress: {
-    height: 6,
+    height: 8,
     backgroundColor: colors.neutral[700],
     borderRadius: borders.radius.full,
     overflow: 'hidden',
     position: 'relative',
+    marginTop: spacing.sm,
   },
   
   metricProgressFill: {
@@ -1421,22 +1425,11 @@ const estilos = StyleSheet.create({
     fontSize: typography.fontSize.xs,
     color: colors.accent.green,
     fontWeight: typography.fontWeight.medium,
+    textAlign: 'center',
+    flex: 1,
   },
   
-  addButton: {
-    position: 'absolute',
-    top: spacing.md,
-    right: spacing.md,
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: colors.accent.blue,
-    alignItems: 'center',
-    justifyContent: 'center',
-    ...shadows.lg,
-    borderWidth: 2,
-    borderColor: colors.neutral[900],
-  },
+
   
   // Próximo treino
   nextWorkout: {

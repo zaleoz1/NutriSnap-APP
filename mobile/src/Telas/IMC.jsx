@@ -1,11 +1,24 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, StatusBar, ScrollView, Dimensions } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { 
+  View, 
+  Text, 
+  TextInput, 
+  TouchableOpacity, 
+  StyleSheet, 
+  Alert, 
+  ActivityIndicator, 
+  StatusBar, 
+  ScrollView, 
+  Dimensions,
+  RefreshControl,
+  Animated
+} from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { colors, typography, spacing, borders, shadows, componentStyles } from '../styles/globalStyles';
 
 const { width } = Dimensions.get('window');
 
-export default function TelaIMC() {
+export default function TelaIMC({ navigation }) {
   const [peso, setPeso] = useState('');
   const [altura, setAltura] = useState('');
   const [imc, setImc] = useState(null);
@@ -16,8 +29,26 @@ export default function TelaIMC() {
   const [erroPeso, setErroPeso] = useState('');
   const [erroAltura, setErroAltura] = useState('');
   const [mostrarClassificacao, setMostrarClassificacao] = useState(false);
-  const [imcSalvo, setImcSalvo] = useState(false);
-  const [salvando, setSalvando] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [fadeAnim] = useState(new Animated.Value(0));
+
+  // Inicializar animação
+  useEffect(() => {
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 800,
+      useNativeDriver: true,
+    }).start();
+  }, []);
+
+  // Função de refresh
+  const onRefresh = async () => {
+    setRefreshing(true);
+    // Simular refresh - pode ser usado para recarregar dados se necessário
+    setTimeout(() => {
+      setRefreshing(false);
+    }, 1000);
+  };
 
   // Função para converter vírgula em ponto (corrige bug do teclado iPhone)
   const converterVirgulaParaPonto = (valor) => {
@@ -112,31 +143,9 @@ export default function TelaIMC() {
     else setCategoria('Obesidade III');
     
     setCalculando(false);
-    setImcSalvo(false); // Reset do status de salvamento
   }
 
-  async function salvarIMC() {
-    if (!imc || !categoria) {
-      return;
-    }
 
-    setSalvando(true);
-    
-    try {
-      // Aqui você pode implementar a lógica para salvar no banco de dados
-      // Por enquanto, vamos simular um salvamento bem-sucedido
-      
-      // Simular delay de salvamento
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      setImcSalvo(true);
-      
-    } catch (erro) {
-      console.error('Erro ao salvar IMC:', erro);
-    } finally {
-      setSalvando(false);
-    }
-  }
 
   function limparDados() {
     setPeso('');
@@ -149,8 +158,6 @@ export default function TelaIMC() {
     setErroAltura('');
     setCalculando(false);
     setMostrarClassificacao(false);
-    setImcSalvo(false);
-    setSalvando(false);
   }
 
   function obterCorCategoria(categoria) {
@@ -173,26 +180,60 @@ export default function TelaIMC() {
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor={colors.neutral[900]} />
       
+      {/* Header moderno */}
+      <View style={styles.header}>
+        <View style={styles.headerContent}>
+          <TouchableOpacity 
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
+            <MaterialIcons name="arrow-back" size={24} color="#FFFFFF" />
+          </TouchableOpacity>
+          
+          <View style={styles.headerText}>
+            <Text style={styles.headerTitle}>Calculadora de IMC</Text>
+          </View>
+          
+          <TouchableOpacity 
+            style={styles.menuButton}
+            onPress={() => {
+              Alert.alert(
+                'Opções do IMC',
+                'Escolha uma opção:',
+                [
+                  { text: 'Cancelar', style: 'cancel' },
+                  { 
+                    text: 'Limpar Dados', 
+                    onPress: () => limparDados(),
+                    style: 'default'
+                  }
+                ]
+              );
+            }}
+          >
+            <MaterialIcons name="more-vert" size={24} color="#FFFFFF" />
+          </TouchableOpacity>
+        </View>
+      </View>
+
       <ScrollView 
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.conteudoScroll}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[colors.accent.blue]}
+            tintColor={colors.accent.blue}
+          />
+        }
       >
-        {/* Header Elegante */}
-        <View style={styles.header}>
-          <View style={styles.containerTitulo}>
-            <Text style={styles.titulo}>Calculadora de IMC</Text>
-            <Text style={styles.subtitulo}>Índice de Massa Corporal</Text>
-          </View>
-          <View style={styles.containerIconeHeader}>
-            <View style={styles.circuloIconeHeader}>
-              <MaterialIcons name="analytics" size={32} color={colors.primary[400]} />
-            </View>
-          </View>
-        </View>
+        <Animated.View style={[styles.content, { opacity: fadeAnim }]}>
 
         {/* Formulário */}
-        <View style={styles.secaoFormulario}>
+        <View style={styles.treinosSection}>
+          <Text style={styles.sectionTitle}>Calculadora de IMC</Text>
+          <View style={styles.secaoFormulario}>
           <View style={styles.grupoEntrada}>
             <Text style={styles.rotuloEntrada}>Peso (kg)</Text>
             <Text style={styles.dicaEntrada}>Use ponto ou vírgula como separador decimal (ex: 70.5)</Text>
@@ -259,11 +300,14 @@ export default function TelaIMC() {
               <Text style={styles.textoBotao}>Calcular IMC</Text>
             )}
           </TouchableOpacity>
+          </View>
         </View>
 
         {/* Resultado */}
         {imc && imc !== null && imc !== '' && imc !== undefined ? (
-          <View style={styles.secaoResultado}>
+          <View style={styles.treinosSection}>
+            <Text style={styles.sectionTitle}>Resultado do IMC</Text>
+            <View style={styles.secaoResultado}>
             <View style={styles.cabecalhoResultado}>
               <Text style={styles.tituloResultado}>Seu IMC</Text>
               <Text style={styles.valorResultado}>{imc}</Text>
@@ -337,34 +381,7 @@ export default function TelaIMC() {
               )}
             </View>
 
-            {/* Botão Salvar IMC */}
-            <TouchableOpacity
-              onPress={salvarIMC}
-              style={[
-                styles.botaoSalvar,
-                imcSalvo ? styles.botaoSalvo : null,
-                salvando ? styles.botaoDesabilitado : null
-              ]}
-              disabled={salvando || imcSalvo}
-              activeOpacity={0.8}
-            >
-              {salvando ? (
-                <View style={styles.botaoComCarregamento}>
-                  <ActivityIndicator color={colors.neutral[50]} size="small" />
-                  <Text style={styles.textoBotao}>Salvando...</Text>
-                </View>
-              ) : imcSalvo ? (
-                <View style={styles.botaoComCarregamento}>
-                  <MaterialIcons name="check-circle" size={20} color={colors.success} />
-                  <Text style={[styles.textoBotao, { color: colors.success }]}>IMC Salvo!</Text>
-                </View>
-              ) : (
-                <View style={styles.botaoComCarregamento}>
-                  <MaterialIcons name="save" size={20} color={colors.neutral[50]} />
-                  <Text style={styles.textoBotao}>Salvar IMC</Text>
-                </View>
-              )}
-            </TouchableOpacity>
+
 
             {/* Botão limpar */}
             <TouchableOpacity
@@ -375,8 +392,10 @@ export default function TelaIMC() {
             >
               <Text style={styles.textoBotaoLimpar}>Limpar Dados</Text>
             </TouchableOpacity>
+            </View>
           </View>
         ) : null}
+        </Animated.View>
       </ScrollView>
     </View>
   );
@@ -388,69 +407,89 @@ const styles = StyleSheet.create({
     backgroundColor: colors.neutral[900],
   },
   
-  scrollView: {
-    flex: 1,
-  },
-  
-  conteudoScroll: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.xl,
-  },
-  
-  // Header Elegante
   header: {
+    backgroundColor: colors.neutral[800],
+    paddingTop: 60,
+    paddingBottom: spacing.xl,
+    paddingHorizontal: spacing.lg,
+    borderBottomLeftRadius: borders.radius['2xl'],
+    borderBottomRightRadius: borders.radius['2xl'],
+    borderWidth: 1,
+    borderColor: colors.neutral[700],
+    ...shadows.xl,
+  },
+  
+  headerContent: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: spacing.xl,
-    paddingTop: spacing.md,
   },
   
-  containerTitulo: {
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.neutral[700],
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: colors.neutral[600],
+  },
+  
+  headerText: {
     flex: 1,
+    alignItems: 'center',
   },
   
-  titulo: {
-    fontSize: typography.fontSize['3xl'],
-    fontWeight: typography.fontWeight.black,
+  headerTitle: {
+    fontSize: typography.fontSize['2xl'],
+    fontWeight: typography.fontWeight.extrabold,
     color: colors.neutral[50],
     marginBottom: spacing.xs,
     letterSpacing: -0.5,
   },
   
-  subtitulo: {
-    fontSize: typography.fontSize.base,
-    fontWeight: typography.fontWeight.medium,
-    color: colors.neutral[400],
-    lineHeight: typography.lineHeight.normal,
-  },
-  
-  containerIconeHeader: {
+  menuButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.neutral[700],
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: colors.neutral[600],
   },
   
-  circuloIconeHeader: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: colors.neutral[800],
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: colors.primary[400] + '30',
-    ...shadows.lg,
+  scrollView: {
+    flex: 1,
+  },
+  
+  content: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.xl,
+    paddingBottom: spacing.xl,
   },
   
   // Seção do Formulário
+  treinosSection: {
+    marginBottom: spacing.xl,
+  },
+  
+  sectionTitle: {
+    fontSize: typography.fontSize.xl,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.neutral[50],
+    marginBottom: spacing.lg,
+    textAlign: 'center',
+  },
+  
   secaoFormulario: {
     backgroundColor: colors.neutral[800],
     borderRadius: borders.radius.xl,
     padding: spacing.xl,
     marginBottom: spacing.xl,
     ...shadows.lg,
-    borderWidth: borders.width.thin,
+    borderWidth: 1,
     borderColor: colors.neutral[700],
   },
   
@@ -530,13 +569,23 @@ const styles = StyleSheet.create({
   },
   
   // Seção de Resultado
+  treinoCard: {
+    backgroundColor: colors.neutral[800],
+    borderRadius: borders.radius.xl,
+    padding: spacing.lg,
+    marginBottom: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.neutral[700],
+    ...shadows.lg,
+  },
+  
   secaoResultado: {
     backgroundColor: colors.neutral[800],
     borderRadius: borders.radius.xl,
     padding: spacing.xl,
     marginBottom: spacing.xl,
     ...shadows.lg,
-    borderWidth: borders.width.thin,
+    borderWidth: 1,
     borderColor: colors.neutral[700],
   },
   
@@ -637,23 +686,7 @@ const styles = StyleSheet.create({
     color: colors.neutral[100],
   },
   
-  botaoSalvar: {
-    backgroundColor: colors.primary[600],
-    borderRadius: borders.radius.xl,
-    paddingVertical: spacing.lg,
-    paddingHorizontal: spacing.lg,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: spacing.md,
-    marginBottom: spacing.md,
-    ...shadows.lg,
-    elevation: 8,
-  },
-  
-  botaoSalvo: {
-    backgroundColor: colors.success,
-    ...shadows.sm,
-  },
+
   
   botaoLimpar: {
     backgroundColor: colors.neutral[700],

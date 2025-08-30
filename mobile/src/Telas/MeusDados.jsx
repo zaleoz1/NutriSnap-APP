@@ -10,7 +10,9 @@ import {
   Alert,
   Modal,
   TextInput,
-  ActivityIndicator
+  ActivityIndicator,
+  RefreshControl,
+  Animated
 } from 'react-native';
 import { MaterialIcons, Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import { usarAutenticacao } from '../services/AuthContext';
@@ -68,10 +70,17 @@ export default function TelaMeusDados({ navigation }) {
   const [campoEditando, setCampoEditando] = useState(null);
   const [valorEditando, setValorEditando] = useState('');
   const [tipoCampo, setTipoCampo] = useState('texto'); // texto, numero, selecao
+  const [refreshing, setRefreshing] = useState(false);
+  const [fadeAnim] = useState(new Animated.Value(0));
 
   // Carregar dados do usuário
   useEffect(() => {
     carregarDadosUsuario();
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 800,
+      useNativeDriver: true,
+    }).start();
   }, []);
 
   const carregarDadosUsuario = async () => {
@@ -125,6 +134,13 @@ export default function TelaMeusDados({ navigation }) {
     } finally {
       setCarregando(false);
     }
+  };
+
+  // Função de refresh
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await carregarDadosUsuario();
+    setRefreshing(false);
   };
 
   const calcularIMC = (peso, altura) => {
@@ -538,26 +554,30 @@ export default function TelaMeusDados({ navigation }) {
     return (
       <TouchableOpacity 
         style={[
-          estilos.cardDado,
-          editavel && estilos.cardEditavel
+          styles.treinoCard,
+          editavel && styles.treinoCardEditavel
         ]}
         onPress={editavel ? onPress : undefined}
         activeOpacity={editavel ? 0.7 : 1}
       >
-        <View style={estilos.cabecalhoCard}>
-          <View style={[estilos.iconeCard, { backgroundColor: cor + '15' }]}>
+        <View style={styles.treinoHeader}>
+          <View style={[styles.treinoIconContainer, { backgroundColor: cor + '20' }]}>
             <MaterialIcons name={icone} size={24} color={cor} />
           </View>
-          <View style={estilos.informacoesCard}>
-            <Text style={estilos.tituloCard}>{titulo}</Text>
-            <Text style={estilos.valorCard}>
-              {valor || 'Não informado'}
-              {unidade && valor && valor !== 'Não informado' && ` ${unidade}`}
-            </Text>
+          
+          <View style={styles.treinoInfo}>
+            <Text style={styles.treinoNome}>{titulo}</Text>
+            <View style={[styles.diaBadge, { backgroundColor: cor + '20' }]}>
+              <Text style={[styles.diaTexto, { color: cor }]}>
+                {valor || 'Não informado'}
+                {unidade && valor && valor !== 'Não informado' && ` ${unidade}`}
+              </Text>
+            </View>
           </View>
+          
           {editavel && (
             <TouchableOpacity 
-              style={estilos.botaoEditar}
+              style={styles.botaoOpcoes}
               onPress={onPress}
               activeOpacity={0.7}
             >
@@ -573,17 +593,20 @@ export default function TelaMeusDados({ navigation }) {
     const corIMC = obterCorIMC(dadosUsuario.imc);
     
     return (
-      <View style={estilos.cardIMC}>
-        <View style={estilos.cabecalhoCard}>
-          <View style={[estilos.iconeCard, { backgroundColor: corIMC + '15' }]}>
+      <View style={styles.treinoCard}>
+        <View style={styles.treinoHeader}>
+          <View style={[styles.treinoIconContainer, { backgroundColor: corIMC + '20' }]}>
             <MaterialIcons name="analytics" size={24} color={corIMC} />
           </View>
-          <View style={estilos.informacoesCard}>
-            <Text style={estilos.tituloCard}>IMC</Text>
-            <Text style={[estilos.valorCard, { color: corIMC }]}>
-              {dadosUsuario.imc || 'Não calculado'}
-              {dadosUsuario.imc && ' kg/m²'}
-            </Text>
+          
+          <View style={styles.treinoInfo}>
+            <Text style={styles.treinoNome}>IMC</Text>
+            <View style={[styles.diaBadge, { backgroundColor: corIMC + '20' }]}>
+              <Text style={[styles.diaTexto, { color: corIMC }]}>
+                {dadosUsuario.imc || 'Não calculado'}
+                {dadosUsuario.imc && ' kg/m²'}
+              </Text>
+            </View>
           </View>
         </View>
       </View>
@@ -591,8 +614,8 @@ export default function TelaMeusDados({ navigation }) {
   };
 
   const renderizarSecaoQuiz = (titulo, campos) => (
-    <View style={estilos.secao}>
-      <Text style={estilos.tituloSecao}>{titulo}</Text>
+    <View style={styles.treinosSection}>
+      <Text style={styles.sectionTitle}>{titulo}</Text>
       
       {campos.map((campo) => {
         if (!campo) return null;
@@ -617,45 +640,68 @@ export default function TelaMeusDados({ navigation }) {
   );
 
   return (
-    <View style={estilos.container}>
+    <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor={colors.neutral[900]} />
       
-      {/* Header com gradiente */}
-      <View style={estilos.header}>
-        <View style={estilos.cabecalhoHeader}>
+      {/* Header moderno */}
+      <View style={styles.header}>
+        <View style={styles.headerContent}>
           <TouchableOpacity 
-            style={estilos.botaoVoltar}
+            style={styles.backButton}
             onPress={() => navigation.goBack()}
-            activeOpacity={0.8}
           >
-            <MaterialIcons name="arrow-back" size={24} color={colors.neutral[50]} />
+            <MaterialIcons name="arrow-back" size={24} color="#FFFFFF" />
           </TouchableOpacity>
           
-          <Text style={estilos.tituloHeader}>Meus Dados</Text>
+          <View style={styles.headerText}>
+            <Text style={styles.headerTitle}>Meus Dados</Text>
+          </View>
           
-
+          <TouchableOpacity 
+            style={styles.menuButton}
+            onPress={() => {
+              Alert.alert(
+                'Opções dos Dados',
+                'Escolha uma opção:',
+                [
+                  { text: 'Cancelar', style: 'cancel' },
+                  { 
+                    text: 'Recarregar', 
+                    onPress: () => onRefresh(),
+                    style: 'default'
+                  }
+                ]
+              );
+            }}
+          >
+            <MaterialIcons name="more-vert" size={24} color="#FFFFFF" />
+          </TouchableOpacity>
         </View>
-        
-        <Text style={estilos.subtituloHeader}>
-          Gerencie suas informações pessoais e de saúde
-        </Text>
       </View>
 
       <ScrollView 
-        style={estilos.scrollView}
+        style={styles.scrollView}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={estilos.conteudoScroll}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[colors.accent.blue]}
+            tintColor={colors.accent.blue}
+          />
+        }
       >
-        {carregando ? (
-          <View style={estilos.containerCarregamento}>
-            <ActivityIndicator size="large" color={colors.primary[600]} />
-            <Text style={estilos.textoCarregamento}>Carregando seus dados...</Text>
-          </View>
-        ) : (
+        <Animated.View style={[styles.content, { opacity: fadeAnim }]}>
+          {carregando ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color={colors.accent.blue} />
+              <Text style={styles.loadingText}>Carregando seus dados...</Text>
+            </View>
+          ) : (
           <>
             {/* Informações básicas */}
-            <View style={estilos.secao}>
-              <Text style={estilos.tituloSecao}>Informações Básicas</Text>
+            <View style={styles.treinosSection}>
+              <Text style={styles.sectionTitle}>Informações Básicas</Text>
               
               {renderizarCardDados({
                 titulo: 'Nome',
@@ -692,8 +738,8 @@ export default function TelaMeusDados({ navigation }) {
             </View>
 
             {/* Medidas físicas */}
-            <View style={estilos.secao}>
-              <Text style={estilos.tituloSecao}>Medidas Físicas</Text>
+            <View style={styles.treinosSection}>
+              <Text style={styles.sectionTitle}>Medidas Físicas</Text>
               
               {renderizarCardDados({
                 titulo: 'Peso Atual',
@@ -757,8 +803,8 @@ export default function TelaMeusDados({ navigation }) {
             ])}
 
             {/* Preferências e objetivos */}
-            <View style={estilos.secao}>
-              <Text style={estilos.tituloSecao}>Preferências e Objetivos</Text>
+            <View style={styles.treinosSection}>
+              <Text style={styles.sectionTitle}>Preferências e Objetivos</Text>
               
               {renderizarCardDados({
                 titulo: 'Meta de Calorias',
@@ -771,27 +817,33 @@ export default function TelaMeusDados({ navigation }) {
             </View>
 
             {/* Botões de ação */}
-            <View style={estilos.botoesAcao}>
-              <TouchableOpacity 
-                style={estilos.botaoCalcularIMC}
-                onPress={() => navigation.navigate('IMC')}
-                activeOpacity={0.8}
-              >
-                <MaterialIcons name="calculate" size={20} color={colors.neutral[50]} />
-                <Text style={estilos.textoBotaoCalcularIMC}>Calcular IMC</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={estilos.botaoDefinirMetas}
-                onPress={() => navigation.navigate('Metas')}
-                activeOpacity={0.8}
-              >
-                <MaterialIcons name="flag" size={20} color={colors.neutral[50]} />
-                <Text style={estilos.textoBotaoDefinirMetas}>Definir Metas</Text>
-              </TouchableOpacity>
+            <View style={styles.treinosSection}>
+              <Text style={styles.sectionTitle}>Ferramentas</Text>
+              <View style={styles.botoesAcao}>
+                <TouchableOpacity 
+                  style={styles.botaoAcao}
+                  onPress={() => navigation.navigate('IMC')}
+                >
+                  <View style={styles.iconeBotaoAcao}>
+                    <MaterialIcons name="calculate" size={20} color="#3B82F6" />
+                  </View>
+                  <Text style={styles.textoBotaoAcao}>Calcular IMC</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity 
+                  style={styles.botaoAcao}
+                  onPress={() => navigation.navigate('Metas')}
+                >
+                  <View style={styles.iconeBotaoAcao}>
+                    <MaterialIcons name="flag" size={20} color="#10B981" />
+                  </View>
+                  <Text style={styles.textoBotaoAcao}>Definir Metas</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </>
-        )}
+          )}
+        </Animated.View>
       </ScrollView>
 
       {/* Modal de edição */}
@@ -801,65 +853,65 @@ export default function TelaMeusDados({ navigation }) {
         animationType="fade"
         onRequestClose={fecharModalEditar}
       >
-        <View style={estilos.modalOverlay}>
-          <View style={estilos.modalContainer}>
-            <View style={estilos.modalHeader}>
-              <Text style={estilos.modalTitulo}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitulo}>
                 Editar {campoEditando?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
               </Text>
-              <TouchableOpacity onPress={fecharModalEditar} style={estilos.botaoFechar}>
+              <TouchableOpacity onPress={fecharModalEditar} style={styles.botaoFechar}>
                 <MaterialIcons name="close" size={24} color={colors.neutral[400]} />
               </TouchableOpacity>
             </View>
             
-            <View style={estilos.inputContainer}>
-              <Text style={estilos.inputLabel}>
+            <View style={styles.inputContainer}>
+              <Text style={styles.inputLabel}>
                 {campoEditando?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
                 {obterUnidade(campoEditando) && ` (${obterUnidade(campoEditando)})`}
               </Text>
               
               {tipoCampo === 'selecao' && campoEditando === 'sexo' ? (
-                <View style={estilos.selecaoContainer}>
+                <View style={styles.selecaoContainer}>
                   <TouchableOpacity 
                     style={[
-                      estilos.opcaoSelecao,
-                      valorEditando === 'M' && estilos.opcaoSelecionada
+                      styles.opcaoSelecao,
+                      valorEditando === 'M' && styles.opcaoSelecionada
                     ]}
                     onPress={() => setValorEditando('M')}
                   >
                     <Text style={[
-                      estilos.textoOpcao,
-                      valorEditando === 'M' && estilos.textoOpcaoSelecionada
+                      styles.textoOpcao,
+                      valorEditando === 'M' && styles.textoOpcaoSelecionada
                     ]}>Masculino</Text>
                   </TouchableOpacity>
                   
                   <TouchableOpacity 
                     style={[
-                      estilos.opcaoSelecao,
-                      valorEditando === 'F' && estilos.opcaoSelecionada
+                      styles.opcaoSelecao,
+                      valorEditando === 'F' && styles.opcaoSelecionada
                     ]}
                     onPress={() => setValorEditando('F')}
                   >
                     <Text style={[
-                      estilos.textoOpcao,
-                      valorEditando === 'F' && estilos.textoOpcaoSelecionada
+                      styles.textoOpcao,
+                      valorEditando === 'F' && styles.textoOpcaoSelecionada
                     ]}>Feminino</Text>
                   </TouchableOpacity>
                 </View>
               ) : tipoCampo === 'selecao' && campoEditando === 'objetivo' ? (
-                <View style={estilos.selecaoContainer}>
+                <View style={styles.selecaoContainer}>
                   {['emagrecer', 'manter', 'ganhar_massa'].map((opcao) => (
                     <TouchableOpacity 
                       key={opcao}
                       style={[
-                        estilos.opcaoSelecao,
-                        valorEditando === opcao && estilos.opcaoSelecionada
+                        styles.opcaoSelecao,
+                        valorEditando === opcao && styles.opcaoSelecionada
                       ]}
                       onPress={() => setValorEditando(opcao)}
                     >
                       <Text style={[
-                        estilos.textoOpcao,
-                        valorEditando === opcao && estilos.textoOpcaoSelecionada
+                        styles.textoOpcao,
+                        valorEditando === opcao && styles.textoOpcaoSelecionada
                       ]}>
                         {opcao === 'emagrecer' ? 'Emagrecer' : 
                          opcao === 'manter' ? 'Manter Peso' : 'Ganhar Massa'}
@@ -868,19 +920,19 @@ export default function TelaMeusDados({ navigation }) {
                   ))}
                 </View>
               ) : tipoCampo === 'selecao' && campoEditando === 'nivel_atividade' ? (
-                <View style={estilos.selecaoContainer}>
+                <View style={styles.selecaoContainer}>
                   {['sedentario', 'leve', 'moderado', 'ativo', 'muito_ativo'].map((opcao) => (
                     <TouchableOpacity 
                       key={opcao}
                       style={[
-                        estilos.opcaoSelecao,
-                        valorEditando === opcao && estilos.opcaoSelecionada
+                        styles.opcaoSelecao,
+                        valorEditando === opcao && styles.opcaoSelecionada
                       ]}
                       onPress={() => setValorEditando(opcao)}
                     >
                       <Text style={[
-                        estilos.textoOpcao,
-                        valorEditando === opcao && estilos.textoOpcaoSelecionada
+                        styles.textoOpcao,
+                        valorEditando === opcao && styles.textoOpcaoSelecionada
                       ]}>
                         {opcao === 'sedentario' ? 'Sedentário' : 
                          opcao === 'leve' ? 'Leve' : 
@@ -891,19 +943,19 @@ export default function TelaMeusDados({ navigation }) {
                   ))}
                 </View>
               ) : tipoCampo === 'selecao' && campoEditando === 'frequencia_treino' ? (
-                <View style={estilos.selecaoContainer}>
+                <View style={styles.selecaoContainer}>
                   {['1_2_vezes', '3_4_vezes', '5_6_vezes', 'diario'].map((opcao) => (
                     <TouchableOpacity 
                       key={opcao}
                       style={[
-                        estilos.opcaoSelecao,
-                        valorEditando === opcao && estilos.opcaoSelecionada
+                        styles.opcaoSelecao,
+                        valorEditando === opcao && styles.opcaoSelecionada
                       ]}
                       onPress={() => setValorEditando(opcao)}
                     >
                       <Text style={[
-                        estilos.textoOpcao,
-                        valorEditando === opcao && estilos.textoOpcaoSelecionada
+                        styles.textoOpcao,
+                        valorEditando === opcao && styles.textoOpcaoSelecionada
                       ]}>
                         {opcao === '1_2_vezes' ? '1-2 vezes/semana' : 
                          opcao === '3_4_vezes' ? '3-4 vezes/semana' : 
@@ -913,19 +965,19 @@ export default function TelaMeusDados({ navigation }) {
                   ))}
                 </View>
               ) : tipoCampo === 'selecao' && campoEditando === 'acesso_academia' ? (
-                <View style={estilos.selecaoContainer}>
+                <View style={styles.selecaoContainer}>
                   {['academia_completa', 'academia_basica', 'casa', 'ar_livre'].map((opcao) => (
                     <TouchableOpacity 
                       key={opcao}
                       style={[
-                        estilos.opcaoSelecao,
-                        valorEditando === opcao && estilos.opcaoSelecionada
+                        styles.opcaoSelecao,
+                        valorEditando === opcao && styles.opcaoSelecionada
                       ]}
                       onPress={() => setValorEditando(opcao)}
                     >
                       <Text style={[
-                        estilos.textoOpcao,
-                        valorEditando === opcao && estilos.textoOpcaoSelecionada
+                        styles.textoOpcao,
+                        valorEditando === opcao && styles.textoOpcaoSelecionada
                       ]}>
                         {opcao === 'academia_completa' ? 'Academia Completa' : 
                          opcao === 'academia_basica' ? 'Academia Básica' : 
@@ -935,19 +987,19 @@ export default function TelaMeusDados({ navigation }) {
                   ))}
                 </View>
               ) : tipoCampo === 'selecao' && campoEditando === 'dieta_atual' ? (
-                <View style={estilos.selecaoContainer}>
+                <View style={styles.selecaoContainer}>
                   {['nao_controlo', 'controlo_parcial', 'controlo_total', 'dieta_especifica'].map((opcao) => (
                     <TouchableOpacity 
                       key={opcao}
                       style={[
-                        estilos.opcaoSelecao,
-                        valorEditando === opcao && estilos.opcaoSelecionada
+                        styles.opcaoSelecao,
+                        valorEditando === opcao && styles.opcaoSelecionada
                       ]}
                       onPress={() => setValorEditando(opcao)}
                     >
                       <Text style={[
-                        estilos.textoOpcao,
-                        valorEditando === opcao && estilos.textoOpcaoSelecionada
+                        styles.textoOpcao,
+                        valorEditando === opcao && styles.textoOpcaoSelecionada
                       ]}>
                         {opcao === 'nao_controlo' ? 'Não Controlo' : 
                          opcao === 'controlo_parcial' ? 'Controlo Parcial' : 
@@ -957,19 +1009,19 @@ export default function TelaMeusDados({ navigation }) {
                   ))}
                 </View>
               ) : tipoCampo === 'selecao' && campoEditando === 'historico_exercicios' ? (
-                <View style={estilos.selecaoContainer}>
+                <View style={styles.selecaoContainer}>
                   {['iniciante', 'intermediario', 'avancado', 'atleta'].map((opcao) => (
                     <TouchableOpacity 
                       key={opcao}
                       style={[
-                        estilos.opcaoSelecao,
-                        valorEditando === opcao && estilos.opcaoSelecionada
+                        styles.opcaoSelecao,
+                        valorEditando === opcao && styles.opcaoSelecionada
                       ]}
                       onPress={() => setValorEditando(opcao)}
                     >
                       <Text style={[
-                        estilos.textoOpcao,
-                        valorEditando === opcao && estilos.textoOpcaoSelecionada
+                        styles.textoOpcao,
+                        valorEditando === opcao && styles.textoOpcaoSelecionada
                       ]}>
                         {opcao === 'iniciante' ? 'Iniciante' : 
                          opcao === 'intermediario' ? 'Intermediário' : 
@@ -979,19 +1031,19 @@ export default function TelaMeusDados({ navigation }) {
                   ))}
                 </View>
               ) : tipoCampo === 'selecao' && campoEditando === 'horario_preferido' ? (
-                <View style={estilos.selecaoContainer}>
+                <View style={styles.selecaoContainer}>
                   {['manha', 'tarde', 'noite', 'flexivel'].map((opcao) => (
                     <TouchableOpacity 
                       key={opcao}
                       style={[
-                        estilos.opcaoSelecao,
-                        valorEditando === opcao && estilos.opcaoSelecionada
+                        styles.opcaoSelecao,
+                        valorEditando === opcao && styles.opcaoSelecionada
                       ]}
                       onPress={() => setValorEditando(opcao)}
                     >
                       <Text style={[
-                        estilos.textoOpcao,
-                        valorEditando === opcao && estilos.textoOpcaoSelecionada
+                        styles.textoOpcao,
+                        valorEditando === opcao && styles.textoOpcaoSelecionada
                       ]}>
                         {opcao === 'manha' ? 'Manhã' : 
                          opcao === 'tarde' ? 'Tarde' : 
@@ -1001,19 +1053,19 @@ export default function TelaMeusDados({ navigation }) {
                   ))}
                 </View>
               ) : tipoCampo === 'selecao' && campoEditando === 'duracao_treino' ? (
-                <View style={estilos.selecaoContainer}>
+                <View style={styles.selecaoContainer}>
                   {['30_min', '45_min', '60_min', '90_min', '120_min'].map((opcao) => (
                     <TouchableOpacity 
                       key={opcao}
                       style={[
-                        estilos.opcaoSelecao,
-                        valorEditando === opcao && estilos.opcaoSelecionada
+                        styles.opcaoSelecao,
+                        valorEditando === opcao && styles.opcaoSelecionada
                       ]}
                       onPress={() => setValorEditando(opcao)}
                     >
                       <Text style={[
-                        estilos.textoOpcao,
-                        valorEditando === opcao && estilos.textoOpcaoSelecionada
+                        styles.textoOpcao,
+                        valorEditando === opcao && styles.textoOpcaoSelecionada
                       ]}>
                         {opcao === '30_min' ? '30 minutos' : 
                          opcao === '45_min' ? '45 minutos' : 
@@ -1024,19 +1076,19 @@ export default function TelaMeusDados({ navigation }) {
                   ))}
                 </View>
               ) : tipoCampo === 'selecao' && campoEditando === 'motivacao' ? (
-                <View style={estilos.selecaoContainer}>
+                <View style={styles.selecaoContainer}>
                   {['saude', 'estetica', 'desempenho', 'competicao', 'bem_estar'].map((opcao) => (
                     <TouchableOpacity 
                       key={opcao}
                       style={[
-                        estilos.opcaoSelecao,
-                        valorEditando === opcao && estilos.opcaoSelecionada
+                        styles.opcaoSelecao,
+                        valorEditando === opcao && styles.opcaoSelecionada
                       ]}
                       onPress={() => setValorEditando(opcao)}
                     >
                       <Text style={[
-                        estilos.textoOpcao,
-                        valorEditando === opcao && estilos.textoOpcaoSelecionada
+                        styles.textoOpcao,
+                        valorEditando === opcao && styles.textoOpcaoSelecionada
                       ]}>
                         {opcao === 'saude' ? 'Saúde' : 
                          opcao === 'estetica' ? 'Estética' : 
@@ -1048,7 +1100,7 @@ export default function TelaMeusDados({ navigation }) {
                 </View>
               ) : (
                 <TextInput
-                  style={estilos.input}
+                  style={styles.input}
                   value={valorEditando}
                   onChangeText={(texto) => {
                     // Substituir vírgulas por pontos para campos numéricos
@@ -1067,15 +1119,15 @@ export default function TelaMeusDados({ navigation }) {
               )}
             </View>
             
-            <View style={estilos.modalBotoes}>
-              <TouchableOpacity style={estilos.botaoCancelar} onPress={fecharModalEditar}>
-                <Text style={estilos.textoBotaoCancelar}>Cancelar</Text>
+            <View style={styles.modalBotoes}>
+              <TouchableOpacity style={styles.botaoCancelar} onPress={fecharModalEditar}>
+                <Text style={styles.textoBotaoCancelar}>Cancelar</Text>
               </TouchableOpacity>
               
               <TouchableOpacity 
                 style={[
-                  estilos.botaoSalvar,
-                  salvando && estilos.botaoDesabilitado
+                  styles.botaoSalvar,
+                  salvando && styles.botaoDesabilitado
                 ]} 
                 onPress={salvarEdicao}
                 disabled={salvando}
@@ -1083,7 +1135,7 @@ export default function TelaMeusDados({ navigation }) {
                 {salvando ? (
                   <ActivityIndicator color={colors.neutral[50]} size="small" />
                 ) : (
-                  <Text style={estilos.textoBotaoSalvar}>Salvar</Text>
+                  <Text style={styles.textoBotaoSalvar}>Salvar</Text>
                 )}
               </TouchableOpacity>
             </View>
@@ -1094,255 +1146,231 @@ export default function TelaMeusDados({ navigation }) {
   );
 }
 
-const estilos = StyleSheet.create({
+const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.neutral[900],
+  },
+  
+  header: {
+    backgroundColor: colors.neutral[800],
+    paddingTop: 60,
+    paddingBottom: spacing.xl,
+    paddingHorizontal: spacing.lg,
+    borderBottomLeftRadius: borders.radius['2xl'],
+    borderBottomRightRadius: borders.radius['2xl'],
+    borderWidth: 1,
+    borderColor: colors.neutral[700],
+    ...shadows.xl,
+  },
+  
+  headerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.neutral[700],
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: colors.neutral[600],
+  },
+  
+  headerText: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  
+  headerTitle: {
+    fontSize: typography.fontSize['2xl'],
+    fontWeight: typography.fontWeight.extrabold,
+    color: colors.neutral[50],
+    marginBottom: spacing.xs,
+    letterSpacing: -0.5,
+  },
+  
+  menuButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.neutral[700],
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: colors.neutral[600],
   },
   
   scrollView: {
     flex: 1,
   },
   
-  conteudoScroll: {
+  content: {
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
+    paddingTop: spacing.xl,
     paddingBottom: spacing.xl,
   },
   
-  // Header com gradiente
-  header: {
-    backgroundColor: colors.primary[600],
-    paddingTop: spacing.xl,
-    paddingBottom: spacing.md,
-    paddingHorizontal: spacing.lg,
-    borderBottomLeftRadius: spacing.lg,
-    borderBottomRightRadius: spacing.lg,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing.md,
-  },
-  
-  cabecalhoHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    width: '100%',
-  },
-  
-  botaoVoltar: {
-    padding: spacing.sm,
-  },
-  
-  tituloHeader: {
-    fontSize: typography.fontSize['3xl'],
-    fontWeight: typography.fontWeight.extrabold,
-    color: colors.neutral[50],
-    textAlign: 'center',
-    flex: 1,
-  },
-  
-  botaoEditarPerfil: {
-    padding: spacing.sm,
-  },
-  
-  subtituloHeader: {
-    fontSize: typography.fontSize.base,
-    fontWeight: typography.fontWeight.medium,
-    color: colors.neutral[200],
-    textAlign: 'center',
-    marginTop: spacing.xs,
-    marginBottom: spacing.lg,
-  },
-  
-  // Container de carregamento
-  containerCarregamento: {
+  loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: spacing['2xl'],
+    paddingVertical: 80,
   },
   
-  textoCarregamento: {
+  loadingText: {
     marginTop: spacing.md,
     fontSize: typography.fontSize.base,
-    color: colors.neutral[400],
+    color: colors.neutral[500],
     fontWeight: typography.fontWeight.medium,
   },
   
-  // Seções
-  secao: {
+  treinosSection: {
     marginBottom: spacing.xl,
   },
   
-  tituloSecao: {
+  sectionTitle: {
     fontSize: typography.fontSize.xl,
     fontWeight: typography.fontWeight.bold,
     color: colors.neutral[50],
     marginBottom: spacing.lg,
-    textShadowColor: colors.neutral[900],
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
+    textAlign: 'center',
   },
   
-  // Cards de dados
-  cardDado: {
+  treinoCard: {
     backgroundColor: colors.neutral[800],
     borderRadius: borders.radius.xl,
     padding: spacing.lg,
     marginBottom: spacing.md,
-    ...shadows.lg,
     borderWidth: 1,
     borderColor: colors.neutral[700],
+    ...shadows.lg,
   },
   
-  cardEditavel: {
+  treinoCardEditavel: {
     borderColor: colors.primary[600] + '30',
   },
   
-  cabecalhoCard: {
+  treinoHeader: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
+    marginBottom: spacing.md,
   },
   
-  iconeCard: {
+  treinoIconContainer: {
     width: 48,
     height: 48,
     borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.neutral[600],
   },
   
-  informacoesCard: {
+  treinoInfo: {
     flex: 1,
   },
   
-  tituloCard: {
-    fontSize: typography.fontSize.base,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.neutral[300],
-    marginBottom: spacing.xs,
-  },
-  
-  valorCard: {
+  treinoNome: {
     fontSize: typography.fontSize.lg,
     fontWeight: typography.fontWeight.bold,
     color: colors.neutral[50],
+    marginBottom: spacing.xs,
   },
   
-  botaoEditar: {
-    padding: spacing.sm,
+  diaBadge: {
+    alignSelf: 'flex-start',
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    borderRadius: borders.radius.lg,
   },
   
-  // Card IMC especial
-  cardIMC: {
-    backgroundColor: colors.neutral[800],
-    borderRadius: borders.radius.xl,
-    padding: spacing.lg,
-    marginBottom: spacing.md,
-    ...shadows.lg,
-    borderWidth: 1,
-    borderColor: colors.neutral[700],
+  diaTexto: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.semibold,
   },
   
-  // Botões de ação
+  botaoOpcoes: {
+    padding: spacing.xs,
+  },
+  
   botoesAcao: {
     flexDirection: 'row',
     gap: spacing.md,
-    marginTop: spacing.lg,
   },
-  
-  botaoCalcularIMC: {
+
+  botaoAcao: {
     flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.accent.blue,
+    backgroundColor: colors.neutral[800],
     borderRadius: borders.radius.xl,
     paddingVertical: spacing.lg,
     paddingHorizontal: spacing.lg,
-    gap: spacing.sm,
-    ...shadows.lg,
-    elevation: 8,
-  },
-  
-  textoBotaoCalcularIMC: {
-    fontSize: typography.fontSize.base,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.neutral[50],
-  },
-  
-  botaoDefinirMetas: {
-    flex: 1,
-    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.accent.green,
-    borderRadius: borders.radius.xl,
-    paddingVertical: spacing.lg,
-    paddingHorizontal: spacing.lg,
-    gap: spacing.sm,
+    borderWidth: 1,
+    borderColor: colors.neutral[700],
     ...shadows.lg,
-    elevation: 8,
   },
-  
-  textoBotaoDefinirMetas: {
+
+  iconeBotaoAcao: {
+    marginBottom: spacing.sm,
+  },
+
+  textoBotaoAcao: {
     fontSize: typography.fontSize.base,
-    fontWeight: typography.fontWeight.bold,
+    fontWeight: typography.fontWeight.semibold,
     color: colors.neutral[50],
   },
-  
-  // Modal de edição
+
+  // Modal
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.7)',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  
+
   modalContainer: {
     backgroundColor: colors.neutral[800],
     borderRadius: borders.radius.xl,
     padding: spacing.xl,
     width: '90%',
     maxWidth: 400,
-    ...shadows.lg,
     borderWidth: 1,
     borderColor: colors.neutral[700],
+    ...shadows.lg,
   },
-  
+
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: spacing.lg,
   },
-  
+
   modalTitulo: {
     fontSize: typography.fontSize.xl,
     fontWeight: typography.fontWeight.bold,
     color: colors.neutral[50],
-    flex: 1,
   },
-  
+
   botaoFechar: {
     padding: spacing.xs,
   },
-  
+
   inputContainer: {
     marginBottom: spacing.lg,
   },
-  
+
   inputLabel: {
     fontSize: typography.fontSize.base,
     fontWeight: typography.fontWeight.medium,
     color: colors.neutral[50],
     marginBottom: spacing.sm,
   },
-  
+
   input: {
     backgroundColor: colors.neutral[700],
     borderRadius: borders.radius.lg,
@@ -1352,41 +1380,42 @@ const estilos = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.neutral[600],
   },
-  
+
   modalBotoes: {
     flexDirection: 'row',
     gap: spacing.md,
   },
-  
+
   botaoCancelar: {
     flex: 1,
     backgroundColor: colors.neutral[600],
-    borderRadius: borders.radius.md,
+    borderRadius: borders.radius.lg,
     paddingVertical: spacing.md,
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.neutral[500],
   },
-  
+
   textoBotaoCancelar: {
     fontSize: typography.fontSize.base,
     fontWeight: typography.fontWeight.semibold,
     color: colors.neutral[50],
   },
-  
+
   botaoSalvar: {
     flex: 1,
-    backgroundColor: colors.primary[600],
-    borderRadius: borders.radius.md,
+    backgroundColor: colors.accent.blue,
+    borderRadius: borders.radius.lg,
     paddingVertical: spacing.md,
     alignItems: 'center',
-    justifyContent: 'center',
-    flexDirection: 'row',
-    gap: spacing.sm,
+    ...shadows.sm,
   },
-  
+
   botaoDesabilitado: {
-    backgroundColor: colors.neutral[600],
+    backgroundColor: colors.neutral[400],
+    shadowOpacity: 0.1,
   },
-  
+
   textoBotaoSalvar: {
     fontSize: typography.fontSize.base,
     fontWeight: typography.fontWeight.semibold,
@@ -1428,4 +1457,5 @@ const estilos = StyleSheet.create({
   textoOpcaoSelecionada: {
     color: colors.neutral[50],
   },
+
 }); 
