@@ -508,6 +508,23 @@ export default function TelaPlanoTreino({ navigation }) {
                     <Text style={styles.emptyStateSubtitle}>
                       Os treinos aparecerão aqui após a configuração
                     </Text>
+                    
+                    <View style={styles.emptyStateSpacer} />
+                    
+                    <TouchableOpacity 
+                      style={[styles.generateButton, gerandoPlano && styles.generateButtonDisabled]}
+                      onPress={gerarNovoTreino}
+                      disabled={gerandoPlano}
+                    >
+                      {gerandoPlano ? (
+                        <ActivityIndicator size="small" color={colors.neutral[50]} />
+                      ) : (
+                        <MaterialIcons name="add" size={20} color={colors.neutral[50]} />
+                      )}
+                      <Text style={styles.generateButtonText}>
+                        {gerandoPlano ? 'Gerando...' : 'Gerar Treino'}
+                      </Text>
+                    </TouchableOpacity>
                   </View>
                 )}
               </View>
@@ -972,6 +989,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: spacing.xl,
     paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.xl,
   },
   
   emptyStateTitle: {
@@ -987,6 +1005,10 @@ const styles = StyleSheet.create({
     color: colors.neutral[500],
     marginTop: spacing.sm,
     textAlign: 'center',
+  },
+  
+  emptyStateSpacer: {
+    height: spacing.xl,
   },
   
   noPlanContainer: {

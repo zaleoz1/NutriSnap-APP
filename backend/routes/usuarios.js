@@ -22,7 +22,7 @@ roteador.get('/perfil', requerAutenticacao, async (req, res) => {
     
     // Buscar dados do quiz se existirem
     const [quizData] = await bancoDados.query(
-      'SELECT idade, sexo, altura, peso_atual, peso_meta, objetivo, nivel_atividade FROM quiz_respostas WHERE id_usuario = ?',
+      'SELECT idade, sexo, altura, peso_atual, peso_meta, objetivo, nivel_atividade FROM meus_dados WHERE id_usuario = ?',
       [req.idUsuario]
     );
     
@@ -74,14 +74,14 @@ roteador.put('/perfil', requerAutenticacao, async (req, res) => {
     
     // Verificar se existe dados do quiz para este usuário
     const [quizExistente] = await bancoDados.query(
-      'SELECT id FROM quiz_respostas WHERE id_usuario = ?',
+      'SELECT id FROM meus_dados WHERE id_usuario = ?',
       [req.idUsuario]
     );
     
     if (quizExistente.length > 0) {
       // Atualizar dados do quiz
       await bancoDados.query(`
-        UPDATE quiz_respostas SET
+        UPDATE meus_dados SET
           idade = ?, sexo = ?, altura = ?, peso_atual = ?, peso_meta = ?,
           objetivo = ?, nivel_atividade = ?, atualizado_em = CURRENT_TIMESTAMP
         WHERE id_usuario = ?
@@ -92,7 +92,7 @@ roteador.put('/perfil', requerAutenticacao, async (req, res) => {
     } else if (idade || sexo || altura || peso_atual || peso_meta || objetivo || nivel_atividade) {
       // Inserir novos dados do quiz
       await bancoDados.query(`
-        INSERT INTO quiz_respostas (
+        INSERT INTO meus_dados (
           id_usuario, idade, sexo, altura, peso_atual, peso_meta,
           objetivo, nivel_atividade
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)

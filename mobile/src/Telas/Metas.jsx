@@ -308,11 +308,8 @@ export default function TelaMetas({ navigation }) {
 
       {!metas ? (
         <View style={styles.emptyContainer}>
-          <MaterialIcons name="target" size={64} color={colors.neutral[400]} />
-          <Text style={styles.emptyTitle}>Nenhuma meta encontrada</Text>
-          <Text style={styles.emptySubtitle}>
-            Gere suas metas nutricionais personalizadas com inteligência artificial
-          </Text>
+          <MaterialIcons name="flag" size={64} color={colors.neutral[400]} />
+          <Text style={styles.emptyTitle}>Crie suas metas nutricionais com IA Bazeada no seu perfil</Text>
           <TouchableOpacity 
             style={[componentStyles.button.primary, styles.generateButton]}
             onPress={gerarMetasComIA}

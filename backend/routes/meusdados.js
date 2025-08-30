@@ -8,7 +8,7 @@ const roteador = express.Router();
 roteador.get('/', requerAutenticacao, async (req, res) => {
   try {
     const [linhas] = await bancoDados.query(
-      'SELECT * FROM quiz_respostas WHERE id_usuario = ?',
+      'SELECT * FROM meus_dados WHERE id_usuario = ?',
       [req.idUsuario]
     );
     
@@ -54,7 +54,7 @@ roteador.post('/', requerAutenticacao, async (req, res) => {
 
     // Verificar se já existe resposta para este usuário
     const [existentes] = await bancoDados.query(
-      'SELECT id FROM quiz_respostas WHERE id_usuario = ?',
+      'SELECT id FROM meus_dados WHERE id_usuario = ?',
       [req.idUsuario]
     );
 
@@ -90,7 +90,7 @@ roteador.post('/', requerAutenticacao, async (req, res) => {
 
       // Atualizar resposta existente
       await bancoDados.query(`
-        UPDATE quiz_respostas SET
+        UPDATE meus_dados SET
           idade = ?, sexo = ?, altura = ?, peso_atual = ?, peso_meta = ?,
           objetivo = ?, nivel_atividade = ?, frequencia_treino = ?, acesso_academia = ?, dieta_atual = ?,
           preferencias = ?, habitos_alimentares = ?, restricoes_medicas = ?,
@@ -132,7 +132,7 @@ roteador.post('/', requerAutenticacao, async (req, res) => {
 
       // Inserir nova resposta
       await bancoDados.query(`
-        INSERT INTO quiz_respostas (
+        INSERT INTO meus_dados (
           id_usuario, idade, sexo, altura, peso_atual, peso_meta,
           objetivo, nivel_atividade, frequencia_treino, acesso_academia, dieta_atual,
           preferencias, habitos_alimentares, restricoes_medicas,
@@ -157,7 +157,7 @@ roteador.post('/', requerAutenticacao, async (req, res) => {
 roteador.delete('/', requerAutenticacao, async (req, res) => {
   try {
     await bancoDados.query(
-      'DELETE FROM quiz_respostas WHERE id_usuario = ?',
+      'DELETE FROM meus_dados WHERE id_usuario = ?',
       [req.idUsuario]
     );
     

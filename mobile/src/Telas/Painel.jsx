@@ -405,14 +405,11 @@ export default function TelaPrincipal({ navigation }) {
             <View style={estilos.emptyStateContent}>
               <MaterialIcons name="restaurant-menu" size={48} color={colors.neutral[500]} />
               <Text style={estilos.emptyStateTitle}>Complete seu perfil</Text>
-              <Text style={estilos.emptyStateText}>
-                Faça o quiz para receber metas nutricionais personalizadas
-              </Text>
               <TouchableOpacity 
                 style={estilos.emptyStateButton}
-                onPress={() => navigation.navigate('Quiz')}
+                onPress={() => navigation.navigate('Metas')}
               >
-                <Text style={estilos.emptyStateButtonText}>Fazer Quiz</Text>
+                <Text style={estilos.emptyStateButtonText}>Gerar Metas</Text>
               </TouchableOpacity>
             </View>
           </View>
