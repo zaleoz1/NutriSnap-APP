@@ -154,6 +154,14 @@ export async function salvarRefeicao(token, dados) {
   });
 }
 
+export async function atualizarRefeicao(token, id, dados) {
+  return buscarApi(`/api/refeicoes/${id}`, {
+    method: 'PUT',
+    token,
+    body: dados
+  });
+}
+
 export async function deletarRefeicao(token, id) {
   return buscarApi(`/api/refeicoes/${id}`, {
     method: 'DELETE',

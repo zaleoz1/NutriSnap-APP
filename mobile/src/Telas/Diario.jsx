@@ -9,11 +9,14 @@ import {
   Dimensions,
   Alert,
   Modal,
-  TextInput
+  TextInput,
+  ActivityIndicator,
+  RefreshControl,
+  Animated
 } from 'react-native';
 import { MaterialIcons, Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import { usarAutenticacao } from '../services/AuthContext';
-import { colors, typography, spacing, borders, shadows } from '../styles/globalStyles';
+import { colors, typography, spacing, borders, shadows, componentStyles } from '../styles/globalStyles';
 
 const { width, height } = Dimensions.get('window');
 
@@ -30,12 +33,32 @@ export default function TelaDiario({ navigation }) {
   const [metaAgua, setMetaAgua] = useState(2000); // 2L por dia - Meta fixa
   const [modalAguaVisivel, setModalAguaVisivel] = useState(false);
   const [quantidadeAgua, setQuantidadeAgua] = useState('');
+  const [refreshing, setRefreshing] = useState(false);
+  const [fadeAnim] = useState(new Animated.Value(0));
 
   // Calcular calorias restantes
   useEffect(() => {
     const restantes = caloriasMeta - caloriasAlimentos + caloriasExercicio;
     setCaloriasRestantes(Math.max(0, restantes));
   }, [caloriasMeta, caloriasAlimentos, caloriasExercicio]);
+
+  // Inicializar animação
+  useEffect(() => {
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 800,
+      useNativeDriver: true,
+    }).start();
+  }, []);
+
+  // Função de refresh
+  const onRefresh = async () => {
+    setRefreshing(true);
+    // Simular carregamento de dados
+    setTimeout(() => {
+      setRefreshing(false);
+    }, 1000);
+  };
 
   // Funções de navegação
   const navegarParaRefeicoes = () => {
@@ -124,100 +147,106 @@ export default function TelaDiario({ navigation }) {
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor={colors.neutral[900]} />
       
-      {/* Header elegante com gradiente visual */}
+      {/* Header moderno */}
       <View style={styles.header}>
         <View style={styles.headerContent}>
-          <View style={styles.navegacaoData}>
-            <TouchableOpacity 
-              style={styles.botaoNavegacao} 
-              onPress={() => navegarData('anterior')}
-            >
-              <MaterialIcons name="chevron-left" size={24} color={colors.neutral[100]} />
-            </TouchableOpacity>
-            
-            <TouchableOpacity style={styles.selectorData}>
-              <Text style={styles.textoData}>{formatarData(dataAtual)}</Text>
-              <MaterialIcons name="keyboard-arrow-down" size={20} color={colors.neutral[100]} />
-            </TouchableOpacity>
-            
-            <TouchableOpacity 
-              style={styles.botaoNavegacao} 
-              onPress={() => navegarData('proximo')}
-            >
-              <MaterialIcons name="chevron-right" size={24} color={colors.neutral[100]} />
-            </TouchableOpacity>
+          <TouchableOpacity 
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
+            <MaterialIcons name="arrow-back" size={24} color="#FFFFFF" />
+          </TouchableOpacity>
+          
+          <View style={styles.headerText}>
+            <Text style={styles.headerTitle}>Diário Nutricional</Text>
           </View>
+          
+          <TouchableOpacity 
+            style={styles.menuButton}
+            onPress={() => {
+              Alert.alert(
+                'Opções do Diário',
+                'Escolha uma opção:',
+                [
+                  { text: 'Cancelar', style: 'cancel' },
+                  { 
+                    text: 'Navegar Data', 
+                    onPress: () => {
+                      Alert.alert('Navegação de Data', 'Funcionalidade em desenvolvimento');
+                    },
+                    style: 'default'
+                  }
+                ]
+              );
+            }}
+          >
+            <MaterialIcons name="more-vert" size={24} color="#FFFFFF" />
+          </TouchableOpacity>
+        </View>
+        
+        {/* Navegação de data discreta */}
+        <View style={styles.navegacaoData}>
+          <TouchableOpacity 
+            style={styles.botaoNavegacaoDiscreto} 
+            onPress={() => navegarData('anterior')}
+          >
+            <MaterialIcons name="chevron-left" size={20} color={colors.neutral[400]} />
+          </TouchableOpacity>
+          
+          <TouchableOpacity style={styles.selectorDataDiscreto}>
+            <Text style={styles.textoDataDiscreto}>{formatarData(dataAtual)}</Text>
+            <MaterialIcons name="keyboard-arrow-down" size={16} color={colors.neutral[400]} />
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={styles.botaoNavegacaoDiscreto} 
+            onPress={() => navegarData('proximo')}
+          >
+            <MaterialIcons name="chevron-right" size={20} color={colors.neutral[400]} />
+          </TouchableOpacity>
         </View>
       </View>
 
       <ScrollView 
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.conteudoScroll}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[colors.accent.blue]}
+            tintColor={colors.accent.blue}
+          />
+        }
       >
-        {/* Seção de Calorias com design moderno */}
-        <View style={styles.secaoCalorias}>
-          <View style={styles.cabecalhoCalorias}>
-            <Text style={styles.tituloCalorias}>Resumo Calórico</Text>
-            <View style={styles.badgeCalorias}>
-              <Text style={styles.badgeTexto}>{caloriasRestantes}</Text>
-              <Text style={styles.badgeLabel}>kcal restantes</Text>
-            </View>
-          </View>
-          
-          <View style={styles.calculoCalorias}>
-            <View style={styles.itemCaloria}>
-              <View style={styles.circuloCaloria}>
-                <Text style={styles.valorCaloria}>{caloriasMeta}</Text>
-              </View>
-              <Text style={styles.labelCaloria}>Meta</Text>
-            </View>
-            
-            <View style={styles.linhaConectora}>
-              <View style={styles.pontoConector} />
-              <View style={styles.linha} />
-              <View style={styles.pontoConector} />
-            </View>
-            
-            <View style={styles.itemCaloria}>
-              <View style={styles.circuloCaloria}>
-                <Text style={styles.valorCaloria}>{caloriasAlimentos}</Text>
-              </View>
-              <Text style={styles.labelCaloria}>Alimentos</Text>
-            </View>
-            
-            <View style={styles.linhaConectora}>
-              <View style={styles.pontoConector} />
-              <View style={styles.linha} />
-              <View style={styles.pontoConector} />
-            </View>
-            
-            <View style={styles.itemCaloria}>
-              <View style={styles.circuloCaloria}>
-                <Text style={styles.valorCaloria}>{caloriasExercicio}</Text>
-              </View>
-              <Text style={styles.labelCaloria}>Exercício</Text>
-            </View>
-          </View>
-        </View>
+        <Animated.View style={[styles.content, { opacity: fadeAnim }]}>
 
-        {/* Seção de Refeições com design elegante */}
-        <View style={styles.secaoRefeicoes}>
-          <Text style={styles.tituloSecao}>Refeições do Dia</Text>
+
+        {/* Seção de Refeições */}
+        <View style={styles.treinosSection}>
+          <Text style={styles.sectionTitle}>Refeições do Dia</Text>
           
           {/* Café da Manhã */}
-          <View style={styles.cardRefeicao}>
-            <View style={styles.cabecalhoRefeicao}>
-              <View style={styles.infoRefeicao}>
-                <View style={styles.iconeRefeicao}>
-                  <FontAwesome5 name="coffee" size={16} color={colors.primary[400]} />
-                </View>
-                <Text style={styles.tituloRefeicao}>Café da Manhã</Text>
+          <View style={styles.treinoCard}>
+            <View style={styles.treinoHeader}>
+              <View style={[styles.treinoIconContainer, { backgroundColor: '#3B82F6' + '20' }]}>
+                <FontAwesome5 name="coffee" size={24} color="#3B82F6" />
               </View>
+              
+              <View style={styles.treinoInfo}>
+                <Text style={styles.treinoNome}>Café da Manhã</Text>
+                <View style={[styles.diaBadge, { backgroundColor: '#3B82F6' + '20' }]}>
+                  <Text style={[styles.diaTexto, { color: '#3B82F6' }]}>
+                    Manhã
+                  </Text>
+                </View>
+              </View>
+              
               <TouchableOpacity style={styles.botaoOpcoes}>
                 <MaterialIcons name="more-horiz" size={20} color={colors.neutral[400]} />
               </TouchableOpacity>
             </View>
+            
             <TouchableOpacity style={styles.botaoAdicionar} onPress={() => navigation.navigate('Refeicoes')}>
               <MaterialIcons name="add" size={20} color={colors.neutral[50]} />
               <Text style={styles.textoBotaoAdicionar}>Adicionar Alimento</Text>
@@ -225,18 +254,26 @@ export default function TelaDiario({ navigation }) {
           </View>
 
           {/* Almoço */}
-          <View style={styles.cardRefeicao}>
-            <View style={styles.cabecalhoRefeicao}>
-              <View style={styles.infoRefeicao}>
-                <View style={styles.iconeRefeicao}>
-                  <FontAwesome5 name="utensils" size={16} color={colors.primary[400]} />
-                </View>
-                <Text style={styles.tituloRefeicao}>Almoço</Text>
+          <View style={styles.treinoCard}>
+            <View style={styles.treinoHeader}>
+              <View style={[styles.treinoIconContainer, { backgroundColor: '#F59E0B' + '20' }]}>
+                <FontAwesome5 name="utensils" size={24} color="#F59E0B" />
               </View>
+              
+              <View style={styles.treinoInfo}>
+                <Text style={styles.treinoNome}>Almoço</Text>
+                <View style={[styles.diaBadge, { backgroundColor: '#F59E0B' + '20' }]}>
+                  <Text style={[styles.diaTexto, { color: '#F59E0B' }]}>
+                    Meio-dia
+                  </Text>
+                </View>
+              </View>
+              
               <TouchableOpacity style={styles.botaoOpcoes}>
                 <MaterialIcons name="more-horiz" size={20} color={colors.neutral[400]} />
               </TouchableOpacity>
             </View>
+            
             <TouchableOpacity style={styles.botaoAdicionar} onPress={() => navigation.navigate('Refeicoes')}>
               <MaterialIcons name="add" size={20} color={colors.neutral[50]} />
               <Text style={styles.textoBotaoAdicionar}>Adicionar Alimento</Text>
@@ -244,18 +281,26 @@ export default function TelaDiario({ navigation }) {
           </View>
 
           {/* Jantar */}
-          <View style={styles.cardRefeicao}>
-            <View style={styles.cabecalhoRefeicao}>
-              <View style={styles.infoRefeicao}>
-                <View style={styles.iconeRefeicao}>
-                  <FontAwesome5 name="moon" size={16} color={colors.primary[400]} />
-                </View>
-                <Text style={styles.tituloRefeicao}>Jantar</Text>
+          <View style={styles.treinoCard}>
+            <View style={styles.treinoHeader}>
+              <View style={[styles.treinoIconContainer, { backgroundColor: '#8B5CF6' + '20' }]}>
+                <FontAwesome5 name="moon" size={24} color="#8B5CF6" />
               </View>
+              
+              <View style={styles.treinoInfo}>
+                <Text style={styles.treinoNome}>Jantar</Text>
+                <View style={[styles.diaBadge, { backgroundColor: '#8B5CF6' + '20' }]}>
+                  <Text style={[styles.diaTexto, { color: '#8B5CF6' }]}>
+                    Noite
+                  </Text>
+                </View>
+              </View>
+              
               <TouchableOpacity style={styles.botaoOpcoes}>
                 <MaterialIcons name="more-horiz" size={20} color={colors.neutral[400]} />
               </TouchableOpacity>
             </View>
+            
             <TouchableOpacity style={styles.botaoAdicionar} onPress={() => navigation.navigate('Refeicoes')}>
               <MaterialIcons name="add" size={20} color={colors.neutral[50]} />
               <Text style={styles.textoBotaoAdicionar}>Adicionar Alimento</Text>
@@ -263,18 +308,26 @@ export default function TelaDiario({ navigation }) {
           </View>
 
           {/* Lanches */}
-          <View style={styles.cardRefeicao}>
-            <View style={styles.cabecalhoRefeicao}>
-              <View style={styles.infoRefeicao}>
-                <View style={styles.iconeRefeicao}>
-                  <FontAwesome5 name="cookie-bite" size={16} color={colors.primary[400]} />
-                </View>
-                <Text style={styles.tituloRefeicao}>Lanches</Text>
+          <View style={styles.treinoCard}>
+            <View style={styles.treinoHeader}>
+              <View style={[styles.treinoIconContainer, { backgroundColor: '#10B981' + '20' }]}>
+                <FontAwesome5 name="cookie-bite" size={24} color="#10B981" />
               </View>
+              
+              <View style={styles.treinoInfo}>
+                <Text style={styles.treinoNome}>Lanches</Text>
+                <View style={[styles.diaBadge, { backgroundColor: '#10B981' + '20' }]}>
+                  <Text style={[styles.diaTexto, { color: '#10B981' }]}>
+                    Entre refeições
+                  </Text>
+                </View>
+              </View>
+              
               <TouchableOpacity style={styles.botaoOpcoes}>
                 <MaterialIcons name="more-horiz" size={20} color={colors.neutral[400]} />
               </TouchableOpacity>
             </View>
+            
             <TouchableOpacity style={styles.botaoAdicionar} onPress={() => navigation.navigate('Refeicoes')}>
               <MaterialIcons name="add" size={20} color={colors.neutral[50]} />
               <Text style={styles.textoBotaoAdicionar}>Adicionar Alimento</Text>
@@ -282,24 +335,31 @@ export default function TelaDiario({ navigation }) {
           </View>
         </View>
 
-        {/* Seção de Água com design moderno */}
-        <View style={styles.secaoAgua}>
-          <Text style={styles.tituloSecao}>Hidratação</Text>
-          <View style={styles.cardRefeicao}>
-            <View style={styles.cabecalhoRefeicao}>
-              <View style={styles.infoRefeicao}>
-                <View style={styles.iconeRefeicao}>
-                  <FontAwesome5 name="tint" size={16} color={colors.primary[400]} />
-                </View>
-                <Text style={styles.tituloRefeicao}>Água</Text>
+        {/* Seção de Água */}
+        <View style={styles.treinosSection}>
+          <Text style={styles.sectionTitle}>Hidratação</Text>
+          <View style={styles.treinoCard}>
+            <View style={styles.treinoHeader}>
+              <View style={[styles.treinoIconContainer, { backgroundColor: '#06B6D4' + '20' }]}>
+                <FontAwesome5 name="tint" size={24} color="#06B6D4" />
               </View>
+              
+              <View style={styles.treinoInfo}>
+                <Text style={styles.treinoNome}>Controle de Água</Text>
+                <View style={[styles.diaBadge, { backgroundColor: '#06B6D4' + '20' }]}>
+                  <Text style={[styles.diaTexto, { color: '#06B6D4' }]}>
+                    Meta: {metaAgua}ml
+                  </Text>
+                </View>
+              </View>
+              
               <TouchableOpacity style={styles.botaoOpcoes}>
                 <MaterialIcons name="more-horiz" size={20} color={colors.neutral[400]} />
               </TouchableOpacity>
             </View>
             
-            <View style={styles.progressoAgua}>
-              <View style={styles.barraProgresso}>
+            <View style={styles.progressoContainer}>
+              <View style={styles.progressoBarra}>
                 <View 
                   style={[
                     styles.progressoPreenchido, 
@@ -307,7 +367,7 @@ export default function TelaDiario({ navigation }) {
                   ]} 
                 />
               </View>
-              <Text style={styles.textoProgresso}>
+              <Text style={styles.progressoTexto}>
                 {aguaConsumida}ml / {metaAgua}ml
               </Text>
             </View>
@@ -320,20 +380,28 @@ export default function TelaDiario({ navigation }) {
         </View>
 
         {/* Seção de Exercícios */}
-        <View style={styles.secaoExercicios}>
-          <Text style={styles.tituloSecao}>Atividade Física</Text>
-          <View style={styles.cardRefeicao}>
-            <View style={styles.cabecalhoRefeicao}>
-              <View style={styles.infoRefeicao}>
-                <View style={styles.iconeRefeicao}>
-                  <FontAwesome5 name="dumbbell" size={16} color={colors.primary[400]} />
-                </View>
-                <Text style={styles.tituloRefeicao}>Exercício</Text>
+        <View style={styles.treinosSection}>
+          <Text style={styles.sectionTitle}>Atividade Física</Text>
+          <View style={styles.treinoCard}>
+            <View style={styles.treinoHeader}>
+              <View style={[styles.treinoIconContainer, { backgroundColor: '#EF4444' + '20' }]}>
+                <FontAwesome5 name="dumbbell" size={24} color="#EF4444" />
               </View>
+              
+              <View style={styles.treinoInfo}>
+                <Text style={styles.treinoNome}>Exercícios</Text>
+                <View style={[styles.diaBadge, { backgroundColor: '#EF4444' + '20' }]}>
+                  <Text style={[styles.diaTexto, { color: '#EF4444' }]}>
+                    Queima: {caloriasExercicio} kcal
+                  </Text>
+                </View>
+              </View>
+              
               <TouchableOpacity style={styles.botaoOpcoes}>
                 <MaterialIcons name="more-horiz" size={20} color={colors.neutral[400]} />
               </TouchableOpacity>
             </View>
+            
             <TouchableOpacity style={styles.botaoAdicionar} onPress={adicionarExercicio}>
               <MaterialIcons name="add" size={20} color={colors.neutral[50]} />
               <Text style={styles.textoBotaoAdicionar}>Adicionar Exercício</Text>
@@ -341,25 +409,26 @@ export default function TelaDiario({ navigation }) {
           </View>
         </View>
 
-        {/* Botões de Ação com design moderno */}
-        <View style={styles.secaoBotoes}>
-          <Text style={styles.tituloSecao}>Ferramentas</Text>
+        {/* Botões de Ação */}
+        <View style={styles.treinosSection}>
+          <Text style={styles.sectionTitle}>Ferramentas</Text>
           <View style={styles.botoesAcao}>
             <TouchableOpacity style={styles.botaoAcao} onPress={navegarParaNutricao}>
               <View style={styles.iconeBotaoAcao}>
-                <FontAwesome5 name="chart-pie" size={20} color={colors.primary[400]} />
+                <FontAwesome5 name="chart-pie" size={20} color="#8B5CF6" />
               </View>
               <Text style={styles.textoBotaoAcao}>Nutrição</Text>
             </TouchableOpacity>
             
             <TouchableOpacity style={styles.botaoAcao} onPress={navegarParaObservacoes}>
               <View style={styles.iconeBotaoAcao}>
-                <FontAwesome5 name="sticky-note" size={20} color={colors.primary[400]} />
+                <FontAwesome5 name="sticky-note" size={20} color="#F59E0B" />
               </View>
               <Text style={styles.textoBotaoAcao}>Observações</Text>
             </TouchableOpacity>
           </View>
         </View>
+        </Animated.View>
       </ScrollView>
 
       {/* Modal de Adicionar Água redesenhado */}
@@ -419,266 +488,212 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.neutral[900],
   },
-
+  
   header: {
     backgroundColor: colors.neutral[800],
     paddingTop: 50,
     paddingBottom: spacing.lg,
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
-    ...shadows.lg,
-  },
-
-  headerContent: {
     paddingHorizontal: spacing.lg,
+    borderBottomLeftRadius: borders.radius['2xl'],
+    borderBottomRightRadius: borders.radius['2xl'],
+    borderWidth: 1,
+    borderColor: colors.neutral[700],
+    ...shadows.xl,
+  },
+  
+  headerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing.lg,
+  },
+  
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.neutral[700],
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: colors.neutral[600],
+  },
+  
+  headerText: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  
+  headerTitle: {
+    fontSize: typography.fontSize['2xl'],
+    fontWeight: typography.fontWeight.extrabold,
+    color: colors.neutral[50],
+    marginBottom: spacing.xs,
+    letterSpacing: -0.5,
+  },
+  
+  menuButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.neutral[700],
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: colors.neutral[600],
   },
 
   navegacaoData: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
+    marginTop: spacing.sm,
   },
 
-  botaoNavegacao: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.neutral[700],
+  botaoNavegacaoDiscreto: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'transparent',
     justifyContent: 'center',
     alignItems: 'center',
-    ...shadows.sm,
+    opacity: 0.7,
   },
 
-  selectorData: {
+  selectorDataDiscreto: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.xs,
+    gap: spacing.sm,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm,
-    backgroundColor: colors.neutral[700],
+    backgroundColor: colors.neutral[700] + '50',
     borderRadius: borders.radius.full,
-    ...shadows.sm,
+    marginHorizontal: spacing.lg,
+    opacity: 0.8,
   },
 
-  textoData: {
-    fontSize: typography.fontSize.lg,
-    color: colors.neutral[50],
-    fontWeight: typography.fontWeight.semibold,
+  textoDataDiscreto: {
+    fontSize: typography.fontSize.base,
+    color: colors.neutral[300],
+    fontWeight: typography.fontWeight.medium,
     textTransform: 'capitalize',
   },
 
   scrollView: {
     flex: 1,
   },
-
-  conteudoScroll: {
+  
+  content: {
     paddingHorizontal: spacing.lg,
+    paddingTop: spacing.xl,
     paddingBottom: spacing.xl,
   },
 
-  // Seção de Calorias
-  secaoCalorias: {
-    marginTop: spacing.xl,
+
+
+  // Estilos das seções do Plano de Treino
+  treinosSection: {
     marginBottom: spacing.xl,
   },
-
-  cabecalhoCalorias: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: spacing.lg,
-  },
-
-  tituloCalorias: {
+  
+  sectionTitle: {
     fontSize: typography.fontSize.xl,
     fontWeight: typography.fontWeight.bold,
     color: colors.neutral[50],
+    marginBottom: spacing.lg,
+    textAlign: 'center',
   },
-
-  badgeCalorias: {
-    backgroundColor: colors.primary[600],
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-    borderRadius: borders.radius.full,
-    alignItems: 'center',
-    ...shadows.sm,
-  },
-
-  badgeTexto: {
-    fontSize: typography.fontSize['2xl'],
-    fontWeight: typography.fontWeight.bold,
-    color: colors.neutral[50],
-  },
-
-  badgeLabel: {
-    fontSize: typography.fontSize.xs,
-    color: colors.neutral[100],
-    fontWeight: typography.fontWeight.medium,
-  },
-
-  calculoCalorias: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+  
+  treinoCard: {
     backgroundColor: colors.neutral[800],
     borderRadius: borders.radius.xl,
     padding: spacing.lg,
-    ...shadows.base,
-  },
-
-  itemCaloria: {
-    alignItems: 'center',
-    flex: 1,
-  },
-
-  circuloCaloria: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: colors.primary[600],
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: spacing.sm,
-    ...shadows.sm,
-  },
-
-  valorCaloria: {
-    fontSize: typography.fontSize.lg,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.neutral[50],
-  },
-
-  labelCaloria: {
-    fontSize: typography.fontSize.sm,
-    color: colors.neutral[300],
-    textAlign: 'center',
-    fontWeight: typography.fontWeight.medium,
-  },
-
-  linhaConectora: {
-    alignItems: 'center',
-    flex: 1,
-  },
-
-  pontoConector: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: colors.neutral[600],
-    marginVertical: spacing.xs,
-  },
-
-  linha: {
-    width: 2,
-    height: 20,
-    backgroundColor: colors.neutral[600],
-  },
-
-  // Seções de conteúdo
-  tituloSecao: {
-    fontSize: typography.fontSize.lg,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.neutral[50],
     marginBottom: spacing.md,
-    marginTop: spacing.xl,
+    borderWidth: 1,
+    borderColor: colors.neutral[700],
+    ...shadows.lg,
   },
-
-  secaoRefeicoes: {
-    marginBottom: spacing.lg,
+  
+  treinoHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: spacing.md,
   },
-
-  secaoAgua: {
-    marginBottom: spacing.lg,
+  
+  treinoIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: spacing.md,
   },
-
-  secaoExercicios: {
-    marginBottom: spacing.lg,
+  
+  treinoInfo: {
+    flex: 1,
   },
-
-  secaoBotoes: {
-    marginBottom: spacing.xl,
+  
+  treinoNome: {
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.neutral[50],
+    marginBottom: spacing.xs,
   },
-
-  // Cards de refeição
-  cardRefeicao: {
-    backgroundColor: colors.neutral[800],
+  
+  diaBadge: {
+    alignSelf: 'flex-start',
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.sm,
     borderRadius: borders.radius.lg,
-    padding: spacing.lg,
-    marginBottom: spacing.md,
-    ...shadows.base,
-    borderLeftWidth: 4,
-    borderLeftColor: colors.primary[600],
   },
-
-  cabecalhoRefeicao: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: spacing.md,
-  },
-
-  infoRefeicao: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-
-  iconeRefeicao: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: colors.primary[600],
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-
-  tituloRefeicao: {
-    fontSize: typography.fontSize.lg,
+  
+  diaTexto: {
+    fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.semibold,
-    color: colors.neutral[50],
   },
-
+  
   botaoOpcoes: {
     padding: spacing.xs,
   },
 
-  // Progresso de água
-  progressoAgua: {
+  // Progresso
+  progressoContainer: {
+    alignItems: 'center',
     marginBottom: spacing.md,
   },
-
-  barraProgresso: {
+  
+  progressoBarra: {
     height: 8,
     backgroundColor: colors.neutral[700],
     borderRadius: borders.radius.full,
     overflow: 'hidden',
+    width: '100%',
     marginBottom: spacing.sm,
   },
-
+  
   progressoPreenchido: {
     height: '100%',
-    backgroundColor: colors.primary[400],
     borderRadius: borders.radius.full,
+    backgroundColor: colors.accent.blue,
   },
-
-  textoProgresso: {
+  
+  progressoTexto: {
     fontSize: typography.fontSize.sm,
-    color: colors.neutral[300],
-    textAlign: 'center',
-    fontWeight: typography.fontWeight.medium,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.accent.blue,
   },
 
   // Botões
   botaoAdicionar: {
-    backgroundColor: colors.primary[600],
-    borderRadius: borders.radius.md,
+    backgroundColor: colors.accent.blue,
+    borderRadius: borders.radius.lg,
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.lg,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.sm,
-    ...shadows.sm,
+    ...shadows.lg,
   },
 
   textoBotaoAdicionar: {
@@ -695,13 +710,13 @@ const styles = StyleSheet.create({
   botaoAcao: {
     flex: 1,
     backgroundColor: colors.neutral[800],
-    borderRadius: borders.radius.lg,
+    borderRadius: borders.radius.xl,
     paddingVertical: spacing.lg,
     paddingHorizontal: spacing.lg,
     alignItems: 'center',
     borderWidth: 1,
     borderColor: colors.neutral[700],
-    ...shadows.sm,
+    ...shadows.lg,
   },
 
   iconeBotaoAcao: {
@@ -728,6 +743,8 @@ const styles = StyleSheet.create({
     padding: spacing.xl,
     width: '90%',
     maxWidth: 400,
+    borderWidth: 1,
+    borderColor: colors.neutral[700],
     ...shadows.lg,
   },
 
@@ -761,7 +778,7 @@ const styles = StyleSheet.create({
 
   input: {
     backgroundColor: colors.neutral[700],
-    borderRadius: borders.radius.md,
+    borderRadius: borders.radius.lg,
     padding: spacing.md,
     fontSize: typography.fontSize.base,
     color: colors.neutral[50],
@@ -801,9 +818,11 @@ const styles = StyleSheet.create({
   botaoCancelar: {
     flex: 1,
     backgroundColor: colors.neutral[600],
-    borderRadius: borders.radius.md,
+    borderRadius: borders.radius.lg,
     paddingVertical: spacing.md,
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.neutral[500],
   },
 
   textoBotaoCancelar: {
@@ -814,10 +833,11 @@ const styles = StyleSheet.create({
 
   botaoSalvar: {
     flex: 1,
-    backgroundColor: colors.primary[600],
-    borderRadius: borders.radius.md,
+    backgroundColor: colors.accent.blue,
+    borderRadius: borders.radius.lg,
     paddingVertical: spacing.md,
     alignItems: 'center',
+    ...shadows.sm,
   },
 
   textoBotaoSalvar: {

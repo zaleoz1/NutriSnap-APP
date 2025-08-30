@@ -96,6 +96,9 @@ export default function TelaRefeicoes() {
     const intervaloProgresso = simularProgresso();
 
     try {
+      console.log('🔍 Iniciando análise de imagem...');
+      console.log('📸 Tamanho da imagem base64:', imagemBase64 ? imagemBase64.length : 0);
+      
       const dados = await buscarApi('/api/analise', { method:'POST', token, body:{ dadosImagemBase64: imagemBase64 } });
       
       // Completar o progresso
@@ -104,6 +107,7 @@ export default function TelaRefeicoes() {
       
       // Log para debug
       console.log('📊 Dados recebidos da API:', dados);
+      console.log('🍎 Número de itens identificados:', dados.itens ? dados.itens.length : 0);
       
       // Pequeno delay para mostrar 100% e depois ocultar imagem
       setTimeout(() => {
@@ -182,17 +186,28 @@ export default function TelaRefeicoes() {
       return false;
     }
 
+    const calorias = parseFloat(caloriasManual);
+    if (isNaN(calorias) || calorias <= 0) {
+      Alert.alert('Erro', 'Por favor, insira um valor válido para as calorias');
+      return false;
+    }
+
     const novoAlimento = {
       nome: alimentoManual.trim(),
-      calorias: parseFloat(caloriasManual) || 0,
+      calorias: calorias,
       proteinas: parseFloat(proteinasManual) || 0,
       carboidratos: parseFloat(carboidratosManual) || 0,
       gorduras: parseFloat(gordurasManual) || 0
     };
 
+    console.log('➕ Adicionando alimento manualmente:', novoAlimento);
+
     const novosItens = [...itens, novoAlimento];
     setItens(novosItens);
     recalcularTotal(novosItens);
+    
+    console.log('📊 Total de itens após adição:', novosItens.length);
+    
     fecharModalAdicao();
     
     Alert.alert('Sucesso', 'Alimento adicionado manualmente!');
@@ -200,16 +215,59 @@ export default function TelaRefeicoes() {
 
   async function salvarRefeicao() {
     try {
-      await buscarApi('/api/refeicoes', { method:'POST', token, body:{ itens, calorias_totais: total, timestamp: new Date() } });
+      // Validar se há itens para salvar
+      if (!itens || itens.length === 0) {
+        Alert.alert('Aviso', 'Adicione pelo menos um alimento antes de salvar a refeição.');
+        return;
+      }
+
+      // Validar se os totais são válidos
+      if (!total || total <= 0) {
+        Alert.alert('Erro', 'Calorias totais inválidas. Verifique os dados dos alimentos.');
+        return;
+      }
+
+      // Preparar dados completos da refeição com validação
+      const dadosRefeicao = {
+        itens: itens.map(item => ({
+          nome: item.nome || 'Alimento não identificado',
+          calorias: parseFloat(item.calorias) || 0,
+          proteinas: parseFloat(item.proteinas) || 0,
+          carboidratos: parseFloat(item.carboidratos) || 0,
+          gorduras: parseFloat(item.gorduras) || 0
+        })),
+        calorias_totais: parseFloat(total) || 0,
+        proteinas_totais: parseFloat(proteinasTotal) || 0,
+        carboidratos_totais: parseFloat(carboidratosTotal) || 0,
+        gorduras_totais: parseFloat(gordurasTotal) || 0,
+        tipo_refeicao: 'outros',
+        observacoes: '',
+        timestamp: new Date().toISOString()
+      };
+
+      console.log('💾 Salvando refeição:', JSON.stringify(dadosRefeicao, null, 2));
+
+      const resposta = await buscarApi('/api/refeicoes', { 
+        method: 'POST', 
+        token, 
+        body: dadosRefeicao 
+      });
+
+      console.log('✅ Resposta do servidor:', resposta);
+
       Alert.alert('Sucesso', 'Refeição salva com sucesso!');
+      
+      // Limpar dados após salvamento
       setImagem(null); 
       setItens([]); 
       setTotal(0);
       setProteinasTotal(0);
       setCarboidratosTotal(0);
       setGordurasTotal(0);
+      
     } catch (erro) {
-      Alert.alert('Erro', erro.message);
+      console.error('❌ Erro ao salvar refeição:', erro);
+      Alert.alert('Erro', `Erro ao salvar refeição: ${erro.message}`);
     }
   }
 

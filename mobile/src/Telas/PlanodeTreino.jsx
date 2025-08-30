@@ -535,9 +535,6 @@ export default function TelaPlanoTreino({ navigation }) {
                 <MaterialIcons name="fitness-center" size={80} color="#9CA3AF" />
               </View>
               <Text style={styles.noPlanTitle}>Nenhum plano encontrado</Text>
-              <Text style={styles.noPlanSubtitle}>
-                Configure suas preferências e gere seu primeiro plano personalizado
-              </Text>
               
               <TouchableOpacity 
                 style={[styles.generateButton, gerandoPlano && styles.generateButtonDisabled]}

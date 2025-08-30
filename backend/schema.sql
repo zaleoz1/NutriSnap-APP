@@ -13,10 +13,17 @@ CREATE TABLE IF NOT EXISTS refeicoes (
   id INT AUTO_INCREMENT PRIMARY KEY,
   id_usuario INT NOT NULL,
   itens JSON NOT NULL,
-  calorias_totais INT NOT NULL,
+  calorias_totais DECIMAL(8,2) NOT NULL,
+  proteinas_totais DECIMAL(8,2) DEFAULT 0,
+  carboidratos_totais DECIMAL(8,2) DEFAULT 0,
+  gorduras_totais DECIMAL(8,2) DEFAULT 0,
+  tipo_refeicao VARCHAR(50) DEFAULT 'outros',
+  observacoes TEXT,
   timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+  criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (id_usuario) REFERENCES usuarios(id) ON DELETE CASCADE
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS metas (
   id INT AUTO_INCREMENT PRIMARY KEY,
