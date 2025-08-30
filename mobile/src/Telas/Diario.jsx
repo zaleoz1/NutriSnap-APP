@@ -14,6 +14,7 @@ import {
   RefreshControl,
   Animated
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MaterialIcons, Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import { usarAutenticacao } from '../services/AuthContext';
 import { buscarRefeicoes, buscarMetas } from '../services/api';
@@ -31,7 +32,7 @@ export default function TelaDiario({ navigation }) {
   const [caloriasExercicio, setCaloriasExercicio] = useState(0);
   const [caloriasRestantes, setCaloriasRestantes] = useState(2290);
   const [aguaConsumida, setAguaConsumida] = useState(0);
-  const [metaAgua, setMetaAgua] = useState(2000); // 2L por dia - Meta fixa
+  const [metaAgua, setMetaAgua] = useState(2000); // Meta padrão - será atualizada pelas metas nutricionais
   const [modalAguaVisivel, setModalAguaVisivel] = useState(false);
   const [quantidadeAgua, setQuantidadeAgua] = useState('');
   const [refreshing, setRefreshing] = useState(false);
@@ -70,12 +71,52 @@ export default function TelaDiario({ navigation }) {
     }
   }, [dataAtual, token]);
 
+  // Carregar água específica quando a data mudar
+  useEffect(() => {
+    carregarAguaDoStorage();
+  }, [dataAtual]);
+
   // Função para formatar data para busca na API
   const formatarDataParaAPI = (data) => {
     const ano = data.getFullYear();
     const mes = String(data.getMonth() + 1).padStart(2, '0');
     const dia = String(data.getDate()).padStart(2, '0');
     return `${ano}-${mes}-${dia}`;
+  };
+
+  // Função para gerar chave única para armazenamento da água por data
+  const gerarChaveAgua = (data) => {
+    const dataFormatada = formatarDataParaAPI(data);
+    return `agua_consumida_${dataFormatada}`;
+  };
+
+  // Função para salvar quantidade de água no AsyncStorage
+  const salvarAguaNoStorage = async (quantidade) => {
+    try {
+      const chave = gerarChaveAgua(dataAtual);
+      await AsyncStorage.setItem(chave, quantidade.toString());
+      console.log('💾 Água salva no storage:', quantidade, 'ml para', formatarDataParaAPI(dataAtual));
+    } catch (erro) {
+      console.error('❌ Erro ao salvar água no storage:', erro);
+    }
+  };
+
+  // Função para carregar quantidade de água do AsyncStorage
+  const carregarAguaDoStorage = async () => {
+    try {
+      const chave = gerarChaveAgua(dataAtual);
+      const aguaSalva = await AsyncStorage.getItem(chave);
+      if (aguaSalva && !isNaN(aguaSalva)) {
+        const quantidade = parseInt(aguaSalva);
+        setAguaConsumida(quantidade);
+        console.log('💧 Água carregada do storage:', quantidade, 'ml para', formatarDataParaAPI(dataAtual));
+        return quantidade;
+      }
+      return 0;
+    } catch (erro) {
+      console.error('❌ Erro ao carregar água do storage:', erro);
+      return 0;
+    }
   };
 
   // Função para carregar dados do dia
@@ -110,9 +151,37 @@ export default function TelaDiario({ navigation }) {
 
       // Carregar metas do usuário
       const metasData = await buscarMetas(token);
-      if (metasData && metasData.calorias_diarias) {
-        setCaloriasMeta(metasData.calorias_diarias);
+      if (metasData) {
+        // Definir meta de calorias
+        if (metasData.calorias_diarias) {
+          setCaloriasMeta(metasData.calorias_diarias);
+        }
+
+        // Extrair meta de água das metas nutricionais
+        if (metasData.metas_nutricionais) {
+          try {
+            const metasNutricionais = typeof metasData.metas_nutricionais === 'string' 
+              ? JSON.parse(metasData.metas_nutricionais) 
+              : metasData.metas_nutricionais;
+
+            // Verificar se existe meta de água nos micronutrientes
+            if (metasNutricionais.micronutrientes && metasNutricionais.micronutrientes.agua) {
+              const aguaLitros = metasNutricionais.micronutrientes.agua.litros;
+              if (aguaLitros && !isNaN(aguaLitros)) {
+                // Converter litros para ml (1L = 1000ml)
+                const aguaMl = Math.round(aguaLitros * 1000);
+                setMetaAgua(aguaMl);
+                console.log('💧 Meta de água carregada das metas:', aguaMl, 'ml');
+              }
+            }
+          } catch (erro) {
+            console.error('❌ Erro ao processar metas nutricionais para água:', erro);
+          }
+        }
       }
+
+      // Carregar quantidade de água consumida do storage
+      await carregarAguaDoStorage();
 
     } catch (erro) {
       console.error('Erro ao carregar dados do diário:', erro);
@@ -168,10 +237,15 @@ export default function TelaDiario({ navigation }) {
     setModalAguaVisivel(true);
   };
 
-  const salvarAgua = () => {
+  const salvarAgua = async () => {
     if (quantidadeAgua && !isNaN(quantidadeAgua)) {
       const quantidade = parseInt(quantidadeAgua);
-      setAguaConsumida(aguaConsumida + quantidade);
+      const novaQuantidade = aguaConsumida + quantidade;
+      setAguaConsumida(novaQuantidade);
+      
+      // Salvar no AsyncStorage
+      await salvarAguaNoStorage(novaQuantidade);
+      
       setQuantidadeAgua('');
     }
     
@@ -832,7 +906,9 @@ export default function TelaDiario({ navigation }) {
                 <FontAwesome5 name="tint" size={16} color={colors.primary[400]} />
                 <Text style={styles.metaTexto}>Meta diária: {metaAgua}ml</Text>
               </View>
-              <Text style={styles.metaDescricao}>Quantidade recomendada de água por dia</Text>
+              <Text style={styles.metaDescricao}>
+                {metaAgua === 2000 ? 'Meta padrão recomendada' : 'Meta personalizada baseada no seu perfil'}
+              </Text>
             </View>
             
             <View style={styles.modalBotoes}>
