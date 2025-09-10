@@ -6,20 +6,51 @@ export default function PoliticaPrivacidade() {
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
-        <Text style={styles.titulo}>Política de Privacidade</Text>
-        <Text style={styles.data}>Última atualização: 3 de setembro de 2025</Text>
+        <Text style={styles.titulo}>Política de Privacidade do NutriSnap</Text>
+        <Text style={styles.data}>Última atualização: 10 de setembro de 2025</Text>
         <Text style={styles.paragrafo}>
-          A sua privacidade é importante para nós. Esta política de privacidade explica como o NutriSnap coleta, usa e protege seus dados pessoais...
+          O NutriSnap foi criado como parte de um trabalho de extensão universitária, com o objetivo de ajudar pessoas a monitorar sua alimentação, treinos e metas de saúde de forma inteligente e personalizada. Valorizamos a sua privacidade e o cuidado com seus dados.
         </Text>
-        <Text style={styles.subtitulo}>1. Coleta de Informações</Text>
+
+        <Text style={styles.subtitulo}>1. Coleta de Dados</Text>
         <Text style={styles.paragrafo}>
-          Coletamos informações que você nos fornece diretamente, como nome, e-mail e dados de saúde para personalizar sua experiência.
+          Coletamos apenas os dados necessários para o funcionamento do aplicativo, como informações de perfil, respostas de quizzes, registros de refeições, metas e fotos de alimentos para análise de calorias por IA.
         </Text>
+
         <Text style={styles.subtitulo}>2. Uso das Informações</Text>
         <Text style={styles.paragrafo}>
-          As informações coletadas são usadas para fornecer e melhorar nossos serviços, personalizar o conteúdo e enviar comunicações relevantes.
+          Os dados coletados são utilizados exclusivamente para oferecer as funcionalidades do NutriSnap, como monitoramento de calorias, geração de planos de treino, definição de metas e análise alimentar por IA. Não utilizamos seus dados para fins comerciais.
         </Text>
-        {/* Adicione o restante do conteúdo aqui */}
+
+        <Text style={styles.subtitulo}>3. Compartilhamento de Dados</Text>
+        <Text style={styles.paragrafo}>
+          Não compartilhamos suas informações pessoais com terceiros sem sua autorização. Seus dados permanecem protegidos e restritos à equipe de desenvolvimento do projeto.
+        </Text>
+
+        <Text style={styles.subtitulo}>4. Segurança</Text>
+        <Text style={styles.paragrafo}>
+          Adotamos medidas de segurança para proteger seus dados contra acesso não autorizado, alteração ou divulgação. Recomendamos que você utilize senhas seguras e mantenha seu dispositivo protegido.
+        </Text>
+
+        <Text style={styles.subtitulo}>5. Direitos do Usuário</Text>
+        <Text style={styles.paragrafo}>
+          Você pode solicitar a atualização, correção ou exclusão de seus dados pessoais a qualquer momento. Para isso, entre em contato com a equipe de desenvolvimento pelo e-mail informado na página Sobre.
+        </Text>
+
+        <Text style={styles.subtitulo}>6. Uso de Inteligência Artificial</Text>
+        <Text style={styles.paragrafo}>
+          As funcionalidades de IA, como o scanner de alimentos e geração de treinos, utilizam seus dados apenas para personalizar as recomendações. Nenhuma informação sensível é compartilhada com provedores externos sem seu consentimento.
+        </Text>
+
+        <Text style={styles.subtitulo}>7. Alterações na Política</Text>
+        <Text style={styles.paragrafo}>
+          Esta política pode ser atualizada periodicamente para garantir maior transparência e segurança. Recomendamos que você revise esta página regularmente.
+        </Text>
+
+        <Text style={styles.subtitulo}>8. Contato</Text>
+        <Text style={styles.paragrafo}>
+          Em caso de dúvidas ou solicitações sobre privacidade, entre em contato com a equipe pelo e-mail disponível na página Sobre.
+        </Text>
       </ScrollView>
     </View>
   );

@@ -132,6 +132,17 @@ export function ProvedorAutenticacao({ children }) {
   const entrar = fazerLogin;
   const sair = fazerLogout;
 
+  // Função para atualizar os dados do usuário no contexto e no AsyncStorage
+  const atualizarUsuario = async (novoUsuario) => {
+    setUsuario(novoUsuario);
+    try {
+      await AsyncStorage.setItem('user', JSON.stringify(novoUsuario));
+      console.log('✅ Usuário atualizado no contexto e AsyncStorage');
+    } catch (erro) {
+      console.error('❌ Erro ao atualizar usuário:', erro);
+    }
+  };
+
   // Contexto fornecido
   const contexto = {
     // Estados
@@ -139,21 +150,24 @@ export function ProvedorAutenticacao({ children }) {
     usuario,
     carregando,
     conectado,
-    
+
     // Funções principais
     fazerLogin,
     fazerLogout,
-    
+
     // Funções de compatibilidade
     entrar,
     sair,
-    
+
     // Funções utilitárias
     estaAutenticado,
-    
+
     // Funções de gerenciamento
     limparDados,
-    verificarConectividade
+    verificarConectividade,
+
+    // Função para atualizar usuário
+    atualizarUsuario
   };
 
   return (

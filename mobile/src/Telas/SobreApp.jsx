@@ -6,25 +6,36 @@ export default function SobreApp() {
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
-        {/* Se você tiver um logo, pode adicioná-lo aqui */}
         {/* <Image source={require('../assets/logo.png')} style={styles.logo} /> */}
-        
         <Text style={styles.titulo}>Sobre o NutriSnap</Text>
         <Text style={styles.versao}>Versão 1.0.0</Text>
-        
+
+        <Text style={styles.subtitulo}>O que é o NutriSnap?</Text>
+        <Text style={styles.paragrafo}>
+          NutriSnap é um aplicativo desenvolvido como parte de um projeto de extensão universitária, voltado para pessoas que desejam melhorar sua alimentação e manter uma rotina frequente de treinos. Com ele, você pode monitorar suas calorias diárias, definir metas como ganho muscular ou limite de calorias, e acompanhar seu progresso de forma prática.
+        </Text>
+
+        <Text style={styles.subtitulo}>Funcionalidades</Text>
+        <Text style={styles.paragrafo}>
+          • Scanner inteligente: tire uma foto do alimento e a IA informa a quantidade exata de calorias.
+          {'\n'}• Quiz personalizado: responda perguntas e receba um plano de treino gerado por IA.
+          {'\n'}• Metas nutricionais e de treino: defina objetivos e acompanhe seu desempenho.
+          {'\n'}• Controle diário: registre refeições, treinos e evolua com dados claros.
+        </Text>
+
         <Text style={styles.subtitulo}>Nossa Missão</Text>
         <Text style={styles.paragrafo}>
-          O NutriSnap nasceu com a missão de simplificar o controle nutricional e tornar a vida mais saudável. Acreditamos que o acesso à informação e o monitoramento fácil dos hábitos alimentares são essenciais para alcançar seus objetivos de bem-estar.
+          Tornar o cuidado com a saúde mais acessível, inteligente e personalizado, ajudando você a conquistar seus objetivos com tecnologia e praticidade.
         </Text>
-        
+
         <Text style={styles.subtitulo}>Equipe</Text>
         <Text style={styles.paragrafo}>
-          Desenvolvido com ❤️ por Kaio Araújo.
+          Desenvolvido por Kaio, Isaleo para o trabalho de extensão da faculdade, com apoio de projetos open source e tecnologia de IA.
         </Text>
-        
+
         <Text style={styles.subtitulo}>Agradecimentos</Text>
         <Text style={styles.paragrafo}>
-          Agradecemos a todos que nos apoiaram e aos projetos de código aberto que tornaram este aplicativo possível.
+          Agradecemos aos professores, colegas e à comunidade de código aberto que contribuíram para tornar este projeto possível.
         </Text>
       </ScrollView>
     </View>

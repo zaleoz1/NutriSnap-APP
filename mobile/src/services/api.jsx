@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Configuração da API
-export const URL_BASE = 'http://192.168.0.5:3000';
+export const URL_BASE = 'http://192.168.0.7:3000';
 
 // Função para buscar dados da API
 export async function buscarApi(endpoint, opcoes = {}) {
@@ -309,7 +309,7 @@ export async function reautenticarUsuario(tokenAtual) {
 // NOVA FUNÇÃO: Alterar a senha do usuário
 export async function alterarSenhaAPI(token, senhaAtual, novaSenha) {
   try {
-    const resposta = await buscarApi('/usuarios/alterar-senha', {
+    const resposta = await buscarApi('/api/usuarios/alterar-senha', {
       method: 'PUT',
       token,
       body: {

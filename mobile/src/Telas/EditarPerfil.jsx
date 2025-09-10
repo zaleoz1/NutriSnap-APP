@@ -27,7 +27,7 @@ export default function EditarPerfil({ navigation }) {
   useEffect(() => {
     async function carregarDadosPerfil() {
       try {
-        const dadosPerfil = await buscarApi(`/usuarios/perfil`, { token });
+        const dadosPerfil = await buscarApi(`/api/usuarios/perfil`, { token });
         if (dadosPerfil) {
           setNome(dadosPerfil.nome || '');
           setEmail(dadosPerfil.email || '');
@@ -63,7 +63,7 @@ export default function EditarPerfil({ navigation }) {
         sexo
       };
       
-      const resposta = await buscarApi('/usuarios/perfil', {
+      const resposta = await buscarApi('/api/usuarios/perfil', {
         method: 'PUT',
         token,
         body: dadosAtualizados,
@@ -75,9 +75,9 @@ export default function EditarPerfil({ navigation }) {
         if (atualizarUsuario) {
           atualizarUsuario(resposta.usuario);
         }
-        navigation.goBack();
+        navigation.navigate('Principal');
       } else {
-        Alert.alert('Erro', resposta.mensagem || 'Não foi possível atualizar o perfil.');
+        Alert.alert('Menssagem', resposta.mensagem || 'Não foi possível atualizar o perfil.');
       }
     } catch (erro) {
       console.error('Erro ao atualizar perfil:', erro);
