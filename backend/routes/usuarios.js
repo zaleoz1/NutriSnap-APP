@@ -1,6 +1,7 @@
 import express from 'express';
 import bancoDados from '../config/db.js';
 import { requerAutenticacao } from '../middleware/auth.js';
+import bcrypt from 'bcrypt';
 
 const roteador = express.Router();
 
@@ -124,6 +125,56 @@ roteador.put('/perfil', requerAutenticacao, async (req, res) => {
     res.status(500).json({ 
       mensagem: 'Erro ao atualizar perfil do usuário',
       erro: erro.message 
+    });
+  }
+});
+
+// Rota para alterar a senha do usuário
+roteador.put('/alterar-senha', requerAutenticacao, async (req, res) => {
+  const { senhaAtual, novaSenha } = req.body;
+  
+  if (!senhaAtual || !novaSenha) {
+    return res.status(400).json({ mensagem: 'Senha atual e nova senha são obrigatórias.' });
+  }
+
+  try {
+    // 1. Buscar o hash da senha atual do banco de dados
+    const [usuarios] = await bancoDados.query(
+      'SELECT senha FROM usuarios WHERE id = ?',
+      [req.idUsuario]
+    );
+
+    if (usuarios.length === 0) {
+      return res.status(404).json({ mensagem: 'Usuário não encontrado.' });
+    }
+
+    const hashSenhaArmazenada = usuarios[0].senha;
+
+    // 2. Comparar a senha atual fornecida com a senha armazenada (hash)
+    const senhaValida = await bcrypt.compare(senhaAtual, hashSenhaArmazenada);
+
+    if (!senhaValida) {
+      return res.status(401).json({ mensagem: 'Senha atual incorreta.' });
+    }
+    
+    // 3. Criptografar a nova senha
+    const saltRounds = 10;
+    const novaSenhaHash = await bcrypt.hash(novaSenha, saltRounds);
+
+    // 4. Atualizar a senha no banco de dados
+    await bancoDados.query(
+      'UPDATE usuarios SET senha = ?, atualizado_em = CURRENT_TIMESTAMP WHERE id = ?',
+      [novaSenhaHash, req.idUsuario]
+    );
+
+    console.log(`✅ Senha alterada com sucesso para o usuário ${req.idUsuario}`);
+    res.json({ mensagem: 'Senha alterada com sucesso!' });
+    
+  } catch (erro) {
+    console.error('❌ Erro ao alterar a senha:', erro);
+    res.status(500).json({ 
+      mensagem: 'Erro ao alterar a senha do usuário.',
+      erro: erro.message
     });
   }
 });

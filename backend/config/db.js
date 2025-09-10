@@ -3,7 +3,7 @@ import mysql from 'mysql2/promise';
 const bancoDados = mysql.createPool({
   host: process.env.DB_HOST || 'localhost',
   user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASS || '12435687',
+  password: process.env.DB_PASS || '0000',
   database: process.env.DB_NAME || 'nutrisnap',
   waitForConnections: true,
   connectionLimit: 10,

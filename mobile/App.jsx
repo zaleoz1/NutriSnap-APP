@@ -17,6 +17,11 @@ import DiarioScreen from './src/Telas/Diario';
 import ConfiguracoesScreen from './src/Telas/Configuracoes';
 import MeusDadosScreen from './src/Telas/MeusDados';
 import { ProvedorAutenticacao } from './src/services/AuthContext';
+import TermosDeUsoScreen from './src/Telas/TermosDeUso'; 
+import PoliticaPrivacidadeScreen from './src/Telas/PoliticaPrivacidade';
+import SobreAppScreen from './src/Telas/SobreApp';
+import AlterarSenhaScreen from './src/Telas/AlterarSenha';
+import EditarPerfilScreen from './src/Telas/EditarPerfil';
 
 const Stack = createNativeStackNavigator();
 
@@ -40,6 +45,11 @@ export default function App() {
             <Stack.Screen name="Diario" component={DiarioScreen} options={{ headerShown: false }} />
             <Stack.Screen name="MeusDados" component={MeusDadosScreen} options={{ headerShown: false }} />
             <Stack.Screen name="Configuracoes" component={ConfiguracoesScreen} options={{ headerShown: false }} />
+            <Stack.Screen name="TermosDeUso" component={TermosDeUsoScreen} options={{ headerShown: false }} />
+            <Stack.Screen name="PoliticaPrivacidade" component={PoliticaPrivacidadeScreen} options={{ headerShown: false }} />
+            <Stack.Screen name="SobreApp" component={SobreAppScreen} options={{ headerShown: false }} />
+            <Stack.Screen name="AlterarSenha" component={AlterarSenhaScreen} options={{ headerShown: false }} />
+            <Stack.Screen name="EditarPerfil" component={EditarPerfilScreen} options={{ headerShown: false }} />
           </Stack.Navigator>
         </NavigationContainer>
       </ProvedorAutenticacao>

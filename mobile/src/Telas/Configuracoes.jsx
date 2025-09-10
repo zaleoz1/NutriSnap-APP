@@ -19,11 +19,12 @@ export default function TelaConfiguracoes({ navigation }) {
   const [sincronizacaoAutomatica, setSincronizacaoAutomatica] = useState(true);
 
   const lidarComEditarPerfil = () => {
-    Alert.alert('Editar Perfil', 'Funcionalidade em desenvolvimento');
+    navigation.navigate('EditarPerfil');
   };
 
   const lidarComAlterarSenha = () => {
-    Alert.alert('Alterar Senha', 'Funcionalidade em desenvolvimento');
+    // Agora navega para a tela AlterarSenha
+    navigation.navigate('AlterarSenha');
   };
 
   const lidarComPrivacidade = () => {
@@ -31,15 +32,18 @@ export default function TelaConfiguracoes({ navigation }) {
   };
 
   const lidarComTermos = () => {
-    Alert.alert('Termos de Uso', 'Funcionalidade em desenvolvimento');
+    // Agora navega para a tela TermosDeUso
+    navigation.navigate('TermosDeUso'); 
   };
 
-  const lidarComPolitica = () => {
-    Alert.alert('Política de Privacidade', 'Funcionalidade em desenvolvimento');
+  const lidarComPoliticaPrivacidade = () => {
+    // Mude de Alert para navigation.navigate
+    navigation.navigate('PoliticaPrivacidade');
   };
 
   const lidarComSobre = () => {
-    Alert.alert('Sobre o App', 'NutriSnap v1.0.0\n\nUm aplicativo para controle nutricional e saúde.');
+    // Agora navega para a tela SobreApp
+    navigation.navigate('SobreApp');
   };
 
   const lidarComAjuda = () => {
@@ -297,7 +301,7 @@ export default function TelaConfiguracoes({ navigation }) {
           {renderizarItemConfiguracao({
             titulo: 'Política de Privacidade',
             icone: 'security',
-            acao: lidarComPolitica
+            acao: lidarComPoliticaPrivacidade
           })}
         </View>
 

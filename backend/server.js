@@ -24,7 +24,7 @@ aplicacao.use(helmet({
 aplicacao.use(cors({
   origin: process.env.NODE_ENV === 'production' 
     ? ['https://seu-dominio.com'] 
-    : ['http://localhost:3000', 'http://192.168.0.135:3000', 'exp://192.168.0.135:8081'],
+    : ['http://localhost:3000', 'http://192.168.0.5:3000', 'exp://192.168.0.5:8081'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
@@ -145,7 +145,7 @@ const HOST = process.env.HOST || '0.0.0.0';
 const servidor = aplicacao.listen(PORTA, HOST, () => {
   console.log('🚀 NutriSnap Backend iniciado!');
   console.log(`✅ Servidor rodando em http://${HOST}:${PORTA}`);
-  console.log(`🌐 Acessível na rede local em http://192.168.0.135:${PORTA}`);
+  console.log(`🌐 Acessível na rede local em http://192.168.0.5:${PORTA}`);
   console.log(`🔒 Ambiente: ${process.env.NODE_ENV || 'development'}`);
   console.log(`📊 Banco: ${process.env.DB_NAME || 'nutrisnap'}`);
   console.log(`⏰ Iniciado em: ${new Date().toLocaleString('pt-BR')}`);
