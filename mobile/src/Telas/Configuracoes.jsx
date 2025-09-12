@@ -4,8 +4,13 @@ import { MaterialIcons, Ionicons, FontAwesome5, MaterialCommunityIcons } from '@
 
 import { usarAutenticacao } from '../services/AuthContext';
 import { colors, typography, spacing, borders, shadows } from '../styles/globalStyles';
+import * as Notifications from 'expo-notifications'; // Importar Notifications
+import AsyncStorage from '@react-native-async-storage/async-storage'; // Para persistência
+import { agendarNotificacaoDiaria, cancelarNotificacoes } from '../services/notificacoes';
 
 const { width, height } = Dimensions.get('window');
+
+
 
 export default function TelaConfiguracoes({ navigation }) {
   const { usuario, fazerLogout } = usarAutenticacao();
@@ -51,7 +56,7 @@ export default function TelaConfiguracoes({ navigation }) {
   };
 
   const lidarComFeedback = () => {
-    Alert.alert('Enviar Feedback', 'Funcionalidade em desenvolvimento');
+    navigation.navigate('FeedBack');
   };
 
   
