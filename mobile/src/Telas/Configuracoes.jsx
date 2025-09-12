@@ -47,12 +47,14 @@ export default function TelaConfiguracoes({ navigation }) {
   };
 
   const lidarComAjuda = () => {
-    Alert.alert('Ajuda', 'Funcionalidade em desenvolvimento');
+    navigation.navigate('Ajuda');
   };
 
   const lidarComFeedback = () => {
     Alert.alert('Enviar Feedback', 'Funcionalidade em desenvolvimento');
   };
+
+  
 
   const lidarComLogout = () => {
     Alert.alert(

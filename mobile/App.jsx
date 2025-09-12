@@ -22,6 +22,9 @@ import PoliticaPrivacidadeScreen from './src/Telas/PoliticaPrivacidade';
 import SobreAppScreen from './src/Telas/SobreApp';
 import AlterarSenhaScreen from './src/Telas/AlterarSenha';
 import EditarPerfilScreen from './src/Telas/EditarPerfil';
+// import FeedBackScreen from './src/Telas/FeedBack'; 
+import AjudaScreen from './src/Telas/Ajuda'; 
+
 
 const Stack = createNativeStackNavigator();
 
@@ -50,6 +53,7 @@ export default function App() {
             <Stack.Screen name="SobreApp" component={SobreAppScreen} options={{ headerShown: false }} />
             <Stack.Screen name="AlterarSenha" component={AlterarSenhaScreen} options={{ headerShown: false }} />
             <Stack.Screen name="EditarPerfil" component={EditarPerfilScreen} options={{ headerShown: false }} />
+            <Stack.Screen name="Ajuda" component={AjudaScreen} options={{ headerShown: false }} />
           </Stack.Navigator>
         </NavigationContainer>
       </ProvedorAutenticacao>

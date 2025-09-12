@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet, Alert, ScrollView, Dimensions
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons, MaterialIcons, FontAwesome5, MaterialCommunityIcons } from '@expo/vector-icons';
 import { usarAutenticacao } from '../services/AuthContext';
-import { buscarApi, buscarTreinos, buscarMetas } from '../services/api';
+import { buscarApi, buscarTreinos, buscarMetas, buscarMeusDados } from '../services/api';
 import { colors, typography, spacing, borders, shadows, componentStyles } from '../styles/globalStyles';
 import { Svg, Circle, G, Text as SvgText } from 'react-native-svg';
 
@@ -75,6 +75,7 @@ const CircularProgressChart = ({ progress, size = 120, strokeWidth = 8, calories
 export default function TelaPrincipal({ navigation }) {
   const { usuario, token, sair } = usarAutenticacao();
   const [meta, setMeta] = useState(null);
+  const [meusDados, setMeusDados] = useState(null);
   const [consumido, setConsumido] = useState(0);
   const [modalVisivel, setModalVisivel] = useState(false);
   const [planoTreino, setPlanoTreino] = useState(null);
@@ -119,6 +120,9 @@ export default function TelaPrincipal({ navigation }) {
   async function carregarDados() {
     try {
       setCarregando(true);
+
+      const dadosPessoais = await buscarMeusDados(token);
+      setMeusDados(dadosPessoais);
       
       // Carregar metas
       const m = await buscarMetas(token);
@@ -220,8 +224,8 @@ export default function TelaPrincipal({ navigation }) {
   const percentualTreinos = totalTreinos > 0 ? Math.round((treinosConcluidos / totalTreinos) * 100) : 0;
   
   // Dados de peso e progresso
-  const pesoAtual = meta?.peso_atual || 0;
-  const pesoMeta = meta?.peso_meta || 0;
+  const pesoAtual = meusDados?.peso_atual || 0;
+  const pesoMeta = meusDados?.peso_meta || 0;
   const diferencaPeso = pesoAtual - pesoMeta;
   const progressoPeso = pesoAtual > 0 && pesoMeta > 0 ? Math.abs(diferencaPeso) : 0;
 
@@ -598,7 +602,7 @@ export default function TelaPrincipal({ navigation }) {
                     />
                   </View>
                   <Text style={estilos.trendText}>
-                    {diferencaPeso > 0 ? `-${diferencaPeso.toFixed(1)} kg` : `+${Math.abs(diferencaPeso).toFixed(1)} kg`} para meta de peso
+                    {diferencaPeso > 0 ? `Faltam ${diferencaPeso.toFixed(1)} kg` : diferencaPeso < 0 ? `Passou da meta em ${Math.abs(diferencaPeso).toFixed(1)} kg` : 'Meta batida!'}
                   </Text>
                 </View>
               )}

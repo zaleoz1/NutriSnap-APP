@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Configuração da API
-export const URL_BASE = 'http://192.168.0.7:3000';
+export const URL_BASE = 'http://192.168.0.4:3000';
 
 // Função para buscar dados da API
 export async function buscarApi(endpoint, opcoes = {}) {
@@ -325,6 +325,28 @@ export async function alterarSenhaAPI(token, senhaAtual, novaSenha) {
       mensagem: 'Erro de conexão. Verifique sua rede.',
     };
   }
+}
+
+export const buscarMeusDados = async (token) => {
+  try {
+    // '/api/quiz' é o endpoint definido no seu server.js para o meusdados.js
+    const dados = await buscarApi('/api/quiz', { token });
+    console.log('👤 Meus Dados carregados:', dados);
+    return dados;
+  } catch (erro) {
+    console.error('❌ Erro ao buscar "Meus Dados":', erro);
+    // Retornar null ou lançar o erro, dependendo de como você quer tratar falhas
+    return null;
+  }
+};
+
+// Atualizar metas
+export async function atualizarMetas(token, dados) {
+  return buscarApi('/api/metas/atualizar', {
+    method: 'PUT',
+    token,
+    body: dados,
+  });
 }
 
 

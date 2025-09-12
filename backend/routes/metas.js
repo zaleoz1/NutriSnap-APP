@@ -83,6 +83,25 @@ roteador.post('/gerar-ia', requerAutenticacao, async (req, res) => {
   }
 });
 
+// Atualizar metas do usuário
+roteador.put('/atualizar', requerAutenticacao, async (req, res) => {
+  try {
+    const { peso_atual, peso_meta, dias, calorias_diarias, metas_nutricionais } = req.body;
+    // Atualiza a meta mais recente do usuário
+    const [result] = await bancoDados.query(
+      'UPDATE metas SET peso_atual = ?, peso_meta = ?, dias = ?, calorias_diarias = ?, metas_nutricionais = ? WHERE id_usuario = ? ORDER BY id DESC LIMIT 1',
+      [peso_atual, peso_meta, dias, calorias_diarias, metas_nutricionais ? JSON.stringify(metas_nutricionais) : null, req.idUsuario]
+    );
+    res.json({ mensagem: 'Meta atualizada com sucesso!' });
+  } catch (erro) {
+    console.error('❌ Erro ao atualizar metas:', erro);
+    res.status(500).json({
+      mensagem: 'Erro ao atualizar metas',
+      erro: erro.message
+    });
+  }
+});
+
 // Função para gerar metas nutricionais inteligentes
 function gerarMetasNutricionais(dadosQuiz) {
   const {

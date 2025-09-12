@@ -18,6 +18,7 @@ export default function EditarPerfil({ navigation }) {
   const [email, setEmail] = useState('');
   const [idade, setIdade] = useState('');
   const [peso, setPeso] = useState('');
+  const [pesoMeta, setPesoMeta] = useState('');
   const [altura, setAltura] = useState('');
   const [objetivo, setObjetivo] = useState('');
   const [nivelAtividade, setNivelAtividade] = useState('');
@@ -33,6 +34,7 @@ export default function EditarPerfil({ navigation }) {
           setEmail(dadosPerfil.email || '');
           setIdade(dadosPerfil.idade?.toString() || '');
           setPeso(dadosPerfil.peso_atual?.toString() || '');
+          setPesoMeta(dadosPerfil.peso_meta?.toString() || '');
           setAltura(dadosPerfil.altura?.toString() || '');
           setObjetivo(dadosPerfil.objetivo || '');
           setNivelAtividade(dadosPerfil.nivel_atividade || '');
@@ -57,6 +59,7 @@ export default function EditarPerfil({ navigation }) {
         email,
         idade: idade ? parseInt(idade) : null,
         peso_atual: peso ? parseFloat(peso) : null,
+        peso_meta: pesoMeta ? parseFloat(pesoMeta) : null,
         altura: altura ? parseFloat(altura) : null,
         objetivo,
         nivel_atividade: nivelAtividade,
@@ -104,7 +107,6 @@ export default function EditarPerfil({ navigation }) {
         <Text style={styles.titulo}>Editar Perfil</Text>
       </View>
       
-      {/* Formulário de edição */}
       <View style={styles.formulario}>
         <Text style={styles.label}>Nome</Text>
         <TextInput style={styles.input} value={nome} onChangeText={setNome} placeholder="Seu nome completo" placeholderTextColor={colors.neutral[500]} />
@@ -118,11 +120,18 @@ export default function EditarPerfil({ navigation }) {
         <Text style={styles.label}>Peso (kg)</Text>
         <TextInput style={styles.input} value={peso} onChangeText={setPeso} keyboardType="numeric" placeholder="Seu peso atual" placeholderTextColor={colors.neutral[500]} />
 
+        <Text style={styles.label}>Peso Meta (kg)</Text>
+        <TextInput style={styles.input} value={pesoMeta} onChangeText={setPesoMeta} keyboardType="numeric" placeholder="Seu peso meta" placeholderTextColor={colors.neutral[500]} />
+
         <Text style={styles.label}>Altura (cm)</Text>
         <TextInput style={styles.input} value={altura} onChangeText={setAltura} keyboardType="numeric" placeholder="Sua altura" placeholderTextColor={colors.neutral[500]} />
 
-        {/* Adicione outros campos como objetivo, nível de atividade, etc. */}
-        
+        <Text style={styles.label}>Objetivo</Text>
+        <TextInput style={styles.input} value={objetivo} onChangeText={setObjetivo} placeholder="Ex: Ganho muscular, emagrecimento..." placeholderTextColor={colors.neutral[500]} />
+
+        <Text style={styles.label}>Nível de Atividade</Text>
+        <TextInput style={styles.input} value={nivelAtividade} onChangeText={setNivelAtividade} placeholder="Ex: Sedentário, moderado, intenso..." placeholderTextColor={colors.neutral[500]} />
+
         <TouchableOpacity style={styles.botao} onPress={lidarComEnvio} disabled={salvando}>
           {salvando ? (
             <ActivityIndicator size="small" color={colors.neutral[50]} />
