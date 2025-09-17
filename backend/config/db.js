@@ -1,9 +1,16 @@
 import mysql from 'mysql2/promise';
 
+/**
+ * Configuração da conexão com o banco de dados MySQL
+ * - Usa variáveis de ambiente para configuração
+ * - Pool de conexões para melhor performance
+ * - Timeout e tentativas de reconexão
+ */
+
 const bancoDados = mysql.createPool({
   host: process.env.DB_HOST || 'localhost',
   user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASS || '0000',
+  password: process.env.DB_PASS || '123456',
   database: process.env.DB_NAME || 'nutrisnap',
   waitForConnections: true,
   connectionLimit: 10,
@@ -13,7 +20,13 @@ const bancoDados = mysql.createPool({
   reconnect: true
 });
 
-// Teste de conexão
+/**
+ * Função para testar a conexão com o banco de dados
+ * - Tenta conectar e loga o status
+ * - Em caso de falha, fornece dicas para resolução
+ * - Não encerra o processo em ambiente de desenvolvimento
+ */
+
 async function testarConexao() {
   try {
     const conexao = await bancoDados.getConnection();

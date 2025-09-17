@@ -6,7 +6,13 @@ import { z } from 'zod';
 
 const roteador = express.Router();
 
-// Esquemas de validação
+/**
+ * ============================
+ * 🔒 VALIDAÇÕES COM ZOD
+ * ============================
+ * - esquemaRegistro: garante que nome, email e senha estejam no formato correto.
+ * - esquemaLogin: valida as credenciais fornecidas no login.
+ */
 const esquemaRegistro = z.object({
   nome: z.string()
     .min(2, 'Nome deve ter pelo menos 2 caracteres')
@@ -20,7 +26,10 @@ const esquemaRegistro = z.object({
   senha: z.string()
     .min(6, 'Senha deve ter pelo menos 6 caracteres')
     .max(255, 'Senha muito longa')
-    .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, 'Senha deve conter pelo menos uma letra maiúscula, uma minúscula e um número')
+    .regex(
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, 
+      'Senha deve conter pelo menos uma letra maiúscula, uma minúscula e um número'
+    )
 });
 
 const esquemaLogin = z.object({
@@ -32,13 +41,20 @@ const esquemaLogin = z.object({
     .min(1, 'Senha é obrigatória')
 });
 
-// Rota de registro
+/**
+ * ============================
+ * 📝 ROTA DE REGISTRO
+ * ============================
+ * - Valida dados de entrada.
+ * - Verifica se o email já existe.
+ * - Criptografa a senha com bcrypt.
+ * - Insere o usuário no banco.
+ */
 roteador.post('/registrar', async (req, res) => {
   try {
-    // Validar dados de entrada
     const dadosValidados = esquemaRegistro.parse(req.body);
     
-    // Verificar se email já existe
+    // Verificar duplicidade de email
     const [usuariosExistentes] = await bancoDados.query(
       'SELECT id FROM usuarios WHERE email = ?', 
       [dadosValidados.email]
@@ -50,11 +66,11 @@ roteador.post('/registrar', async (req, res) => {
       });
     }
 
-    // Criptografar senha
+    // Criptografar senha antes de salvar
     const saltRounds = 12;
     const senhaCriptografada = await bcrypt.hash(dadosValidados.senha, saltRounds);
     
-    // Inserir usuário
+    // Inserir usuário no banco
     const [resultado] = await bancoDados.query(
       'INSERT INTO usuarios (nome, email, senha) VALUES (?, ?, ?)',
       [dadosValidados.nome, dadosValidados.email, senhaCriptografada]
@@ -74,6 +90,7 @@ roteador.post('/registrar', async (req, res) => {
   } catch (erro) {
     console.error('❌ Erro no registro:', erro);
     
+    // Tratar erros de validação Zod
     if (erro instanceof z.ZodError) {
       const mensagens = erro.errors.map(e => e.message);
       return res.status(400).json({ 
@@ -88,46 +105,44 @@ roteador.post('/registrar', async (req, res) => {
   }
 });
 
-// Rota de login
+/**
+ * ============================
+ * 🔑 ROTA DE LOGIN
+ * ============================
+ * - Valida credenciais.
+ * - Busca usuário no banco.
+ * - Compara senha criptografada.
+ * - Gera token JWT com expiração.
+ */
 roteador.post('/entrar', async (req, res) => {
   try {
-    // Validar dados de entrada
     const dadosValidados = esquemaLogin.parse(req.body);
     
-    // Buscar usuário
+    // Buscar usuário no banco
     const [usuarios] = await bancoDados.query(
       'SELECT id, nome, email, senha FROM usuarios WHERE email = ?',
       [dadosValidados.email]
     );
     
     if (usuarios.length === 0) {
-      return res.status(401).json({ 
-        mensagem: 'Email ou senha incorretos' 
-      });
+      return res.status(401).json({ mensagem: 'Email ou senha incorretos' });
     }
     
     const usuario = usuarios[0];
     
-    // Verificar senha
+    // Validar senha
     const senhaCorreta = await bcrypt.compare(dadosValidados.senha, usuario.senha);
     if (!senhaCorreta) {
-      return res.status(401).json({ 
-        mensagem: 'Email ou senha incorretos' 
-      });
+      return res.status(401).json({ mensagem: 'Email ou senha incorretos' });
     }
     
-    // Gerar token JWT
-    const payload = { 
-      id: usuario.id, 
-      email: usuario.email,
-      nome: usuario.nome
-    };
-    
+    // Gerar JWT
+    const payload = { id: usuario.id, email: usuario.email, nome: usuario.nome };
     const token = jwt.sign(
       payload, 
       process.env.JWT_SECRET || 'secreta', 
       { 
-        expiresIn: '7d',
+        expiresIn: '7d', // expira em 7 dias
         issuer: 'nutrisnap',
         audience: 'nutrisnap-users'
       }
@@ -135,7 +150,6 @@ roteador.post('/entrar', async (req, res) => {
     
     console.log(`✅ Login realizado: ${usuario.email} (ID: ${usuario.id})`);
     
-    // Retornar dados do usuário (sem senha) e token
     res.json({
       token,
       usuario: {
@@ -163,32 +177,33 @@ roteador.post('/entrar', async (req, res) => {
   }
 });
 
-// Rota de verificação de token (opcional)
+/**
+ * ============================
+ * 🔍 ROTA DE VERIFICAÇÃO
+ * ============================
+ * - Verifica se o token JWT enviado no header é válido.
+ * - Retorna os dados do usuário atualizados do banco.
+ */
 roteador.get('/verificar', async (req, res) => {
   try {
     const cabecalho = req.headers.authorization || '';
     const token = cabecalho.startsWith('Bearer ') ? cabecalho.slice(7) : null;
     
     if (!token) {
-      return res.status(401).json({ 
-        mensagem: 'Token ausente',
-        valido: false 
-      });
+      return res.status(401).json({ mensagem: 'Token ausente', valido: false });
     }
     
+    // Validar token
     const decodificado = jwt.verify(token, process.env.JWT_SECRET || 'secreta');
     
-    // Buscar dados atualizados do usuário
+    // Buscar usuário atualizado
     const [usuarios] = await bancoDados.query(
       'SELECT id, nome, email FROM usuarios WHERE id = ?',
       [decodificado.id]
     );
     
     if (usuarios.length === 0) {
-      return res.status(401).json({ 
-        mensagem: 'Usuário não encontrado',
-        valido: false 
-      });
+      return res.status(401).json({ mensagem: 'Usuário não encontrado', valido: false });
     }
     
     res.json({
@@ -199,10 +214,7 @@ roteador.get('/verificar', async (req, res) => {
     
   } catch (erro) {
     console.error('❌ Erro na verificação:', erro);
-    res.status(401).json({ 
-      mensagem: 'Token inválido',
-      valido: false 
-    });
+    res.status(401).json({ mensagem: 'Token inválido', valido: false });
   }
 });
 

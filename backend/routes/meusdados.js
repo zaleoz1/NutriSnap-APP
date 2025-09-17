@@ -4,7 +4,26 @@ import { requerAutenticacao } from '../middleware/auth.js';
 
 const roteador = express.Router();
 
-// Buscar respostas do quiz do usuário
+/**
+ * ==============================
+ * ROTAS DO QUIZ (meus_dados)
+ * ==============================
+ * - GET    /       → Buscar respostas do quiz
+ * - POST   /       → Criar ou atualizar respostas
+ * - DELETE /       → Deletar respostas
+ * 
+ * Todas as rotas exigem autenticação via middleware `requerAutenticacao`.
+ * A tabela `meus_dados` armazena informações do quiz nutricional/treino de cada usuário.
+ */
+
+
+/**
+ * [GET] /
+ * Busca as respostas do quiz do usuário logado.
+ * 
+ * - Retorna `null` caso não exista quiz.
+ * - Caso exista, retorna o registro mais recente.
+ */
 roteador.get('/', requerAutenticacao, async (req, res) => {
   try {
     const [linhas] = await bancoDados.query(
@@ -26,9 +45,18 @@ roteador.get('/', requerAutenticacao, async (req, res) => {
   }
 });
 
-// Salvar ou atualizar respostas do quiz
+
+/**
+ * [POST] /
+ * Salva ou atualiza as respostas do quiz do usuário.
+ * 
+ * - Caso o usuário já tenha respostas, é feito um UPDATE.
+ * - Caso contrário, é feito um INSERT.
+ * - Campos opcionais ou não preenchidos são salvos como `NULL`.
+ */
 roteador.post('/', requerAutenticacao, async (req, res) => {
   try {
+    // Extrai os dados enviados pelo cliente
     const {
       idade,
       sexo,
@@ -52,7 +80,7 @@ roteador.post('/', requerAutenticacao, async (req, res) => {
       obstaculos
     } = req.body;
 
-    // Verificar se já existe resposta para este usuário
+    // Verifica se já existe quiz para o usuário
     const [existentes] = await bancoDados.query(
       'SELECT id FROM meus_dados WHERE id_usuario = ?',
       [req.idUsuario]
@@ -61,9 +89,9 @@ roteador.post('/', requerAutenticacao, async (req, res) => {
     console.log(`🔍 Verificando quiz para usuário ${req.idUsuario}: ${existentes.length > 0 ? 'EXISTE' : 'NÃO EXISTE'}`);
 
     if (existentes.length > 0) {
+      // Caso exista → Atualiza o registro existente
       console.log(`📝 Fazendo UPDATE do quiz existente para usuário ${req.idUsuario}`);
       
-      //Garantir que campos vazios sejam tratados como NULL
       const dadosParaAtualizar = [
         idade || null, 
         sexo || null, 
@@ -88,7 +116,6 @@ roteador.post('/', requerAutenticacao, async (req, res) => {
         req.idUsuario
       ];
 
-      // Atualizar resposta existente
       await bancoDados.query(`
         UPDATE meus_dados SET
           idade = ?, sexo = ?, altura = ?, peso_atual = ?, peso_meta = ?,
@@ -102,10 +129,11 @@ roteador.post('/', requerAutenticacao, async (req, res) => {
       
       console.log(`✅ Quiz atualizado para usuário ${req.idUsuario}`);
       res.json({ mensagem: 'Quiz atualizado com sucesso' });
+
     } else {
+      // Caso não exista → Insere novo registro
       console.log(`🆕 Fazendo INSERT de novo quiz para usuário ${req.idUsuario}`);
       
-      //Garantir que campos vazios sejam tratados como NULL
       const dadosParaInserir = [
         req.idUsuario, 
         idade || null, 
@@ -130,7 +158,6 @@ roteador.post('/', requerAutenticacao, async (req, res) => {
         JSON.stringify(obstaculos || {})
       ];
 
-      // Inserir nova resposta
       await bancoDados.query(`
         INSERT INTO meus_dados (
           id_usuario, idade, sexo, altura, peso_atual, peso_meta,
@@ -153,7 +180,11 @@ roteador.post('/', requerAutenticacao, async (req, res) => {
   }
 });
 
-// Deletar respostas do quiz
+
+/**
+ * [DELETE] /
+ * Deleta as respostas do quiz do usuário logado.
+ */
 roteador.delete('/', requerAutenticacao, async (req, res) => {
   try {
     await bancoDados.query(

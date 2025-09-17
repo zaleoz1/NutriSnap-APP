@@ -4,7 +4,22 @@ import { requerAutenticacao } from '../middleware/auth.js';
 
 const roteador = express.Router();
 
-// Buscar refeições do usuário
+/**
+ * =============================
+ * Rotas de Refeições
+ * =============================
+ * - GET /           → Buscar todas as refeições do usuário autenticado
+ * - POST /          → Salvar uma nova refeição
+ * - PUT /:id        → Atualizar refeição existente
+ * - DELETE /:id     → Deletar refeição existente
+ * 
+ * Todas as rotas exigem autenticação (middleware requerAutenticacao).
+ */
+
+/**
+ * 📌 Buscar todas as refeições do usuário autenticado
+ * - Ordenadas por timestamp (mais recentes primeiro)
+ */
 roteador.get('/', requerAutenticacao, async (req, res) => {
   try {
     const [linhas] = await bancoDados.query(
@@ -16,14 +31,16 @@ roteador.get('/', requerAutenticacao, async (req, res) => {
     res.json(linhas);
   } catch (erro) {
     console.error('❌ Erro ao buscar refeições:', erro);
-    res.status(500).json({ 
-      mensagem: 'Erro ao buscar refeições',
-      erro: erro.message 
-    });
+    res.status(500).json({ mensagem: 'Erro ao buscar refeições', erro: erro.message });
   }
 });
 
-// Salvar nova refeição
+/**
+ * 📌 Salvar uma nova refeição
+ * - Recebe lista de itens, macros, tipo de refeição e observações
+ * - Faz validação básica (itens obrigatórios, calorias > 0)
+ * - Recalcula macros com base nos itens para consistência
+ */
 roteador.post('/', requerAutenticacao, async (req, res) => {
   try {
     console.log('📥 Dados recebidos para salvar refeição:', JSON.stringify(req.body, null, 2));
@@ -39,27 +56,19 @@ roteador.post('/', requerAutenticacao, async (req, res) => {
       observacoes = ''
     } = req.body;
 
-    // Validação básica
+    // ⚠️ Validações básicas
     if (!itens || !Array.isArray(itens) || itens.length === 0) {
-      console.log('❌ Validação falhou: itens inválidos');
-      return res.status(400).json({ 
-        mensagem: 'Lista de itens é obrigatória e deve conter pelo menos um item' 
-      });
+      return res.status(400).json({ mensagem: 'Lista de itens é obrigatória e deve conter pelo menos um item' });
     }
-
     if (!calorias_totais || calorias_totais <= 0) {
-      console.log('❌ Validação falhou: calorias inválidas');
-      return res.status(400).json({ 
-        mensagem: 'Calorias totais devem ser maiores que zero' 
-      });
+      return res.status(400).json({ mensagem: 'Calorias totais devem ser maiores que zero' });
     }
 
-    // Calcular totais se não fornecidos
+    // 🔢 Recalcular macros a partir dos itens
     let proteinas = parseFloat(proteinas_totais) || 0;
     let carboidratos = parseFloat(carboidratos_totais) || 0;
     let gorduras = parseFloat(gorduras_totais) || 0;
 
-    // Sempre recalcular totais baseado nos itens para garantir consistência
     const totais = itens.reduce((acc, item) => {
       acc.proteinas += parseFloat(item.proteinas || 0);
       acc.carboidratos += parseFloat(item.carboidratos || 0);
@@ -67,43 +76,20 @@ roteador.post('/', requerAutenticacao, async (req, res) => {
       return acc;
     }, { proteinas: 0, carboidratos: 0, gorduras: 0 });
 
-    // Usar totais calculados se os fornecidos forem 0 ou inválidos
     if (proteinas === 0) proteinas = totais.proteinas;
     if (carboidratos === 0) carboidratos = totais.carboidratos;
     if (gorduras === 0) gorduras = totais.gorduras;
 
-    console.log('🧮 Totais calculados:', { proteinas, carboidratos, gorduras });
+    // ⏰ Converter timestamp
+    const timestampConvertido = timestamp ? new Date(timestamp) : new Date();
 
-    // Verificar se o usuário existe
-    const [usuarioExiste] = await bancoDados.query(
-      'SELECT id FROM usuarios WHERE id = ?',
-      [req.idUsuario]
-    );
-
-    if (usuarioExiste.length === 0) {
-      console.log('❌ Usuário não encontrado:', req.idUsuario);
-      return res.status(404).json({ 
-        mensagem: 'Usuário não encontrado' 
-      });
-    }
-
-    console.log('✅ Usuário validado:', req.idUsuario);
-
-    // Converter timestamp para formato compatível com MySQL
-    let timestampConvertido;
-    if (timestamp) {
-      // Se o timestamp vem como string ISO 8601, converter para Date e depois para formato MySQL
-      if (typeof timestamp === 'string') {
-        timestampConvertido = new Date(timestamp);
-      } else {
-        timestampConvertido = new Date(timestamp);
-      }
-    } else {
-      timestampConvertido = new Date();
-    }
-
-    // Preparar dados para inserção
-    const dadosInsercao = [
+    // 💾 Inserir refeição
+    const [resultado] = await bancoDados.query(`
+      INSERT INTO refeicoes (
+        id_usuario, itens, calorias_totais, proteinas_totais, 
+        carboidratos_totais, gorduras_totais, timestamp, tipo_refeicao, observacoes
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `, [
       req.idUsuario,
       JSON.stringify(itens),
       parseFloat(calorias_totais),
@@ -113,73 +99,40 @@ roteador.post('/', requerAutenticacao, async (req, res) => {
       timestampConvertido,
       tipo_refeicao,
       observacoes
-    ];
-
-    console.log('💾 Dados para inserção:', dadosInsercao);
-
-    // Inserir refeição no banco
-    const [resultado] = await bancoDados.query(`
-      INSERT INTO refeicoes (
-        id_usuario, itens, calorias_totais, proteinas_totais, 
-        carboidratos_totais, gorduras_totais, timestamp, tipo_refeicao, observacoes
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `, dadosInsercao);
-
-    console.log(`✅ Refeição salva para usuário ${req.idUsuario} (ID: ${resultado.insertId})`);
-    console.log(`📊 Dados: ${itens.length} itens, ${calorias_totais} kcal, ${proteinas}g proteínas`);
+    ]);
 
     res.status(201).json({ 
       mensagem: 'Refeição salva com sucesso',
-      id: resultado.insertId,
-      dados: {
-        itens: itens.length,
-        calorias: calorias_totais,
-        proteinas,
-        carboidratos,
-        gorduras
-      }
+      id: resultado.insertId
     });
 
   } catch (erro) {
     console.error('❌ Erro ao salvar refeição:', erro);
-    console.error('❌ Stack trace:', erro.stack);
-    console.error('❌ Dados que causaram o erro:', JSON.stringify(req.body, null, 2));
-    
-    res.status(500).json({ 
-      mensagem: 'Erro ao salvar refeição',
-      erro: erro.message,
-      detalhes: process.env.NODE_ENV === 'development' ? erro.stack : undefined
-    });
+    res.status(500).json({ mensagem: 'Erro ao salvar refeição', erro: erro.message });
   }
 });
 
-// Atualizar refeição existente
+/**
+ * 📌 Atualizar refeição existente
+ * - Requer o ID da refeição na URL
+ * - Só atualiza se a refeição pertencer ao usuário autenticado
+ */
 roteador.put('/:id', requerAutenticacao, async (req, res) => {
   try {
     const { id } = req.params;
-    const { 
-      itens, 
-      calorias_totais, 
-      proteinas_totais,
-      carboidratos_totais,
-      gorduras_totais,
-      tipo_refeicao,
-      observacoes
-    } = req.body;
+    const { itens, calorias_totais, proteinas_totais, carboidratos_totais, gorduras_totais, tipo_refeicao, observacoes } = req.body;
 
-    // Verificar se a refeição pertence ao usuário
+    // ⚠️ Garantir que pertence ao usuário
     const [refeicaoExistente] = await bancoDados.query(
       'SELECT id FROM refeicoes WHERE id = ? AND id_usuario = ?',
       [id, req.idUsuario]
     );
 
     if (refeicaoExistente.length === 0) {
-      return res.status(404).json({ 
-        mensagem: 'Refeição não encontrada' 
-      });
+      return res.status(404).json({ mensagem: 'Refeição não encontrada' });
     }
 
-    // Atualizar refeição
+    // 💾 Atualizar
     await bancoDados.query(`
       UPDATE refeicoes SET
         itens = ?, calorias_totais = ?, proteinas_totais = ?,
@@ -198,33 +151,30 @@ roteador.put('/:id', requerAutenticacao, async (req, res) => {
       req.idUsuario
     ]);
 
-    console.log(`✅ Refeição ${id} atualizada para usuário ${req.idUsuario}`);
     res.json({ mensagem: 'Refeição atualizada com sucesso' });
 
   } catch (erro) {
     console.error('❌ Erro ao atualizar refeição:', erro);
-    res.status(500).json({ 
-      mensagem: 'Erro ao atualizar refeição',
-      erro: erro.message 
-    });
+    res.status(500).json({ mensagem: 'Erro ao atualizar refeição', erro: erro.message });
   }
 });
 
-// Deletar refeição
+/**
+ * 📌 Deletar refeição
+ * - Requer o ID da refeição
+ * - Só remove se for do usuário autenticado
+ */
 roteador.delete('/:id', requerAutenticacao, async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Verificar se a refeição pertence ao usuário
     const [refeicaoExistente] = await bancoDados.query(
       'SELECT id FROM refeicoes WHERE id = ? AND id_usuario = ?',
       [id, req.idUsuario]
     );
 
     if (refeicaoExistente.length === 0) {
-      return res.status(404).json({ 
-        mensagem: 'Refeição não encontrada' 
-      });
+      return res.status(404).json({ mensagem: 'Refeição não encontrada' });
     }
 
     await bancoDados.query(
@@ -232,15 +182,11 @@ roteador.delete('/:id', requerAutenticacao, async (req, res) => {
       [id, req.idUsuario]
     );
 
-    console.log(`✅ Refeição ${id} deletada para usuário ${req.idUsuario}`);
     res.json({ mensagem: 'Refeição removida com sucesso' });
 
   } catch (erro) {
     console.error('❌ Erro ao deletar refeição:', erro);
-    res.status(500).json({ 
-      mensagem: 'Erro ao deletar refeição',
-      erro: erro.message 
-    });
+    res.status(500).json({ mensagem: 'Erro ao deletar refeição', erro: erro.message });
   }
 });
 

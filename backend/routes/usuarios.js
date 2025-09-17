@@ -1,19 +1,35 @@
+
+/**
+ * Rotas relacionadas ao usuário: perfil, atualização de dados e alteração de senha.
+ * Inclui autenticação obrigatória para todas as operações.
+ *
+ * @module routes/usuarios
+ */
+
 import express from 'express';
 import bancoDados from '../config/db.js';
 import { requerAutenticacao } from '../middleware/auth.js';
 import bcrypt from 'bcrypt';
 
+// Cria um roteador Express para as rotas de usuário
 const roteador = express.Router();
 
-// Buscar perfil do usuário
+
+/**
+ * GET /perfil
+ * Retorna os dados do perfil do usuário autenticado, incluindo dados do quiz se existirem.
+ * Requer autenticação via middleware.
+ */
 roteador.get('/perfil', requerAutenticacao, async (req, res) => {
   try {
+    // Busca dados básicos do usuário
     const [usuarios] = await bancoDados.query(
       'SELECT id, nome, email, criado_em FROM usuarios WHERE id = ?',
       [req.idUsuario]
     );
     
     if (usuarios.length === 0) {
+      // Usuário não encontrado
       return res.status(404).json({ 
         mensagem: 'Usuário não encontrado' 
       });
@@ -21,7 +37,7 @@ roteador.get('/perfil', requerAutenticacao, async (req, res) => {
     
     const usuario = usuarios[0];
     
-    // Buscar dados do quiz se existirem
+    // Busca dados do quiz, se existirem, e adiciona ao objeto do usuário
     const [quizData] = await bancoDados.query(
       'SELECT idade, sexo, altura, peso_atual, peso_meta, objetivo, nivel_atividade FROM meus_dados WHERE id_usuario = ?',
       [req.idUsuario]
@@ -41,19 +57,25 @@ roteador.get('/perfil', requerAutenticacao, async (req, res) => {
   }
 });
 
-// Atualizar perfil do usuário
+
+/**
+ * PUT /perfil
+ * Atualiza os dados do perfil do usuário autenticado e, se necessário, os dados do quiz.
+ * Requer autenticação via middleware.
+ */
 roteador.put('/perfil', requerAutenticacao, async (req, res) => {
   try {
+    // Extrai dados do corpo da requisição
     const { nome, email, idade, sexo, altura, peso_atual, peso_meta, objetivo, nivel_atividade } = req.body;
     
-    // Validar dados obrigatórios
+    // Validação: nome e email são obrigatórios
     if (!nome || !email) {
       return res.status(400).json({ 
         mensagem: 'Nome e email são obrigatórios' 
       });
     }
     
-    // Verificar se email já existe (exceto para o usuário atual)
+    // Verifica se o email já está em uso por outro usuário
     if (email) {
       const [usuariosExistentes] = await bancoDados.query(
         'SELECT id FROM usuarios WHERE email = ? AND id != ?',
@@ -67,20 +89,20 @@ roteador.put('/perfil', requerAutenticacao, async (req, res) => {
       }
     }
     
-    // Atualizar dados básicos do usuário
+    // Atualiza dados básicos do usuário
     await bancoDados.query(
       'UPDATE usuarios SET nome = ?, email = ? WHERE id = ?',
       [nome, email, req.idUsuario]
     );
     
-    // Verificar se existe dados do quiz para este usuário
+    // Verifica se já existem dados do quiz para este usuário
     const [quizExistente] = await bancoDados.query(
       'SELECT id FROM meus_dados WHERE id_usuario = ?',
       [req.idUsuario]
     );
     
     if (quizExistente.length > 0) {
-      // Atualizar dados do quiz
+      // Atualiza dados do quiz
       await bancoDados.query(`
         UPDATE meus_dados SET
           idade = ?, sexo = ?, altura = ?, peso_atual = ?, peso_meta = ?,
@@ -91,7 +113,7 @@ roteador.put('/perfil', requerAutenticacao, async (req, res) => {
         objetivo || null, nivel_atividade || null, req.idUsuario
       ]);
     } else if (idade || sexo || altura || peso_atual || peso_meta || objetivo || nivel_atividade) {
-      // Inserir novos dados do quiz
+      // Insere novos dados do quiz caso não existam
       await bancoDados.query(`
         INSERT INTO meus_dados (
           id_usuario, idade, sexo, altura, peso_atual, peso_meta,
@@ -129,39 +151,48 @@ roteador.put('/perfil', requerAutenticacao, async (req, res) => {
   }
 });
 
-// Rota para alterar a senha do usuário
+
+/**
+ * PUT /alterar-senha
+ * Permite ao usuário autenticado alterar sua senha, validando a senha atual.
+ * Requer autenticação via middleware.
+ */
 roteador.put('/alterar-senha', requerAutenticacao, async (req, res) => {
+  // Extrai as senhas do corpo da requisição
   const { senhaAtual, novaSenha } = req.body;
   
+  // Validação: ambas as senhas são obrigatórias
   if (!senhaAtual || !novaSenha) {
     return res.status(400).json({ mensagem: 'Senha atual e nova senha são obrigatórias.' });
   }
 
   try {
-    // 1. Buscar o hash da senha atual do banco de dados
+    // 1. Busca o hash da senha atual do banco de dados
     const [usuarios] = await bancoDados.query(
       'SELECT senha FROM usuarios WHERE id = ?',
       [req.idUsuario]
     );
 
     if (usuarios.length === 0) {
+      // Usuário não encontrado
       return res.status(404).json({ mensagem: 'Usuário não encontrado.' });
     }
 
     const hashSenhaArmazenada = usuarios[0].senha;
 
-    // 2. Comparar a senha atual fornecida com a senha armazenada (hash)
+    // 2. Compara a senha atual fornecida com o hash armazenado
     const senhaValida = await bcrypt.compare(senhaAtual, hashSenhaArmazenada);
 
     if (!senhaValida) {
+      // Senha atual incorreta
       return res.status(401).json({ mensagem: 'Senha atual incorreta.' });
     }
     
-    // 3. Criptografar a nova senha
+    // 3. Criptografa a nova senha
     const saltRounds = 10;
     const novaSenhaHash = await bcrypt.hash(novaSenha, saltRounds);
 
-    // 4. Atualizar a senha no banco de dados
+    // 4. Atualiza a senha no banco de dados
     await bancoDados.query(
       'UPDATE usuarios SET senha = ?, atualizado_em = CURRENT_TIMESTAMP WHERE id = ?',
       [novaSenhaHash, req.idUsuario]
@@ -179,4 +210,6 @@ roteador.put('/alterar-senha', requerAutenticacao, async (req, res) => {
   }
 });
 
+
+// Exporta o roteador para ser utilizado no app principal
 export default roteador;

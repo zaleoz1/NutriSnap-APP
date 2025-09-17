@@ -1,5 +1,13 @@
 import jwt from 'jsonwebtoken';
 
+/**
+ * Middleware para proteger rotas que requerem autenticação
+ * - Verifica o token JWT no cabeçalho Authorization
+ * - Valida o token e extrai os dados do usuário
+ * - Em caso de falha, retorna erros apropriados
+ * - Adiciona os dados do usuário ao objeto req
+ */
+
 export function requerAutenticacao(req, res, next) {
   try {
     const cabecalho = req.headers.authorization || '';
@@ -75,7 +83,14 @@ export function requerAutenticacao(req, res, next) {
   }
 }
 
-// Middleware opcional para verificar se o usuário está autenticado
+/**
+ * Middleware opcional para verificar se o usuário está autenticado
+ * - Se o token JWT estiver presente e válido, adiciona os dados do usuário ao objeto req
+ * - Caso contrário, prossegue sem interromper a requisição
+ * @param {Object} req - Objeto de requisição
+ * @param {Object} res - Objeto de resposta
+ * @param {Function} next - Função para passar para o próximo middleware
+ */
 export function autenticacaoOpcional(req, res, next) {
   try {
     const cabecalho = req.headers.authorization || '';

@@ -1,12 +1,27 @@
+
+/**
+ * Rotas relacionadas ao plano de treino do usuário.
+ * Inclui endpoints para buscar, salvar, atualizar e gerar planos personalizados.
+ *
+ * @module routes/workouts
+ */
+
 import express from 'express';
 import bancoDados from '../config/db.js';
 import { requerAutenticacao } from '../middleware/auth.js';
 
+// Cria um roteador Express para as rotas de treinos
 const roteador = express.Router();
 
-// Buscar plano de treino atual
+
+/**
+ * GET /
+ * Busca o plano de treino mais recente do usuário autenticado.
+ * Requer autenticação via middleware.
+ */
 roteador.get('/', requerAutenticacao, async (req, res) => {
   try {
+    // Busca o último plano de treino cadastrado para o usuário
     const [linhas] = await bancoDados.query(
       'SELECT * FROM treinos WHERE id_usuario = ? ORDER BY id DESC LIMIT 1', 
       [req.idUsuario]
@@ -21,10 +36,17 @@ roteador.get('/', requerAutenticacao, async (req, res) => {
   }
 });
 
-// Salvar plano de treino
+
+/**
+ * POST /
+ * Salva um novo plano de treino para o usuário autenticado.
+ * Espera no corpo: plano (array de treinos).
+ * Requer autenticação via middleware.
+ */
 roteador.post('/', requerAutenticacao, async (req, res) => {
   try {
     const { plano } = req.body;
+    // Insere novo plano de treino no banco de dados
     await bancoDados.query(
       'INSERT INTO treinos (id_usuario, plano) VALUES (?, ?)', 
       [req.idUsuario, JSON.stringify(plano || [])]
@@ -39,15 +61,22 @@ roteador.post('/', requerAutenticacao, async (req, res) => {
   }
 });
 
-// Gerar plano de treino personalizado baseado no quiz
+
+/**
+ * POST /gerar
+ * Gera um plano de treino personalizado com base nos dados do quiz do usuário.
+ * Salva o plano gerado no banco e retorna para o cliente.
+ * Requer autenticação via middleware.
+ */
 roteador.post('/gerar', requerAutenticacao, async (req, res) => {
   try {
-    // Buscar dados do quiz do usuário
+    // Busca os dados do quiz preenchido pelo usuário
     const [quizData] = await bancoDados.query(
       'SELECT * FROM meus_dados WHERE id_usuario = ?',
       [req.idUsuario]
     );
 
+    // Se não houver quiz preenchido, retorna erro
     if (quizData.length === 0) {
       return res.status(400).json({ 
         mensagem: 'Complete o quiz primeiro para gerar um plano personalizado' 
@@ -56,10 +85,10 @@ roteador.post('/gerar', requerAutenticacao, async (req, res) => {
 
     const dadosQuiz = quizData[0];
     
-    // Gerar plano baseado nos dados do quiz
+    // Gera plano de treino personalizado a partir dos dados do quiz
     const plano = gerarPlanoTreino(dadosQuiz);
     
-    // Salvar o plano gerado
+    // Salva o plano gerado no banco de dados
     await bancoDados.query(
       'INSERT INTO treinos (id_usuario, plano) VALUES (?, ?)',
       [req.idUsuario, JSON.stringify(plano)]
@@ -80,25 +109,31 @@ roteador.post('/gerar', requerAutenticacao, async (req, res) => {
   }
 });
 
-// Atualizar plano de treino
+
+/**
+ * PUT /
+ * Atualiza o plano de treino mais recente do usuário autenticado.
+ * Espera no corpo: plano (array de treinos).
+ * Requer autenticação via middleware.
+ */
 roteador.put('/', requerAutenticacao, async (req, res) => {
   try {
     const { plano } = req.body;
     
-    // Verificar se já existe um plano
+    // Verifica se já existe um plano de treino para o usuário
     const [treinosExistentes] = await bancoDados.query(
       'SELECT id FROM treinos WHERE id_usuario = ? ORDER BY id DESC LIMIT 1',
       [req.idUsuario]
     );
 
     if (treinosExistentes.length > 0) {
-      // Atualizar plano existente
+      // Atualiza o plano existente
       await bancoDados.query(
         'UPDATE treinos SET plano = ? WHERE id_usuario = ? ORDER BY id DESC LIMIT 1',
         [JSON.stringify(plano), req.idUsuario]
       );
     } else {
-      // Criar novo plano
+      // Cria novo plano caso não exista
       await bancoDados.query(
         'INSERT INTO treinos (id_usuario, plano) VALUES (?, ?)',
         [req.idUsuario, JSON.stringify(plano)]
@@ -115,8 +150,15 @@ roteador.put('/', requerAutenticacao, async (req, res) => {
   }
 });
 
-// Função para gerar plano de treino personalizado
+
+/**
+ * Função utilitária para gerar um plano de treino personalizado a partir dos dados do quiz do usuário.
+ * Calcula intensidade, frequência, tipos de treino, duração e gera os treinos da semana.
+ * @param {Object} dadosQuiz - Dados do quiz preenchido pelo usuário.
+ * @returns {Object} Objeto com plano de treino detalhado.
+ */
 function gerarPlanoTreino(dadosQuiz) {
+  // Desestruturação dos dados do quiz
   const {
     idade,
     sexo,
@@ -132,19 +174,15 @@ function gerarPlanoTreino(dadosQuiz) {
     metas_especificas
   } = dadosQuiz;
 
-  // Determinar intensidade baseada no objetivo e nível de atividade
+  // Determina intensidade baseada no objetivo e nível de atividade
   const intensidade = determinarIntensidade(objetivo, nivel_atividade);
-  
-  // Determinar frequência de treinos
+  // Determina frequência de treinos
   const frequencia = determinarFrequencia(frequencia_treino);
-  
-  // Determinar tipos de treino baseados no objetivo
+  // Determina tipos de treino baseados no objetivo e metas específicas
   const tiposTreino = determinarTiposTreino(objetivo, metas_especificas);
-  
-  // Determinar duração baseada na preferência
+  // Determina duração baseada na preferência
   const duracao = determinarDuracao(duracao_treino);
-  
-  // Gerar treinos para a semana
+  // Gera treinos para a semana
   const treinos = gerarTreinosSemana(
     frequencia,
     tiposTreino,
@@ -154,6 +192,7 @@ function gerarPlanoTreino(dadosQuiz) {
     horario_preferido
   );
 
+  // Retorna objeto completo de plano de treino
   return {
     usuario: {
       idade,
@@ -176,6 +215,13 @@ function gerarPlanoTreino(dadosQuiz) {
   };
 }
 
+
+/**
+ * Determina a intensidade do treino com base no objetivo e nível de atividade do usuário.
+ * @param {string} objetivo - Objetivo principal do usuário.
+ * @param {string} nivelAtividade - Nível de atividade do usuário.
+ * @returns {string} Intensidade sugerida.
+ */
 function determinarIntensidade(objetivo, nivelAtividade) {
   if (objetivo === 'emagrecer') {
     return nivelAtividade === 'iniciante' ? 'média' : 'alta';
@@ -189,6 +235,12 @@ function determinarIntensidade(objetivo, nivelAtividade) {
   return 'média';
 }
 
+
+/**
+ * Determina a frequência semanal de treinos com base na resposta do quiz.
+ * @param {string} frequenciaTreino - Frequência informada no quiz.
+ * @returns {number} Número de treinos por semana.
+ */
 function determinarFrequencia(frequenciaTreino) {
   const frequencias = {
     '1_2_vezes': 2,
@@ -199,6 +251,13 @@ function determinarFrequencia(frequenciaTreino) {
   return frequencias[frequenciaTreino] || 3;
 }
 
+
+/**
+ * Determina os tipos de treino sugeridos com base no objetivo e metas específicas do usuário.
+ * @param {string} objetivo - Objetivo principal do usuário.
+ * @param {Object|string} metasEspecificas - Metas específicas do quiz.
+ * @returns {Array} Lista de tipos de treino.
+ */
 function determinarTiposTreino(objetivo, metasEspecificas) {
   const tipos = [];
   
@@ -212,7 +271,7 @@ function determinarTiposTreino(objetivo, metasEspecificas) {
     tipos.push('funcional', 'cardio');
   }
 
-  // Adicionar tipos baseados em metas específicas
+  // Adiciona tipos baseados em metas específicas do usuário
   if (metasEspecificas) {
     try {
       const metas = typeof metasEspecificas === 'string' ? JSON.parse(metasEspecificas) : metasEspecificas;
@@ -227,6 +286,12 @@ function determinarTiposTreino(objetivo, metasEspecificas) {
   return [...new Set(tipos)]; // Remove duplicatas
 }
 
+
+/**
+ * Determina a duração do treino em minutos com base na resposta do quiz.
+ * @param {string} duracaoTreino - Duração informada no quiz.
+ * @returns {number} Duração em minutos.
+ */
 function determinarDuracao(duracaoTreino) {
   const duracoes = {
     '30_min': 30,
@@ -237,16 +302,24 @@ function determinarDuracao(duracaoTreino) {
   return duracoes[duracaoTreino] || 60;
 }
 
+
+/**
+ * Gera os treinos da semana distribuindo os tipos de treino de forma equilibrada.
+ * @param {number} frequencia - Número de treinos por semana.
+ * @param {Array} tiposTreino - Tipos de treino sugeridos.
+ * @param {string} intensidade - Intensidade sugerida.
+ * @param {number} duracao - Duração de cada treino.
+ * @param {string} acessoAcademia - Tipo de acesso à academia.
+ * @param {string} horarioPreferido - Horário preferido do usuário.
+ * @returns {Array} Lista de treinos da semana.
+ */
 function gerarTreinosSemana(frequencia, tiposTreino, intensidade, duracao, acessoAcademia, horarioPreferido) {
   const treinos = [];
-  
-  // Distribuir tipos de treino ao longo da semana de forma equilibrada
+  // Distribui tipos de treino ao longo da semana
   let tipoIndex = 0;
-  
   for (let i = 0; i < frequencia; i++) {
-    const dia = i + 1; // Dia da semana (1 = Segunda, 2 = Terça, etc.)
+    const dia = i + 1; // Dia da semana (1 = Segunda, 2 = Terça, ...)
     const tipo = tiposTreino[tipoIndex % tiposTreino.length];
-    
     const treino = gerarTreinoEspecifico(
       dia,
       tipo,
@@ -255,14 +328,23 @@ function gerarTreinosSemana(frequencia, tiposTreino, intensidade, duracao, acess
       acessoAcademia,
       horarioPreferido
     );
-    
     treinos.push(treino);
     tipoIndex++;
   }
-  
   return treinos;
 }
 
+
+/**
+ * Gera um treino específico para um dia da semana.
+ * @param {number} dia - Dia da semana.
+ * @param {string} tipo - Tipo de treino.
+ * @param {string} intensidade - Intensidade sugerida.
+ * @param {number} duracao - Duração do treino.
+ * @param {string} acessoAcademia - Tipo de acesso à academia.
+ * @param {string} horarioPreferido - Horário preferido do usuário.
+ * @returns {Object} Objeto de treino detalhado.
+ */
 function gerarTreinoEspecifico(dia, tipo, intensidade, duracao, acessoAcademia, horarioPreferido) {
   const treino = {
     dia: dia,
@@ -275,10 +357,16 @@ function gerarTreinoEspecifico(dia, tipo, intensidade, duracao, acessoAcademia, 
     exercicios: gerarExercicios(tipo, intensidade, duracao, acessoAcademia),
     concluido: false
   };
-  
   return treino;
 }
 
+
+/**
+ * Gera o nome do treino de acordo com o tipo e intensidade.
+ * @param {string} tipo - Tipo de treino.
+ * @param {string} intensidade - Intensidade sugerida.
+ * @returns {string} Nome do treino.
+ */
 function gerarNomeTreino(tipo, intensidade) {
   const nomes = {
     cardio: {
@@ -306,10 +394,17 @@ function gerarNomeTreino(tipo, intensidade) {
       máxima: 'Alongamento Avançado'
     }
   };
-  
   return nomes[tipo]?.[intensidade] || `${tipo.charAt(0).toUpperCase() + tipo.slice(1)} ${intensidade}`;
 }
 
+
+/**
+ * Gera a descrição do treino de acordo com o tipo e duração.
+ * @param {string} tipo - Tipo de treino.
+ * @param {string} intensidade - Intensidade sugerida.
+ * @param {number} duracao - Duração do treino.
+ * @returns {string} Descrição do treino.
+ */
 function gerarDescricaoTreino(tipo, intensidade, duracao) {
   const descricoes = {
     cardio: `Treino cardiovascular de ${duracao} minutos focado em melhorar resistência e queima calórica.`,
@@ -317,13 +412,21 @@ function gerarDescricaoTreino(tipo, intensidade, duracao) {
     funcional: `Treino funcional de ${duracao} minutos que trabalha múltiplos grupos musculares simultaneamente.`,
     flexibilidade: `Sessão de alongamento e flexibilidade de ${duracao} minutos para melhorar mobilidade.`
   };
-  
   return descricoes[tipo] || `Treino personalizado de ${duracao} minutos.`;
 }
 
+
+/**
+ * Gera a lista de exercícios para um treino de acordo com o tipo, intensidade e acesso à academia.
+ * @param {string} tipo - Tipo de treino.
+ * @param {string} intensidade - Intensidade sugerida.
+ * @param {number} duracao - Duração do treino.
+ * @param {string} acessoAcademia - Tipo de acesso à academia.
+ * @returns {Array} Lista de exercícios.
+ */
 function gerarExercicios(tipo, intensidade, duracao, acessoAcademia) {
   const exercicios = [];
-  
+  // Define exercícios conforme o tipo de treino
   if (tipo === 'cardio') {
     exercicios.push(
       { nome: 'Corrida', series: 1, repeticoes: `${duracao} min`, descricao: 'Corrida contínua para melhorar resistência cardiovascular' },
@@ -367,8 +470,7 @@ function gerarExercicios(tipo, intensidade, duracao, acessoAcademia) {
       { nome: 'Alongamento de Coluna', series: 3, repeticoes: '30s', descricao: 'Mobilidade da coluna vertebral' }
     );
   }
-  
-  // Ajustar baseado na intensidade
+  // Ajusta repetições baseado na intensidade
   if (intensidade === 'alta' || intensidade === 'máxima') {
     exercicios.forEach(ex => {
       if (ex.repeticoes !== '30s' && ex.repeticoes !== '2 min' && ex.repeticoes !== '20s') {
@@ -376,8 +478,9 @@ function gerarExercicios(tipo, intensidade, duracao, acessoAcademia) {
       }
     });
   }
-  
   return exercicios;
 }
 
+
+// Exporta o roteador para ser utilizado no app principal
 export default roteador;
