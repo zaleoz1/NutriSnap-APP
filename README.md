@@ -92,11 +92,14 @@ GEMINI_API_KEY=sua_chave_gemini
 PORT=3000
 ```
 
+<b>caso seu banco tenha variáveis diferentes edite-as</b>
+
 ### **IP do Backend (Mobile)**
 Edite `mobile/src/services/api.jsx`:
 ```javascript
 export const URL_BASE = 'http://SEU_IP:3000';
 ```
+Além de editar a url edite também no server, colocando seu email
 
 ## 📱 Fluxo do Usuário
 
