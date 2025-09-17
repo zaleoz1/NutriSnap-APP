@@ -11,13 +11,13 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
-import rotasAutenticacao from './routes/auth.js';
-import rotasRefeicoes from './routes/refeicoes.js';
-import rotasMetas from './routes/metas.js';
-import rotasTreinos from './routes/workouts.js';
-import rotasAnalise from './routes/analyze.js';
-import rotasQuiz from './routes/meusdados.js';
-import rotasUsuarios from './routes/usuarios.js';
+import rotasAutenticacao from './routes/authRoutes.js';
+import rotasRefeicoes from './routes/refeicoesRoutes.js';
+import rotasMetas from './routes/metasRoutes.js';
+import rotasTreinos from './routes/workoutsRoutes.js';
+import rotasAnalise from './routes/analiseRoutes.js';
+import rotasQuiz from './routes/meusDadosRoutes.js';
+import rotasUsuarios from './routes/usuariosRoutes.js';
 import bancoDados from './config/db.js';
 
 
