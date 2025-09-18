@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Configuração da API
-export const URL_BASE = 'http://192.168.0.4:3000';
+export const URL_BASE = 'http://192.168.0.60:3000';
 
 // Função para buscar dados da API
 export async function buscarApi(endpoint, opcoes = {}) {
