@@ -22,4 +22,6 @@ roteador.put('/perfil', requerAutenticacao, UsuariosController.atualizarPerfil);
  */
 roteador.put('/alterar-senha', requerAutenticacao, UsuariosController.alterarSenha);
 
+
+
 export default roteador;

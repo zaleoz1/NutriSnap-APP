@@ -4,13 +4,14 @@ import bcrypt from 'bcrypt';
 class UsuariosModel {
 
     /**
-     * Busca os dados completos do perfil de um usuário.
+     * Busca os dados completos do perfil de um usuário pelo ID.
      * @param {number} idUsuario - ID do usuário.
      * @returns {Promise<object|null>} Dados do usuário e quiz, ou null.
      */
     static async buscarPerfilCompleto(idUsuario) {
         const [usuarios] = await bancoDados.query(
-            'SELECT id, nome, email, criado_em FROM usuarios WHERE id = ?',
+            // CORRIGIDO: Removida a coluna 'foto'
+            'SELECT id, nome, email, criado_em, email_verificado FROM usuarios WHERE id = ?',
             [idUsuario]
         );
 
@@ -28,9 +29,25 @@ class UsuariosModel {
         if (quizData.length > 0) {
             Object.assign(usuario, quizData[0]);
         }
+
         return usuario;
     }
 
+    /**
+     * Busca um usuário pelo email.
+     * @param {string} email - Email do usuário.
+     * @returns {Promise<object|null>} Dados do usuário ou null.
+     */
+    static async buscarPorEmail(email) {
+        const [usuarios] = await bancoDados.query( 
+            // CORRIGIDO: Removida a coluna 'foto'
+            'SELECT id, nome, email, criado_em, email_verificado FROM usuarios WHERE email = ?',
+            [email]
+        );
+        return usuarios[0] || null;
+    }
+
+    
     /**
      * Atualiza os dados de perfil de um usuário.
      * @param {number} idUsuario - ID do usuário.
@@ -43,7 +60,7 @@ class UsuariosModel {
             [dados.nome, dados.email, idUsuario]
         );
 
-        // Atualiza/Insere dados do quiz
+        // Atualiza/insere dados do quiz
         const [quizExistente] = await bancoDados.query(
             'SELECT id FROM meus_dados WHERE id_usuario = ?',
             [idUsuario]
@@ -79,6 +96,7 @@ class UsuariosModel {
      * @param {string} novaSenha - Nova senha em texto puro.
      */
     static async alterarSenha(idUsuario, novaSenha) {
+        if (!novaSenha) return;
         const saltRounds = 10;
         const novaSenhaHash = await bcrypt.hash(novaSenha, saltRounds);
         await bancoDados.query(
@@ -98,6 +116,44 @@ class UsuariosModel {
             [idUsuario]
         );
         return usuarios[0]?.senha || null;
+    }
+
+    // =======================================
+    // MARCAR EMAIL VERIFICADO
+    // =======================================
+
+    /**
+     * Marca o email do usuário como verificado no banco de dados.
+     * @param {number} idUsuario - ID do usuário.
+     */
+    static async marcarEmailVerificado(idUsuario) {
+        await bancoDados.query(
+            'UPDATE usuarios SET email_verificado = TRUE, atualizado_em = CURRENT_TIMESTAMP WHERE id = ?',
+            [idUsuario]
+        );
+    }
+    /**
+     * Cria um novo usuário na tabela principal (usuarios) usando a senha JÁ hasheada.
+     * Este é o 'COMMIT' final do registro.
+     * @param {object} dados - Dados finais do usuário.
+     * @returns {Promise<object>} Dados do usuário criado.
+     */
+    static async criarUsuarioComHash({ nome, email, senha_hash, email_verificado = true }) {
+        const [resultado] = await bancoDados.query(
+            `
+            INSERT INTO usuarios (nome, email, senha, email_verificado) 
+            VALUES (?, ?, ?, ?)
+            `,
+            [nome, email, senha_hash, email_verificado]
+        );
+
+        // Retorna os dados básicos do usuário, incluindo o ID inserido
+        return { 
+            id: resultado.insertId, 
+            nome, 
+            email, 
+            email_verificado
+        };
     }
 }
 
